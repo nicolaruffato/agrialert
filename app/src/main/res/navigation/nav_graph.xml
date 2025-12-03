@@ -1,28 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/alertsListFragment">
 
     <fragment
-        android:id="@+id/FirstFragment"
-        android:name="com.agrialert.FirstFragment"
-        android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_first">
+        android:id="@+id/alertsListFragment"
+        android:name="com.agrialeirt.ui.alerts.AlertsListFragment"
+        android:label="Alert" />
 
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-    </fragment>
     <fragment
-        android:id="@+id/SecondFragment"
-        android:name="com.agrialert.SecondFragment"
-        android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second">
+        android:id="@+id/fieldsListFragment"
+        android:name="com.agrialert.ui.fields.FieldsListFragment"
+        android:label="Campi" />
 
-        <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
-    </fragment>
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.agrialert.ui.dashboard.DashboardFragment"
+        android:label="Dashboard" />
 </navigation>
