@@ -6,37 +6,31 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
 
 import com.agrialert.R;
-import com.agrialert.databinding.FragmentAlertsListBinding;
-import com.agrialert.databinding.FragmentAlertsListBinding;
 
 public class AlertsListFragment extends Fragment {
 
-    private FragmentAlertsListBinding binding;
-
-    @Override
-    public View onCreateView(
-            @NonNull LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState
-    ) {
-
-        binding = FragmentAlertsListBinding.inflate(inflater, container, false);
-        return binding.getRoot();
-
+    public AlertsListFragment() {
+        // Costruttore vuoto richiesto
     }
 
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        // Per ora niente binding, solo inflate “normale”
+        return inflater.inflate(R.layout.fragment_alerts_list, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view,
+                              @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // qui dopo ci metteremo la logica della lista alert
     }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-    }
-
 }

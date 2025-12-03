@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/alertsListFragment"
-        android:name="com.agrialeirt.ui.alerts.AlertsListFragment"
+        android:name="com.agrialert.ui.alerts.AlertsListFragment"
         android:label="Alert" />
 
     <fragment
