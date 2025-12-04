@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- TOGGLE CAMPI / GRUPPI -->
+    <LinearLayout
+        android:id="@+id/toggleGroups"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFields"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="Campi"
+            android:checkable="true"
+            android:checked="true"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFieldGroups"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="Gruppi di campi"
+            android:checkable="true"
+            android:checked="false"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
+
+    </LinearLayout>
+
+
+
+    <!-- LISTA (RecyclerView) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFields"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"/>
+
+    <!-- BOTTONE AGGIUNGI -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAddField"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Aggiungi un nuovo campo"
+        android:textAllCaps="false"
+        android:layout_marginTop="12dp"/>
+</LinearLayout>
+

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- TOGGLE ATTIVI / RISOLTI -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/toggleAlerts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlertsActive"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="Attivi"
+            android:checkable="true"
+            android:checked="true"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAlertsResolved"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="Risolti"
+            android:checkable="true"
+            android:checked="false"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!-- LISTA ALERT -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvAlerts"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp" />
+
+</LinearLayout>
