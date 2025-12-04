@@ -1,4 +1,6 @@
 package com.agrialert.ui.fields;
+import com.agrialert.ui.fields.groups.GroupUiModel;
+import com.agrialert.ui.fields.groups.GroupsAdapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -12,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.R;
+import com.agrialert.ui.fields.groups.GroupUiModel;
+import com.agrialert.ui.fields.groups.GroupsAdapter;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -25,8 +29,16 @@ public class FieldsListFragment extends Fragment {
     private MaterialButton btnFieldGroups;
     private MaterialButton btnAddField;
 
+    // Adapter e dati per Campi
+    private FieldsAdapter fieldsAdapter;
+    private List<FieldUiModel> fieldsList = new ArrayList<>();
+
+    // Adapter e dati per Gruppi
+    private GroupsAdapter groupsAdapter;
+    private List<GroupUiModel> groupsList = new ArrayList<>();
+
     public FieldsListFragment() {
-        // Costruttore vuoto richiesto
+        // costruttore vuoto richiesto
     }
 
     @Override
@@ -41,121 +53,126 @@ public class FieldsListFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Collego le view dal layout
         rvFields = view.findViewById(R.id.rvFields);
         btnFields = view.findViewById(R.id.btnFields);
         btnFieldGroups = view.findViewById(R.id.btnFieldGroups);
         btnAddField = view.findViewById(R.id.btnAddField);
 
-        // Siamo sulla tab "Campi"
-        btnFields.setChecked(true);
-
-        // Setup RecyclerView
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
-        FieldsAdapter adapter = new FieldsAdapter();
-        rvFields.setAdapter(adapter);
 
-        // Dati finti di esempio (poi arriveranno dal backend )
-        List<FieldUiModel> sampleFields = createSampleFields();
-        adapter.submitList(sampleFields);
+        // Adapter campi
+        fieldsAdapter = new FieldsAdapter();
+        fieldsList = createSampleFields();
 
-        // Per ora questi pulsanti non fanno nulla (li gestiremo dopo)
-        btnFieldGroups.setOnClickListener(v -> {
-            // TODO: mostrare i gruppi invece dei campi
-        });
+        // Adapter gruppi
+        groupsAdapter = new GroupsAdapter();
+        groupsList = createSampleGroups();
 
-        btnAddField.setOnClickListener(v -> {
-            // TODO: aprire schermata "Nuovo campo"
-        });
+        // Stato iniziale: CAMPI
+        showFields();
+
+        // Toggle CAMPI
+        btnFields.setOnClickListener(v -> showFields());
+
+        // Toggle GRUPPI
+        btnFieldGroups.setOnClickListener(v -> showGroups());
     }
 
-    /**
-     * Crea una lista di campi di esempio, con:
-     * - indirizzo, coltura, gruppo
-     * - icona principale in base alla coltura
-     * - icone alert (lista, max 6 usate dall'adapter)
-     */
+    // ------------------- MOSTRA CAMPi -------------------
+
+    private void showFields() {
+        btnFields.setChecked(true);
+        btnFieldGroups.setChecked(false);
+
+        rvFields.setAdapter(fieldsAdapter);
+        fieldsAdapter.submitList(fieldsList);
+
+        btnAddField.setText("Aggiungi un nuovo campo");
+    }
+
+    // ------------------- MOSTRA GRUPPI -------------------
+
+    private void showGroups() {
+        btnFields.setChecked(false);
+        btnFieldGroups.setChecked(true);
+
+        rvFields.setAdapter(groupsAdapter);
+        groupsAdapter.submitList(groupsList);
+
+        btnAddField.setText("Aggiungi un nuovo gruppo");
+    }
+
+    // ------------------- DATI DI ESEMPIO CAMPi -------------------
+
     private List<FieldUiModel> createSampleFields() {
         List<FieldUiModel> list = new ArrayList<>();
 
-        // Liste di icone alert di esempio (riuso sempre ic_alert, poi saranno da mettere quelle degli alert)
-        List<Integer> alerts1 = Arrays.asList(
-                R.drawable.ic_alert,
-                R.drawable.ic_alert,
-                R.drawable.ic_alert
-        );
+        int iconOrtaggi = R.drawable.ic_ortaggi;
+        int iconCereali = R.drawable.ic_cereali;
+        int iconFrutteti = R.drawable.ic_frutteti;
 
-        List<Integer> alerts2 = Arrays.asList(
-                R.drawable.ic_alert,
-                R.drawable.ic_alert
-        );
-
-        List<Integer> alerts3 = Arrays.asList(
-                R.drawable.ic_alert
-        );
-
-        // Campo 1 – Ortaggi
         list.add(new FieldUiModel(
                 1,
                 "Via Verdirdi, 15 - Mestre (VE)",
                 "Ortaggi",
                 "Gruppo: Prova",
-                getIconForCrop("Ortaggi"),
-                alerts1
+                iconOrtaggi,
+                Arrays.asList(R.drawable.ic_alert_vento, R.drawable.ic_alert_pioggia)
         ));
 
-        // Campo 2 – Cereali
         list.add(new FieldUiModel(
                 2,
-                "Via Giallo, 15 - Mestre (VE)",
+                "Via Giallo, 10 - Mestre (VE)",
                 "Cereali",
                 "Gruppo: Zona A",
-                getIconForCrop("Cereali"),
-                alerts2
+                iconCereali,
+                Arrays.asList(R.drawable.ic_alert_calore)
         ));
 
-        // Campo 3 – Frutteti
         list.add(new FieldUiModel(
                 3,
-                "Via Blu, 15 - Rovigo (RO)",
+                "Via Blu, 5 - Rovigo (RO)",
                 "Frutteti",
                 "Gruppo: Zona B",
-                getIconForCrop("Frutteti"),
-                alerts3
+                iconFrutteti,
+                Arrays.asList(R.drawable.ic_alert_gelo, R.drawable.ic_alert_temporale)
         ));
-
-        // Aggiungi altri campi se vuoi…
 
         return list;
     }
 
-    /**
-     * Restituisce l'icona giusta in base alla coltura.
-     * Qui usiamo le  foto messe in res/drawable come PNG:
-     *  - ic_ortaggi.png
-     *  - ic_cereali.png
-     *  - ic_frutteti.png
-     *  - ic_leguminose.png
-     *  - ic_oleaginose.png
-     *  - ic_aromatiche.png
-     *
-     * Se il nome della coltura non corrisponde, torna una icona di default.
-     */
-    private int getIconForCrop(String cropType) {
-        if (cropType == null) {
-            return R.drawable.ic_fields;  // icona generica
-        }
+    // ------------------- DATI DI ESEMPIO GRUPPI -------------------
 
-        String c = cropType.toLowerCase();
+    private List<GroupUiModel> createSampleGroups() {
+        List<GroupUiModel> list = new ArrayList<>();
 
-        if (c.contains("ortaggi"))        return R.drawable.ic_ortaggi;
-        if (c.contains("leguminose"))     return R.drawable.ic_leguminose;
-        if (c.contains("cereali"))        return R.drawable.ic_cereali;
-        if (c.contains("frutt"))          return R.drawable.ic_frutteti;
-        if (c.contains("oleaginose"))     return R.drawable.ic_oleaginose;
-        if (c.contains("aromatiche"))     return R.drawable.ic_aromatiche;
+        // icona grande del gruppo (puoi mettere una tua)
+        int groupIcon = R.drawable.ic_group_default;
 
-        return R.drawable.ic_fields;      // default se non trova niente
+        list.add(new GroupUiModel(
+                1,
+                "Gruppo A",
+                "Campi in zona Mestre con ortaggi",
+                groupIcon,
+                Arrays.asList(
+                        R.drawable.ic_alert_vento,
+                        R.drawable.ic_alert_gelo,
+                        R.drawable.ic_alert_calore
+                )
+        ));
+
+        list.add(new GroupUiModel(
+                2,
+                "Gruppo B",
+                "Campi in zona Rovigo con frutteti",
+                groupIcon,
+                Arrays.asList(
+                        R.drawable.ic_alert_pioggia,
+                        R.drawable.ic_alert_temporale
+                )
+        ));
+
+        return list;
     }
 }
 

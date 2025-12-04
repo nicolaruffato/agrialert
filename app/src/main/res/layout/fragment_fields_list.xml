@@ -6,47 +6,58 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <!-- Toggle Campi / Gruppi -->
-    <com.google.android.material.button.MaterialButtonToggleGroup
+    <!-- TOGGLE CAMPI / GRUPPI -->
+    <LinearLayout
         android:id="@+id/toggleGroups"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp">
+        android:layout_height="wrap_content">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFields"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Campi" />
+            android:layout_height="48dp"
+            android:text="Campi"
+            android:checkable="true"
+            android:checked="true"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFieldGroups"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Gruppi di campi" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
+            android:layout_height="48dp"
+            android:text="Gruppi di campi"
+            android:checkable="true"
+            android:checked="false"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
 
-    <!-- Lista dei campi -->
+    </LinearLayout>
+
+
+
+    <!-- LISTA (RecyclerView) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFields"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="8dp" />
+        android:layout_marginTop="12dp"/>
 
-    <!-- Bottone aggiungi nuovo campo -->
+    <!-- BOTTONE AGGIUNGI -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAddField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         android:text="Aggiungi un nuovo campo"
-        style="@style/Widget.MaterialComponents.Button"
-        app:cornerRadius="24dp" />
-
+        android:textAllCaps="false"
+        android:layout_marginTop="12dp"/>
 </LinearLayout>
+

@@ -48,8 +48,21 @@ public class AlertsListFragment extends Fragment {
 
         // RecyclerView
         rvAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new AlertsAdapter();
+
+        adapter = new AlertsAdapter((alert, isResolved) -> {
+            // aggiorno il model
+            alert.isResolved = isResolved;
+
+            // ricalcolo la lista da mostrare in base al toggle
+            if (btnAlertsActive.isChecked()) {
+                showActiveAlerts();
+            } else {
+                showResolvedAlerts();
+            }
+        });
+
         rvAlerts.setAdapter(adapter);
+
 
         // dati di esempio
         allAlerts.clear();

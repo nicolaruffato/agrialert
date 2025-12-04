@@ -17,9 +17,17 @@ import java.util.List;
 
 public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewHolder> {
 
-    private final List<AlertUiModel> alertList = new ArrayList<>();
+    public interface OnResolvedChangeListener {
+        void onResolvedChanged(AlertUiModel alert, boolean isResolved);
+    }
 
-    // Aggiorna la lista visibile
+    private final List<AlertUiModel> alertList = new ArrayList<>();
+    private final OnResolvedChangeListener listener;
+
+    public AlertsAdapter(OnResolvedChangeListener listener) {
+        this.listener = listener;
+    }
+
     public void submitList(List<AlertUiModel> newList) {
         alertList.clear();
         if (newList != null) {
@@ -39,7 +47,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
     @Override
     public void onBindViewHolder(@NonNull AlertViewHolder holder, int position) {
         AlertUiModel item = alertList.get(position);
-        holder.bind(item);
+        holder.bind(item, listener);
     }
 
     @Override
@@ -47,7 +55,6 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         return alertList.size();
     }
 
-    // ---------- VIEW HOLDER ----------
     static class AlertViewHolder extends RecyclerView.ViewHolder {
 
         ImageView imgIcon;
@@ -70,30 +77,28 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtResolvedLabel = itemView.findViewById(R.id.txtResolvedLabel);
         }
 
-        void bind(AlertUiModel item) {
+        void bind(AlertUiModel item, OnResolvedChangeListener listener) {
 
-            // Icona
             if (item.iconRes != 0) {
                 imgIcon.setImageResource(item.iconRes);
             }
 
-            // Testi
             txtTitle.setText(item.title);
             txtThreshold.setText(item.thresholdText);
             txtFieldAddress.setText(item.fieldAddress);
             txtTime.setText(item.timeLabel);
+            txtResolvedLabel.setText("Risolto");
 
-            // Switch Risolto
+            // evito che il listener scatti quando faccio setChecked
             switchResolved.setOnCheckedChangeListener(null);
             switchResolved.setChecked(item.isResolved);
 
-            // Testo "Risolto"
-            txtResolvedLabel.setText("Risolto");
-
-            // Quando l’utente usa lo switch
-            switchResolved.setOnCheckedChangeListener((buttonView, checked) -> {
-                item.isResolved = checked;
+            switchResolved.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (listener != null) {
+                    listener.onResolvedChanged(item, isChecked);
+                }
             });
         }
     }
 }
+
