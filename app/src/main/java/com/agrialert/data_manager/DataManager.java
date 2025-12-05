@@ -6,11 +6,22 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.widget.Toast;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class DataManager extends Service {
 
+    // Thread pool used for implementing the asynchronous operations on data
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
     private final IBinder binder = new LocalBinder();
 
     public DataManager() {
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
     }
 
     /**
