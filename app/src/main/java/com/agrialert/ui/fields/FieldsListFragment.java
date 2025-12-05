@@ -1,6 +1,4 @@
 package com.agrialert.ui.fields;
-import com.agrialert.ui.fields.groups.GroupUiModel;
-import com.agrialert.ui.fields.groups.GroupsAdapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -60,25 +59,28 @@ public class FieldsListFragment extends Fragment {
 
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Adapter campi
-        fieldsAdapter = new FieldsAdapter();
-        fieldsList = createSampleFields();
+        // Adapter CAMPI con click → apre Visualizza Campo
+        fieldsAdapter = new FieldsAdapter(field -> {
+            NavHostFragment.findNavController(FieldsListFragment.this)
+                    .navigate(R.id.action_fieldsListFragment_to_viewFieldFragment);
+        });
 
-        // Adapter gruppi
+        // Adapter GRUPPI
         groupsAdapter = new GroupsAdapter();
+
+        // Dati finti per test
+        fieldsList = createSampleFields();
         groupsList = createSampleGroups();
 
         // Stato iniziale: CAMPI
         showFields();
 
-        // Toggle CAMPI
+        // Toggle CAMPI / GRUPPI
         btnFields.setOnClickListener(v -> showFields());
-
-        // Toggle GRUPPI
         btnFieldGroups.setOnClickListener(v -> showGroups());
     }
 
-    // ------------------- MOSTRA CAMPi -------------------
+    // ------------------- MOSTRA CAMPI -------------------
 
     private void showFields() {
         btnFields.setChecked(true);
@@ -107,7 +109,7 @@ public class FieldsListFragment extends Fragment {
     private List<FieldUiModel> createSampleFields() {
         List<FieldUiModel> list = new ArrayList<>();
 
-        int iconOrtaggi = R.drawable.ic_ortaggi;
+        int iconOrtaggi = R.drawable.ic_ortaggi;      // usa le tue icone
         int iconCereali = R.drawable.ic_cereali;
         int iconFrutteti = R.drawable.ic_frutteti;
 
@@ -146,8 +148,7 @@ public class FieldsListFragment extends Fragment {
     private List<GroupUiModel> createSampleGroups() {
         List<GroupUiModel> list = new ArrayList<>();
 
-        // icona grande del gruppo (puoi mettere una tua)
-        int groupIcon = R.drawable.ic_group_default;
+        int groupIcon = R.drawable.ic_group_default; // icona grande del gruppo
 
         list.add(new GroupUiModel(
                 1,
@@ -175,4 +176,3 @@ public class FieldsListFragment extends Fragment {
         return list;
     }
 }
-

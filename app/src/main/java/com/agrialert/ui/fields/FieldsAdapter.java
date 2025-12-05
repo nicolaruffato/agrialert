@@ -18,7 +18,16 @@ import java.util.List;
 
 public class FieldsAdapter extends RecyclerView.Adapter<FieldsAdapter.FieldViewHolder> {
 
+    public interface OnFieldClickListener {
+        void onFieldClicked(FieldUiModel field);
+    }
+
     private final List<FieldUiModel> items = new ArrayList<>();
+    private final OnFieldClickListener listener;
+
+    public FieldsAdapter(OnFieldClickListener listener) {
+        this.listener = listener;
+    }
 
     public void submitList(List<FieldUiModel> newItems) {
         items.clear();
@@ -31,15 +40,14 @@ public class FieldsAdapter extends RecyclerView.Adapter<FieldsAdapter.FieldViewH
     @NonNull
     @Override
     public FieldViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_field, parent, false);
-        return new FieldViewHolder(view);
+        return new FieldViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull FieldViewHolder holder, int position) {
-        FieldUiModel field = items.get(position);
-        holder.bind(field);
+        holder.bind(items.get(position), listener);
     }
 
     @Override
@@ -47,66 +55,55 @@ public class FieldsAdapter extends RecyclerView.Adapter<FieldsAdapter.FieldViewH
         return items.size();
     }
 
-    // ---------------- VIEW HOLDER ----------------
-
     static class FieldViewHolder extends RecyclerView.ViewHolder {
 
-        private final ImageView imgFieldIcon;
-        private final TextView txtFieldAddress;
-        private final TextView txtFieldCrop;
-        private final TextView txtFieldGroup;
-        private final LinearLayout layoutAlertIcons;
+        ImageView imgIcon;
+        TextView txtAddress, txtCrop, txtGroup;
+        LinearLayout layoutIcons;
 
-        FieldViewHolder(@NonNull View itemView) {
+        public FieldViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgFieldIcon = itemView.findViewById(R.id.imgFieldIcon);
-            txtFieldAddress = itemView.findViewById(R.id.txtFieldAddress);
-            txtFieldCrop = itemView.findViewById(R.id.txtFieldCrop);
-            txtFieldGroup = itemView.findViewById(R.id.txtFieldGroup);
-            layoutAlertIcons = itemView.findViewById(R.id.layoutAlertIcons);
+            imgIcon = itemView.findViewById(R.id.imgFieldIcon);
+            txtAddress = itemView.findViewById(R.id.txtFieldAddress);
+            txtCrop = itemView.findViewById(R.id.txtFieldCrop);
+            txtGroup = itemView.findViewById(R.id.txtFieldGroup);
+            layoutIcons = itemView.findViewById(R.id.layoutFieldIcons);
         }
 
-        void bind(FieldUiModel field) {
-            Context context = itemView.getContext();
+        void bind(FieldUiModel item, OnFieldClickListener listener) {
+            Context ctx = itemView.getContext();
 
-            // Testi dinamici
-            txtFieldAddress.setText(field.address);
-            txtFieldCrop.setText(field.cropType);
+            imgIcon.setImageResource(item.iconRes);
+            txtAddress.setText(item.address);
+            txtCrop.setText(item.crop);
+            txtGroup.setText(item.groupName);
 
-            if (field.groupName == null || field.groupName.isEmpty()) {
-                txtFieldGroup.setText("Gruppo: nessun gruppo");
-            } else {
-                txtFieldGroup.setText("Gruppo: " + field.groupName);
-            }
+            // icone alert associate al campo
+            layoutIcons.removeAllViews();
+            if (item.icons != null && !item.icons.isEmpty()) {
+                for (int i = 0; i < item.icons.size(); i++) {
+                    Integer iconRes = item.icons.get(i);
+                    if (iconRes == null) continue;
 
-            // Icona principale in base alla coltura (già scelta nel model)
-            imgFieldIcon.setImageResource(field.iconRes);
-
-            // Icone alert/meteo (max 6)
-            layoutAlertIcons.removeAllViews(); // pulisce quelle vecchie
-
-            if (field.alertIcons != null && !field.alertIcons.isEmpty()) {
-                int maxIcons = Math.min(6, field.alertIcons.size());
-
-                for (int i = 0; i < maxIcons; i++) {
-                    Integer iconResId = field.alertIcons.get(i);
-                    if (iconResId == null) continue;
-
-                    ImageView iconView = new ImageView(context);
+                    ImageView iv = new ImageView(ctx);
+                    int size = dpToPx(ctx, 20);
                     LinearLayout.LayoutParams params =
-                            new LinearLayout.LayoutParams(
-                                    dpToPx(context, 20),
-                                    dpToPx(context, 20)
-                            );
+                            new LinearLayout.LayoutParams(size, size);
                     if (i > 0) {
-                        params.setMarginStart(dpToPx(context, 4));
+                        params.setMarginStart(dpToPx(ctx, 4));
                     }
-                    iconView.setLayoutParams(params);
-                    iconView.setImageResource(iconResId);
-
-                    layoutAlertIcons.addView(iconView);
+                    iv.setLayoutParams(params);
+                    iv.setImageResource(iconRes);
+                    layoutIcons.addView(iv);
                 }
             }
+
+            // click sulla card
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onFieldClicked(item);
+                }
+            });
         }
 
         private int dpToPx(Context context, int dp) {
