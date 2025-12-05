@@ -18,7 +18,16 @@ import java.util.List;
 
 public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewHolder> {
 
+    public interface OnGroupClickListener {
+        void onGroupClicked(GroupUiModel group);
+    }
+
     private final List<GroupUiModel> items = new ArrayList<>();
+    private final OnGroupClickListener listener;
+
+    public GroupsAdapter(OnGroupClickListener listener) {
+        this.listener = listener;
+    }
 
     public void submitList(List<GroupUiModel> newItems) {
         items.clear();
@@ -38,7 +47,7 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
 
     @Override
     public void onBindViewHolder(@NonNull GroupViewHolder holder, int position) {
-        holder.bind(items.get(position));
+        holder.bind(items.get(position), listener);
     }
 
     @Override
@@ -49,48 +58,49 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
     static class GroupViewHolder extends RecyclerView.ViewHolder {
 
         ImageView imgGroupIcon;
-        TextView txtName, txtDescription;
+        TextView txtGroupName;
+        TextView txtGroupDescription;
         LinearLayout layoutIcons;
 
         public GroupViewHolder(@NonNull View itemView) {
             super(itemView);
             imgGroupIcon = itemView.findViewById(R.id.imgGroupIcon);
-            txtName = itemView.findViewById(R.id.txtGroupName);
-            txtDescription = itemView.findViewById(R.id.txtGroupDescription);
+            txtGroupName = itemView.findViewById(R.id.txtGroupName);
+            txtGroupDescription = itemView.findViewById(R.id.txtGroupDescription);
             layoutIcons = itemView.findViewById(R.id.layoutGroupIcons);
         }
 
-        void bind(GroupUiModel item) {
+        void bind(GroupUiModel item, OnGroupClickListener listener) {
             Context ctx = itemView.getContext();
 
             imgGroupIcon.setImageResource(item.iconRes);
-            txtName.setText(item.name);
-            txtDescription.setText(item.description);
+            txtGroupName.setText(item.name);
+            txtGroupDescription.setText(item.description);
 
-            // svuota e rimette le iconcine
             layoutIcons.removeAllViews();
-
             if (item.icons != null && !item.icons.isEmpty()) {
                 for (int i = 0; i < item.icons.size(); i++) {
                     Integer iconRes = item.icons.get(i);
                     if (iconRes == null) continue;
 
                     ImageView iv = new ImageView(ctx);
-
-                    int size = dpToPx(ctx, 24);
+                    int size = dpToPx(ctx, 18);
                     LinearLayout.LayoutParams params =
                             new LinearLayout.LayoutParams(size, size);
-
                     if (i > 0) {
                         params.setMarginStart(dpToPx(ctx, 4));
                     }
-
                     iv.setLayoutParams(params);
                     iv.setImageResource(iconRes);
-
                     layoutIcons.addView(iv);
                 }
             }
+
+            itemView.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onGroupClicked(item);
+                }
+            });
         }
 
         private int dpToPx(Context context, int dp) {

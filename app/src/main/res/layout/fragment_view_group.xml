@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- ICONA GRANDE DEL GRUPPO -->
+        <ImageView
+            android:id="@+id/imgGroupIcon"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_group_default"
+            android:layout_marginBottom="16dp" />
+
+        <!-- NOME GRUPPO -->
+        <TextView
+            android:id="@+id/txtGroupName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Gruppo A"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- DESCRIZIONE GRUPPO -->
+        <TextView
+            android:id="@+id/txtGroupDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Descrizione del gruppo..."
+            android:textSize="14sp"
+            android:gravity="center"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- ICONCINE ALERT ASSOCIATE AL GRUPPO -->
+        <LinearLayout
+            android:id="@+id/layoutGroupIcons"
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp" />
+
+        <!-- TITOLO LISTA CAMPI -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lista campi"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- LISTA CAMPI DEL GRUPPO -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvGroupFields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- BOTTONI FONDO -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Modifica gruppo"
+            android:layout_marginTop="24dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Elimina gruppo"
+            android:layout_marginTop="12dp"
+            app:backgroundTint="@android:color/holo_red_light"/>
+    </LinearLayout>
+
+</ScrollView>

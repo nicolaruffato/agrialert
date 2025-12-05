@@ -66,7 +66,11 @@ public class FieldsListFragment extends Fragment {
         });
 
         // Adapter GRUPPI
-        groupsAdapter = new GroupsAdapter();
+        groupsAdapter = new GroupsAdapter(group -> {
+            NavHostFragment.findNavController(FieldsListFragment.this)
+                    .navigate(R.id.action_fieldsListFragment_to_viewGroupFragment);
+        });
+
 
         // Dati finti per test
         fieldsList = createSampleFields();
