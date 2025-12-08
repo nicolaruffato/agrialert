@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="crop_types">
+        <item>Ortaggi</item>
+        <item>Leguminose</item>
+        <item>Cereali</item>
+        <item>Frutteti</item>
+        <item>Oleaginose e industriali</item>
+        <item>Piante aromatiche e officinali</item>
+    </string-array>
+
+</resources>

@@ -37,11 +37,15 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
+    implementation(libs.play.services.location)
+
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
