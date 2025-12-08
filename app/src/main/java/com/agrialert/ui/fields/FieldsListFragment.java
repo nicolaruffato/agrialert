@@ -62,7 +62,7 @@ public class FieldsListFragment extends Fragment {
         // adapter (usano submitList(...) per i dati)
         fieldsAdapter = new FieldsAdapter();
         rvFields.setAdapter(fieldsAdapter);
-        groupsAdapter = new GroupsAdapter();
+        groupsAdapter = new GroupsAdapter(this);
 
         // toggle Campi / Gruppi di campi
         btnFields.setOnClickListener(v -> showFields());

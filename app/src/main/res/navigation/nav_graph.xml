@@ -39,5 +39,9 @@
         android:name="com.agrialert.ui.fields.groups.AddGroupFragment"
         android:label="Inserisci gruppo" />
 
+    <fragment
+        android:id="@+id/viewGroupFragment"
+        android:name="com.agrialert.ui.fields.groups.ViewGroupFragment"
+        android:label="Visualizza gruppo" />
 
 </navigation>

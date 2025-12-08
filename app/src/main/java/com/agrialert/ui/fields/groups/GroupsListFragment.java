@@ -45,7 +45,7 @@ public class GroupsListFragment extends Fragment {
                         .navigate(R.id.addGroupFragment)
         );
         rvGroups.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new GroupsAdapter();
+        adapter = new GroupsAdapter(this);
         rvGroups.setAdapter(adapter);
 
         adapter.submitList(createSampleGroups());
