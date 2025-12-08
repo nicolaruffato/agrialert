@@ -9,7 +9,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.navigation.Navigation;
+
 
 import com.agrialert.R;
 
@@ -59,12 +62,20 @@ public class FieldsAdapter extends RecyclerView.Adapter<FieldsAdapter.FieldViewH
 
         FieldViewHolder(@NonNull View itemView) {
             super(itemView);
+
             imgFieldIcon = itemView.findViewById(R.id.imgFieldIcon);
             txtFieldAddress = itemView.findViewById(R.id.txtFieldAddress);
             txtFieldCrop = itemView.findViewById(R.id.txtFieldCrop);
             txtFieldGroup = itemView.findViewById(R.id.txtFieldGroup);
             layoutAlertIcons = itemView.findViewById(R.id.layoutAlertIcons);
+
+            // CLICK sulla card: apri Visualizza Campo
+            itemView.setOnClickListener(v -> {
+                Navigation.findNavController(v)
+                        .navigate(R.id.viewFieldFragment);
+            });
         }
+
 
         void bind(FieldUiModel field) {
             Context context = itemView.getContext();

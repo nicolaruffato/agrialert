@@ -61,6 +61,7 @@ public class FieldsListFragment extends Fragment {
 
         // adapter (usano submitList(...) per i dati)
         fieldsAdapter = new FieldsAdapter();
+        rvFields.setAdapter(fieldsAdapter);
         groupsAdapter = new GroupsAdapter();
 
         // toggle Campi / Gruppi di campi
@@ -72,7 +73,7 @@ public class FieldsListFragment extends Fragment {
             if (showingGroups) {
                 // siamo nella tab "Gruppi di campi"
                 NavHostFragment.findNavController(FieldsListFragment.this)
-                        .navigate(R.id.addGroupFragment);
+                        .navigate(R.id.addFieldFragment);
             } else {
                 // siamo nella tab "Campi"
                 NavHostFragment.findNavController(FieldsListFragment.this)
