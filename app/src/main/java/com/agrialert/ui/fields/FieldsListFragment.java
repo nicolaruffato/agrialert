@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -88,7 +89,12 @@ public class FieldsListFragment extends Fragment {
         fieldsAdapter.submitList(fieldsList);
 
         btnAddField.setText("Aggiungi un nuovo campo");
+        btnAddField.setOnClickListener(v ->
+                NavHostFragment.findNavController(FieldsListFragment.this)
+                        .navigate(R.id.addFieldFragment)
+        );
     }
+
 
     // ------------------- MOSTRA GRUPPI -------------------
 
