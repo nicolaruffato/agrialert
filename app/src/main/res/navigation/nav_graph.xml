@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/alertsListFragment">
+    app:startDestination="@id/dashboardFragment">
 
     <fragment
         android:id="@+id/alertsListFragment"
@@ -33,6 +33,9 @@
         android:id="@+id/viewFieldFragment"
         android:name="com.agrialert.ui.fields.ViewFieldFragment"
         android:label="Visualizza campo" />
+        android:id="@+id/addGroupFragment"
+        android:name="com.agrialert.ui.fields.groups.AddGroupFragment"
+        android:label="Inserisci gruppo" />
 
 
 </navigation>
