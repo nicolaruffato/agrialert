@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/alertsListFragment">
+    app:startDestination="@id/dashboardFragment">
 
     <fragment
         android:id="@+id/alertsListFragment"
@@ -28,6 +28,11 @@
         android:id="@+id/setAlertsFragment"
         android:name="com.agrialert.ui.alerts.SetAlertsFragment"
         android:label="Imposta alert" />
+
+    <fragment
+        android:id="@+id/addGroupFragment"
+        android:name="com.agrialert.ui.fields.groups.AddGroupFragment"
+        android:label="Inserisci gruppo" />
 
 
 </navigation>
