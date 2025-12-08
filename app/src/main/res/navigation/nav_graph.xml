@@ -33,6 +33,8 @@
         android:id="@+id/viewFieldFragment"
         android:name="com.agrialert.ui.fields.ViewFieldFragment"
         android:label="Visualizza campo" />
+
+    <fragment
         android:id="@+id/addGroupFragment"
         android:name="com.agrialert.ui.fields.groups.AddGroupFragment"
         android:label="Inserisci gruppo" />

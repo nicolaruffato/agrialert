@@ -73,7 +73,7 @@ public class FieldsListFragment extends Fragment {
             if (showingGroups) {
                 // siamo nella tab "Gruppi di campi"
                 NavHostFragment.findNavController(FieldsListFragment.this)
-                        .navigate(R.id.addFieldFragment);
+                        .navigate(R.id.addGroupFragment);
             } else {
                 // siamo nella tab "Campi"
                 NavHostFragment.findNavController(FieldsListFragment.this)
