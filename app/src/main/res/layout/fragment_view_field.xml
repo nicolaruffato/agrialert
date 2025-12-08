@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- ICONA COLTURA -->
+        <ImageView
+            android:id="@+id/imgCrop"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_ortaggi" />
+
+        <!-- INDIRIZZO -->
+        <TextView
+            android:id="@+id/txtAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Via Verdirdi, 15 - Mestre (VE)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingTop="12dp" />
+
+        <!-- COLTURA -->
+        <TextView
+            android:id="@+id/txtCrop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ortaggi"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <!-- GRUPPO -->
+        <TextView
+            android:id="@+id/txtGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Gruppo: Prova"
+            android:textSize="15sp"
+            android:gravity="center"
+            android:paddingBottom="16dp" />
+
+        <!-- LISTA ALERT ASSOCIATI -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lista Alert"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvFieldAlerts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+</ScrollView>

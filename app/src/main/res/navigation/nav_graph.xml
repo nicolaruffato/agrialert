@@ -29,5 +29,10 @@
         android:name="com.agrialert.ui.alerts.SetAlertsFragment"
         android:label="Imposta alert" />
 
+    <fragment
+        android:id="@+id/viewFieldFragment"
+        android:name="com.agrialert.ui.fields.ViewFieldFragment"
+        android:label="Visualizza campo" />
+
 
 </navigation>
