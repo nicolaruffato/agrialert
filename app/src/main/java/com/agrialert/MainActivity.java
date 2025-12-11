@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.widget.Toast;
 
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -17,6 +17,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.agrialert.data_manager.DataManager;
+import com.agrialert.data_manager.FieldsGroup;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -35,6 +36,12 @@ public class MainActivity extends AppCompatActivity {
             DataManager.LocalBinder binder = (DataManager.LocalBinder) service;
             dataManager = binder.getService();
             mBound = true;
+            Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+            dataManager.getAllGroups().observe(MainActivity.this, groups -> {
+                for(FieldsGroup group : groups) {
+                    Log.d("mytag", group.getName());
+                }
+            });
         }
 
         @Override
@@ -102,4 +109,5 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
 }
