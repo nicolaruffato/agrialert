@@ -1,4 +1,4 @@
-package com.agrialert.data_manager.AppDatabase;
+package com.agrialert.AppDatabase;
 
 import androidx.room.Embedded;
 import androidx.room.Relation;

@@ -6,19 +6,12 @@ import android.os.Binder;
 import android.os.IBinder;
 
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.Transformations;
-import androidx.room.Room;
 
-import com.agrialert.data_manager.AppDatabase.AppDatabase;
-import com.agrialert.data_manager.AppDatabase.FieldDB;
-import com.agrialert.data_manager.AppDatabase.FieldsDao;
-import com.agrialert.data_manager.AppDatabase.FieldsGroupDB;
+import com.agrialert.AppDatabase.AppDatabase;
+import com.agrialert.AppDatabase.FieldsDao;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class DataManager extends Service {
