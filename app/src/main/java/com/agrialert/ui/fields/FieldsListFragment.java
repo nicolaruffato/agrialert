@@ -24,6 +24,9 @@ import java.util.List;
 
 public class FieldsListFragment extends Fragment {
 
+
+    //quando true , al prossimo ritorno forziamo il tab "Gruppi"
+    public static boolean forceGroupsTab = false;
     private MaterialButton btnFields;
     private MaterialButton btnFieldGroups;
     private MaterialButton btnAddField;
@@ -83,6 +86,17 @@ public class FieldsListFragment extends Fragment {
 
         // schermata iniziale: Campi
         showFields();
+    }
+
+
+    @Override
+    public void onResume(){
+       super.onResume();
+       //se toogle "Gruppi" è selezionato mostra lista gruppi
+        if (forceGroupsTab){
+            showGroups();
+            forceGroupsTab = false;
+        }
     }
 
     // -------------------- UI helper --------------------

@@ -30,9 +30,18 @@
         android:label="Imposta alert" />
 
     <fragment
+
         android:id="@+id/viewFieldFragment"
         android:name="com.agrialert.ui.fields.ViewFieldFragment"
-        android:label="Visualizza campo" />
+        android:label="Visualizza campo">
+        <action
+            android:id="@+id/action_viewFieldFragment_to_editFieldFragment"
+            app:destination="@id/editFieldFragment" />
+         <action
+            android:id="@+id/action_viewFieldFragment_to_confirmDeleteFieldFragment"
+            app:destination="@id/confirmDeleteFieldFragment" />
+    </fragment>
+
 
     <fragment
         android:id="@+id/addGroupFragment"
@@ -43,5 +52,26 @@
         android:id="@+id/viewGroupFragment"
         android:name="com.agrialert.ui.fields.groups.ViewGroupFragment"
         android:label="Visualizza gruppo" />
+
+    <fragment
+        android:id="@+id/editGroupFragment"
+        android:name="com.agrialert.ui.fields.groups.EditGroupFragment"
+        android:label="Modifica gruppo" />
+
+    <fragment
+        android:id="@+id/confirmDeleteGroupFragment"
+        android:name="com.agrialert.ui.fields.groups.ConfirmDeleteGroupFragment"
+        android:label="Conferma eliminazione" />
+
+    <fragment
+        android:id="@+id/editFieldFragment"
+        android:name="com.agrialert.ui.fields.EditFieldFragment"
+        android:label="Modifica campo" />
+
+    <fragment
+        android:id="@+id/confirmDeleteFieldFragment"
+        android:name="com.agrialert.ui.fields.ConfirmDeleteFieldFragment"
+        android:label="Elimina campo" />
+
 
 </navigation>

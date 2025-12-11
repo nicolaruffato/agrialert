@@ -7,15 +7,19 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.R;
 import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
+import com.agrialert.ui.fields.FieldsListFragment;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.Arrays;
@@ -29,6 +33,7 @@ public class ViewGroupFragment extends Fragment {
     private RecyclerView rvGroupFields;
     private MaterialButton btnEditGroup;
     private MaterialButton btnDeleteGroup;
+    private MaterialToolbar toolbar;
 
     public ViewGroupFragment() {
         // costruttore vuoto richiesto
@@ -55,6 +60,7 @@ public class ViewGroupFragment extends Fragment {
         btnEditGroup = view.findViewById(R.id.btnEditGroup);
         btnDeleteGroup = view.findViewById(R.id.btnDeleteGroup);
 
+
         // per ora dati finti
         txtGroupName.setText("Gruppo A");
         txtGroupDescription.setText("Descrizione di esempio del gruppo A.");
@@ -66,9 +72,28 @@ public class ViewGroupFragment extends Fragment {
         rvGroupFields.setAdapter(adapter);
         adapter.submitList(getSampleFields());
 
-        // i bottoni per ora possono solo mostrare un toast / TODO
-        // (li puoi gestire dopo)
+        // bottoni  / TODO bottone salva
+        btnEditGroup.setOnClickListener(v ->
+                NavHostFragment.findNavController(this)
+                        .navigate(R.id.editGroupFragment)
+        );
+
+        btnDeleteGroup.setOnClickListener(v -> {
+            NavHostFragment.findNavController(ViewGroupFragment.this)
+                    .navigate(R.id.confirmDeleteGroupFragment);
+        });
+
+
+
     }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        FieldsListFragment.forceGroupsTab=true;
+    }
+
+    
 
     private List<FieldUiModel> getSampleFields() {
         return Arrays.asList(
