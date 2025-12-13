@@ -5,14 +5,21 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Transformations;
-
 import com.agrialert.AppDatabase.AppDatabase;
+import com.agrialert.AppDatabase.Field;
 import com.agrialert.AppDatabase.FieldsDao;
+import com.agrialert.AppDatabase.GroupWithFields;
+import com.agrialert.AppDatabase.FieldsGroup;
+
+
+import org.reactivestreams.Publisher;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class DataManager extends Service {
 
@@ -32,21 +39,16 @@ public class DataManager extends Service {
         fieldsDao = db.fieldsDao();
     }
 
-    public LiveData<List<FieldsGroup>> getAllGroups() {
-        return Transformations.map(fieldsDao.loadAllGroupsWithFields(), dbList -> {
-            return dbList.stream()
-                    .map(groupwfields -> {
-                        FieldsGroup group = new FieldsGroup(groupwfields.group.id, groupwfields.group.name);
+    public Flowable<List<GroupWithFields>> getAllGroups() {
+        return fieldsDao.getGroups().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
 
-                        List<Field> domainFields = groupwfields.fields.stream()
-                                .map(dbfield -> new Field(dbfield.id, dbfield.address, dbfield.latitude, dbfield.longitude)) // Tuo costruttore di conversione
-                                .collect(Collectors.toList());
+    public Completable insertGroup(FieldsGroup group) {
+        return fieldsDao.insertGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
 
-                        group.addFields(domainFields);
-                        return group;
-                    })
-                    .collect(Collectors.toList());
-        });
+    public Completable insertField(Field field) {
+        return fieldsDao.insetField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
     /**

@@ -9,25 +9,26 @@ import androidx.room.Transaction;
 
 import java.util.List;
 
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
+
 @Dao
 public interface FieldsDao {
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    public void insertField(FieldDB fieldDB);
-
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    public void inserFieldsGroup(FieldsGroupDB fieldsGroupDB);
-
-    @Query("SELECT * FROM FieldDB WHERE groupId = :groupId")
-    public LiveData<List<FieldDB>> loadAllFieldsFromGroup(int groupId);
-
-    @Query("SELECT * FROM FieldsGroupDB")
-    public LiveData<List<FieldsGroupDB>> loadAllFieldsGroups();
     @Transaction
-    @Query("SELECT * FROM FieldsGroupDB")
-    public LiveData<List<GroupWithFieldsDB>> loadAllGroupsWithFields();
+    @Query("SELECT * FROM FieldsGroup")
+    Flowable<List<GroupWithFields>> getGroups();
 
     @Transaction
-    @Query("SELECT * FROM FieldsGroupDB WHERE name = :name")
-    public LiveData<GroupWithFieldsDB> loadGroupWithFields(String name);
+    @Query("SELECT * FROM FieldsGroup WHERE name = :name")
+    Flowable<GroupWithFields> getGroup(String name);
+
+
+    @Insert
+    Completable insertGroup(FieldsGroup group);
+
+    @Insert
+    Completable insetField(Field field);
+
 }
