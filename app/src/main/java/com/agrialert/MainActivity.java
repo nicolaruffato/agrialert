@@ -16,11 +16,15 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.agrialert.AppDatabase.Field;
+import com.agrialert.AppDatabase.FieldsGroup;
+import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.data_manager.DataManager;
-import com.agrialert.data_manager.FieldsGroup;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
+
+import io.reactivex.rxjava3.core.Observer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,9 +41,17 @@ public class MainActivity extends AppCompatActivity {
             dataManager = binder.getService();
             mBound = true;
             Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
-            dataManager.getAllGroups().observe(MainActivity.this, groups -> {
-                for(FieldsGroup group : groups) {
-                    Log.d("mytag", group.getName());
+            /*dataManager.insertGroup(new FieldsGroup("default", "default")).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );
+            dataManager.insertField(new Field("test", 2d, 2d, "default")).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );*/
+            dataManager.getAllGroups().subscribe(groups -> {
+                for (GroupWithFields group : groups) {
+                    Log.d("mytag", group.toString());
                 }
             });
         }
