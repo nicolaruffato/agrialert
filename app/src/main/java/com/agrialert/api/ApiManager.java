@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -21,7 +20,7 @@ public class ApiManager {
                 .addConverterFactory(GsonConverterFactory.create())
             .build().create(WeatherService.class);
     private static final GeoService geoService = new Retrofit.Builder()
-            .baseUrl(weatherBaseUrl)
+            .baseUrl(geoBaseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build().create(GeoService.class);
 
@@ -37,7 +36,7 @@ public class ApiManager {
         Call<GeoResponse> call = geoService.getCoordinates(address, BuildConfig.MAPS_API_KEY);
         GeoResponse response = call.execute().body();
         if (response != null && Objects.equals(response.status, "OK")) {
-            return new Pair<Double, Double>(response.result.geometry.location.lat, response.result.geometry.location.lng);
+            return new Pair<>(response.result.geometry.location.lat, response.result.geometry.location.lng);
         } else {
             throw new IOException("Error getting coordinates");
         }
