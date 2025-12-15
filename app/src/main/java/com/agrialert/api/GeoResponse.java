@@ -4,7 +4,7 @@ import java.util.List;
 
 public class GeoResponse {
 
-    public List<Result> results;
+    public Result result;
     public String status;
 
     public static class Result {
