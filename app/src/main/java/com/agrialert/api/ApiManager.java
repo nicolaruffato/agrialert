@@ -1,5 +1,7 @@
 package com.agrialert.api;
 
+import android.util.Pair;
+
 import com.agrialert.BuildConfig;
 
 import java.io.IOException;
@@ -25,14 +27,19 @@ public class ApiManager {
 
     private ApiManager() {}
 
-    public WeatherResponse getWeatherForecast(double lat, double lon) throws IOException {
+    // TODO: move open-meteo api calls from alertManager to ApiManager
+    public static WeatherResponse getWeatherForecast(double lat, double lon) throws IOException {
         Call<WeatherResponse> call = weatherService.getCurrentWeather(lat, lon, "temperature_2m, relativehumidity_2m, windspeed_10m, weathercode");
         return call.execute().body();
     }
 
-
-    public ArrayList<Double> getCoordinatesFromAddress(String address) throws IOException {
+    public static Pair<Double, Double> getCoordinatesFromAddress(String address) throws IOException {
         Call<GeoResponse> call = geoService.getCoordinates(address, BuildConfig.MAPS_API_KEY);
         GeoResponse response = call.execute().body();
+        if (response != null && Objects.equals(response.status, "OK")) {
+            return new Pair<Double, Double>(response.result.geometry.location.lat, response.result.geometry.location.lng);
+        } else {
+            throw new IOException("Error getting coordinates");
+        }
     }
 }
