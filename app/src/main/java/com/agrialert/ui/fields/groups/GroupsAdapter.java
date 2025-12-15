@@ -8,8 +8,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.R;
@@ -17,31 +15,27 @@ import com.agrialert.R;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Adapter per la lista dei gruppi nella schermata "Campi / Gruppi di campi".
- *
- * Layout riga: res/layout/item_group.xml
- * ID usati:
- *  - imgGroupIcon          -> icona grande del gruppo
- *  - txtGroupName          -> nome gruppo
- *  - txtGroupDescription   -> descrizione gruppo
- *  - layoutGroupAlertIcons -> fila con icone degli alert del gruppo (max 6)
- *
- * Campi attesi in GroupUiModel:
- *  public long id;
- *  public String name;
- *  public String description;
- *  public int iconRes;          // icona principale del gruppo
- *  public List<Integer> icons;  // icone dei tipi di alert associati
- */
 public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewHolder> {
 
-
+    public interface OnGroupClickListener {
+        void onGroupClick(GroupUiModel group);
+    }
 
     private final List<GroupUiModel> items = new ArrayList<>();
-    private final Fragment fragment;
-    public GroupsAdapter( Fragment fragment) {
-        this.fragment = fragment;
+    private final OnGroupClickListener listener;
+
+    public GroupsAdapter() {
+        this(null);
+    }
+
+    public GroupsAdapter(OnGroupClickListener listener) {
+        this.listener = listener;
+    }
+
+    public void submitList(List<GroupUiModel> newItems) {
+        items.clear();
+        if (newItems != null) items.addAll(newItems);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -54,8 +48,15 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
 
     @Override
     public void onBindViewHolder(@NonNull GroupViewHolder holder, int position) {
-        GroupUiModel item = items.get(position);
-        holder.bind(item);
+        GroupUiModel group = items.get(position);
+        holder.bind(group);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener == null) return;
+            int p = holder.getAdapterPosition();
+            if (p == RecyclerView.NO_POSITION) return;
+            listener.onGroupClick(items.get(p));
+        });
     }
 
     @Override
@@ -63,19 +64,7 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
         return items.size();
     }
 
-    /**
-     * Rimpiazza l’elenco dei gruppi con nuovi dati (es. quelli che arriveranno dal DB).
-     */
-    public void submitList(@NonNull List<GroupUiModel> newItems) {
-        items.clear();
-        items.addAll(newItems);
-        notifyDataSetChanged();
-    }
-
-    // =========================================
-    //              VIEW HOLDER
-    // =========================================
-    class GroupViewHolder extends RecyclerView.ViewHolder {
+    static class GroupViewHolder extends RecyclerView.ViewHolder {
 
         private final ImageView imgGroupIcon;
         private final TextView txtGroupName;
@@ -84,48 +73,28 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
 
         GroupViewHolder(@NonNull View itemView) {
             super(itemView);
-
             imgGroupIcon = itemView.findViewById(R.id.imgGroupIcon);
             txtGroupName = itemView.findViewById(R.id.txtGroupName);
             txtGroupDescription = itemView.findViewById(R.id.txtGroupDescription);
             layoutGroupAlertIcons = itemView.findViewById(R.id.layoutGroupIcons);
-
-            // CLICK SULLA CARD -> apre "Visualizza gruppo"
-            itemView.setOnClickListener(v ->
-                    NavHostFragment.findNavController(fragment)
-                            .navigate(R.id.viewGroupFragment)
-            );
         }
 
-        void bind(@NonNull GroupUiModel item) {
-            // Nome e descrizione
-            txtGroupName.setText(item.name);
-            txtGroupDescription.setText(item.description);
+        void bind(@NonNull GroupUiModel group) {
+            imgGroupIcon.setImageResource(group.iconRes);
+            txtGroupName.setText(group.name);
+            txtGroupDescription.setText(group.description);
 
-            // Icona grande del gruppo
-            imgGroupIcon.setImageResource(item.iconRes);
-
-            // icone degli alert associati (max 6)
             layoutGroupAlertIcons.removeAllViews();
-            if (item.icons != null && !item.icons.isEmpty()) {
-                final int maxIcons = Math.min(item.icons.size(), 6);
-                for (int i = 0; i < maxIcons; i++) {
-                    Integer iconRes = item.icons.get(i);
-                    if (iconRes == null) continue;
+            if (group.icons != null) {
+                int sizePx = dpToPx(18);
+                int marginPx = dpToPx(4);
 
+                for (int resId : group.icons) {
                     ImageView iv = new ImageView(itemView.getContext());
-                    // misura in dp ~20 come negli altri adapter
-                    int sizePx = dpToPx(20);
-                    LinearLayout.LayoutParams params =
-                            new LinearLayout.LayoutParams(sizePx, sizePx);
-
-                    // un po’ di spazio a sinistra dalle icone successive
-                    if (i > 0) {
-                        params.setMarginStart(dpToPx(4));
-                    }
-
-                    iv.setLayoutParams(params);
-                    iv.setImageResource(iconRes);
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizePx, sizePx);
+                    lp.setMargins(marginPx, 0, 0, 0);
+                    iv.setLayoutParams(lp);
+                    iv.setImageResource(resId);
                     layoutGroupAlertIcons.addView(iv);
                 }
             }
@@ -133,7 +102,7 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
 
         private int dpToPx(int dp) {
             float density = itemView.getResources().getDisplayMetrics().density;
-            return (int) (dp * density + 0.5f);
+            return Math.round(dp * density);
         }
     }
 }

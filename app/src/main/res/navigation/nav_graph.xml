@@ -66,7 +66,15 @@
     <fragment
         android:id="@+id/editFieldFragment"
         android:name="com.agrialert.ui.fields.EditFieldFragment"
-        android:label="Modifica campo" />
+        android:label="Modifica campo" >
+        <action
+        android:id="@+id/action_editField_to_setAlerts"
+        app:destination="@id/setAlertsFragment" />
+        <action
+            android:id="@+id/action_editField_to_confirmDeleteField"
+            app:destination="@id/confirmDeleteFieldFragment" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/confirmDeleteFieldFragment"

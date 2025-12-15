@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
@@ -15,6 +16,9 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.agrialert.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class EditFieldFragment extends Fragment {
 
@@ -36,22 +40,52 @@ public class EditFieldFragment extends Fragment {
         TextInputEditText edtAddress = view.findViewById(R.id.inputAddress);
         AutoCompleteTextView ddlCrop = view.findViewById(R.id.dropCropType);
         AutoCompleteTextView ddlGroup = view.findViewById(R.id.dropGroup);
-        MaterialButton btnSave = view.findViewById(R.id.btnSetAlerts);
+        MaterialButton btnEditAlerts = view.findViewById(R.id.btnEditAlerts);
+        MaterialButton btnDeleteField = view.findViewById(R.id.btnDeleteField);
+
+        setupDropdowns(ddlCrop, ddlGroup);
+
+        btnEditAlerts.setOnClickListener(v -> {
+            NavHostFragment.findNavController(EditFieldFragment.this)
+                    .navigate(R.id.action_editField_to_setAlerts);
+        });
+
+        btnDeleteField.setOnClickListener(v -> {
+            NavHostFragment.findNavController(EditFieldFragment.this)
+                    .navigate(R.id.action_editField_to_confirmDeleteField);
+        });
 
         // Dati FINTI di esempio (poi verranno dal DB)
         edtAddress.setText("Via Verdirdi, 15 - Mestre (VE)");
         ddlCrop.setText("Ortaggi", false);
         ddlGroup.setText("Gruppo A", false);
-        btnSave.setText("Salva campo");
 
-        btnSave.setOnClickListener(v -> {
-            Toast.makeText(requireContext(),
-                    "Campo aggiornato (finto, niente database ancora)",
-                    Toast.LENGTH_SHORT).show();
+    }
 
-            // Torna alla schermata Visualizza campo
-            NavHostFragment.findNavController(EditFieldFragment.this)
-                    .popBackStack();
-        });
+    private void setupDropdowns(AutoCompleteTextView ddlCrop, AutoCompleteTextView ddlGroup) {
+
+        ArrayAdapter<CharSequence> cropAdapter = ArrayAdapter.createFromResource(
+                requireContext(),
+                R.array.crop_types,
+                android.R.layout.simple_list_item_1
+        );
+        ddlCrop.setAdapter(cropAdapter);
+
+        List<String> groupNames = getUserGroups(); // finti per ora
+        ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_list_item_1,
+                groupNames
+        );
+        ddlGroup.setAdapter(groupAdapter);
+    }
+
+    private List<String> getUserGroups() {
+        // TODO: sostituire con i gruppi reali salvati dall'utente
+        return Arrays.asList(
+                "Gruppo A",
+                "Gruppo B",
+                "Inserisci nuovo gruppo"
+        );
     }
 }

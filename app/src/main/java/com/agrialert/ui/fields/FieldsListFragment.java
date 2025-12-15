@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class FieldsListFragment extends Fragment {
+public class FieldsListFragment extends Fragment implements GroupsAdapter.OnGroupClickListener {
 
 
     //quando true , al prossimo ritorno forziamo il tab "Gruppi"
@@ -88,6 +88,12 @@ public class FieldsListFragment extends Fragment {
         showFields();
     }
 
+
+    @Override
+    public void onGroupClick(GroupUiModel group){
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.viewGroupFragment);
+    }
 
     @Override
     public void onResume(){
