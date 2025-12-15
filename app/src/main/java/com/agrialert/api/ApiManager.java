@@ -1,5 +1,7 @@
 package com.agrialert.api;
 
+import com.agrialert.BuildConfig;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -30,8 +32,7 @@ public class ApiManager {
 
 
     public ArrayList<Double> getCoordinatesFromAddress(String address) throws IOException {
-        Call<GeoResponse> call = geoService.getCoordinates(address, "API_KEY");
+        Call<GeoResponse> call = geoService.getCoordinates(address, BuildConfig.MAPS_API_KEY);
         GeoResponse response = call.execute().body();
-
     }
 }

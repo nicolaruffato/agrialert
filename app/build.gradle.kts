@@ -1,5 +1,19 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+fun getProps(name: String): String {
+    var propsFile = rootProject.file("local.properties")
+    if(propsFile.exists() && propsFile.isFile) {
+        var props = Properties()
+        props.load(FileInputStream(propsFile))
+        return props[name] as String
+    } else {
+        return ""
+    }
 }
 
 android {
@@ -16,6 +30,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
@@ -25,6 +40,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "MAPS_API_KEY", getProps("MAPS_API_KEY"))
+        }
+        debug {
+            buildConfigField("String", "MAPS_API_KEY", getProps("MAPS_API_KEY"))
         }
     }
     compileOptions {
@@ -33,6 +52,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
