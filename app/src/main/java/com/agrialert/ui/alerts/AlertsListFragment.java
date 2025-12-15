@@ -165,15 +165,6 @@ public class AlertsListFragment extends Fragment {
      * ATTENZIONE: i nomi dei drawable devono esistere in res/drawable.
      * Esempio:
      *  - ic_alert_vento.xml
-     *  - ic_alert_calore.xml
-     *  - ic_alert_ventilazione.xml
-     *  - ic_alert_gelo.xml
-     *  - ic_alert_pioggia.xml
-     *  - ic_alert_temporale.xml
-     *  - ic_alert_siccita.xml
-     *  - ic_alert_umidita.xml
-     *  - ic_alert_escursione.xml
-     *  - ic_alert_incendio.xml
      */
     private int getIconForType(String typeId) {
         if (typeId == null) return R.drawable.ic_alert; // icona generica

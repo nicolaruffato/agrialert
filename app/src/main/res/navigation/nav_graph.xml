@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/alertsListFragment">
+    app:startDestination="@id/dashboardFragment">
 
     <fragment
         android:id="@+id/alertsListFragment"
@@ -18,4 +18,24 @@
         android:id="@+id/dashboardFragment"
         android:name="com.agrialert.ui.dashboard.DashboardFragment"
         android:label="Dashboard" />
+
+    <fragment
+        android:id="@+id/addFieldFragment"
+        android:name="com.agrialert.ui.fields.AddFieldFragment"
+        android:label="Inserisci un nuovo campo" />
+
+    <fragment
+        android:id="@+id/setAlertsFragment"
+        android:name="com.agrialert.ui.alerts.SetAlertsFragment"
+        android:label="Imposta alert" />
+
+    <fragment
+        android:id="@+id/viewFieldFragment"
+        android:name="com.agrialert.ui.fields.ViewFieldFragment"
+        android:label="Visualizza campo" />
+        android:id="@+id/addGroupFragment"
+        android:name="com.agrialert.ui.fields.groups.AddGroupFragment"
+        android:label="Inserisci gruppo" />
+
+
 </navigation>

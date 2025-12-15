@@ -1,6 +1,4 @@
 package com.agrialert.ui.fields;
-import com.agrialert.ui.fields.groups.GroupUiModel;
-import com.agrialert.ui.fields.groups.GroupsAdapter;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -18,24 +16,24 @@ import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
 import com.google.android.material.button.MaterialButton;
 
-import java.util.ArrayList;
+import androidx.navigation.fragment.NavHostFragment;
+
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class FieldsListFragment extends Fragment {
 
-    private RecyclerView rvFields;
     private MaterialButton btnFields;
     private MaterialButton btnFieldGroups;
     private MaterialButton btnAddField;
+    private RecyclerView rvFields;
 
-    // Adapter e dati per Campi
+    // FALSE = Campi, TRUE = Gruppi di campi
+    private boolean showingGroups = false;
+
     private FieldsAdapter fieldsAdapter;
-    private List<FieldUiModel> fieldsList = new ArrayList<>();
-
-    // Adapter e dati per Gruppi
     private GroupsAdapter groupsAdapter;
-    private List<GroupUiModel> groupsList = new ArrayList<>();
 
     public FieldsListFragment() {
         // costruttore vuoto richiesto
@@ -53,126 +51,129 @@ public class FieldsListFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        rvFields = view.findViewById(R.id.rvFields);
+        // view binding “manuale”
         btnFields = view.findViewById(R.id.btnFields);
         btnFieldGroups = view.findViewById(R.id.btnFieldGroups);
         btnAddField = view.findViewById(R.id.btnAddField);
+        rvFields = view.findViewById(R.id.rvFields);
 
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Adapter campi
+        // adapter (usano submitList(...) per i dati)
         fieldsAdapter = new FieldsAdapter();
-        fieldsList = createSampleFields();
-
-        // Adapter gruppi
+        rvFields.setAdapter(fieldsAdapter);
         groupsAdapter = new GroupsAdapter();
-        groupsList = createSampleGroups();
 
-        // Stato iniziale: CAMPI
-        showFields();
-
-        // Toggle CAMPI
+        // toggle Campi / Gruppi di campi
         btnFields.setOnClickListener(v -> showFields());
-
-        // Toggle GRUPPI
         btnFieldGroups.setOnClickListener(v -> showGroups());
+
+        // bottone in basso: decide in base alla tab attiva
+        btnAddField.setOnClickListener(v -> {
+            if (showingGroups) {
+                // siamo nella tab "Gruppi di campi"
+                NavHostFragment.findNavController(FieldsListFragment.this)
+                        .navigate(R.id.addFieldFragment);
+            } else {
+                // siamo nella tab "Campi"
+                NavHostFragment.findNavController(FieldsListFragment.this)
+                        .navigate(R.id.addFieldFragment);
+            }
+        });
+
+        // schermata iniziale: Campi
+        showFields();
     }
 
-    // ------------------- MOSTRA CAMPi -------------------
+    // -------------------- UI helper --------------------
 
     private void showFields() {
+        showingGroups = false;
+
         btnFields.setChecked(true);
         btnFieldGroups.setChecked(false);
+        btnAddField.setText("Aggiungi un nuovo campo");
 
         rvFields.setAdapter(fieldsAdapter);
-        fieldsAdapter.submitList(fieldsList);
-
-        btnAddField.setText("Aggiungi un nuovo campo");
+        fieldsAdapter.submitList(createSampleFields());
     }
 
-    // ------------------- MOSTRA GRUPPI -------------------
-
     private void showGroups() {
+        showingGroups = true;
+
         btnFields.setChecked(false);
         btnFieldGroups.setChecked(true);
+        btnAddField.setText("Aggiungi un nuovo gruppo");
 
         rvFields.setAdapter(groupsAdapter);
-        groupsAdapter.submitList(groupsList);
-
-        btnAddField.setText("Aggiungi un nuovo gruppo");
+        groupsAdapter.submitList(createSampleGroups());
     }
 
     // ------------------- DATI DI ESEMPIO CAMPi -------------------
 
     private List<FieldUiModel> createSampleFields() {
-        List<FieldUiModel> list = new ArrayList<>();
-
-        int iconOrtaggi = R.drawable.ic_ortaggi;
-        int iconCereali = R.drawable.ic_cereali;
-        int iconFrutteti = R.drawable.ic_frutteti;
-
-        list.add(new FieldUiModel(
-                1,
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Ortaggi",
-                "Gruppo: Prova",
-                iconOrtaggi,
-                Arrays.asList(R.drawable.ic_alert_vento, R.drawable.ic_alert_pioggia)
-        ));
-
-        list.add(new FieldUiModel(
-                2,
-                "Via Giallo, 10 - Mestre (VE)",
-                "Cereali",
-                "Gruppo: Zona A",
-                iconCereali,
-                Arrays.asList(R.drawable.ic_alert_calore)
-        ));
-
-        list.add(new FieldUiModel(
-                3,
-                "Via Blu, 5 - Rovigo (RO)",
-                "Frutteti",
-                "Gruppo: Zona B",
-                iconFrutteti,
-                Arrays.asList(R.drawable.ic_alert_gelo, R.drawable.ic_alert_temporale)
-        ));
-
-        return list;
+        return Arrays.asList(
+                new FieldUiModel(
+                        1L,
+                        "Via Verdirdi, 15 - Mestre (VE)",
+                        "Ortaggi",
+                        "Gruppo A",
+                        R.drawable.ic_ortaggi,
+                        Arrays.asList(
+                                R.drawable.ic_alert_vento,
+                                R.drawable.ic_alert_calore,
+                                R.drawable.ic_alert_gelo
+                        )
+                ),
+                new FieldUiModel(
+                        2L,
+                        "Via Giallo, 15 - Mestre (VE)",
+                        "Cereali",
+                        "Gruppo A",
+                        R.drawable.ic_cereali,
+                        Arrays.asList(
+                                R.drawable.ic_alert_calore,
+                                R.drawable.ic_alert_temporale
+                        )
+                ),
+                new FieldUiModel(
+                        3L,
+                        "Via Torino, 154 - Martellago (VE)",
+                        "Frutteti",
+                        "Gruppo B",
+                        R.drawable.ic_frutteti,
+                        Arrays.asList(
+                                R.drawable.ic_alert_vento
+                        )
+                )
+        );
     }
+
 
     // ------------------- DATI DI ESEMPIO GRUPPI -------------------
 
     private List<GroupUiModel> createSampleGroups() {
-        List<GroupUiModel> list = new ArrayList<>();
-
-        // icona grande del gruppo (puoi mettere una tua)
-        int groupIcon = R.drawable.ic_group_default;
-
-        list.add(new GroupUiModel(
-                1,
-                "Gruppo A",
-                "Campi in zona Mestre con ortaggi",
-                groupIcon,
-                Arrays.asList(
-                        R.drawable.ic_alert_vento,
-                        R.drawable.ic_alert_gelo,
-                        R.drawable.ic_alert_calore
+        return Arrays.asList(
+                new GroupUiModel(
+                        1L,
+                        "Gruppo A",
+                        "Descrizione del Gruppo A",
+                        R.drawable.ic_group_default,
+                        Arrays.asList(
+                                R.drawable.ic_alert_vento,
+                                R.drawable.ic_alert_calore
+                        )
+                ),
+                new GroupUiModel(
+                        2L,
+                        "Gruppo B",
+                        "Descrizione del Gruppo B",
+                        R.drawable.ic_group_default,
+                        Arrays.asList(
+                                R.drawable.ic_alert_gelo
+                        )
                 )
-        ));
-
-        list.add(new GroupUiModel(
-                2,
-                "Gruppo B",
-                "Campi in zona Rovigo con frutteti",
-                groupIcon,
-                Arrays.asList(
-                        R.drawable.ic_alert_pioggia,
-                        R.drawable.ic_alert_temporale
-                )
-        ));
-
-        return list;
+        );
     }
-}
 
+}

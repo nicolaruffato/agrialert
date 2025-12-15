@@ -1,22 +1,68 @@
 package com.agrialert;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.util.Log;
+import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.agrialert.AppDatabase.Field;
+import com.agrialert.AppDatabase.FieldsGroup;
+import com.agrialert.AppDatabase.GroupWithFields;
+import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
+
+import io.reactivex.rxjava3.core.Observer;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private AppBarConfiguration appBarConfiguration;
+    private DataManager dataManager;
+    private boolean mBound = false;
+
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance.
+            DataManager.LocalBinder binder = (DataManager.LocalBinder) service;
+            dataManager = binder.getService();
+            mBound = true;
+            Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+            /*dataManager.insertGroup(new FieldsGroup("default", "default")).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );
+            dataManager.insertField(new Field("test", 2d, 2d, "default")).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );*/
+            dataManager.getAllGroups().subscribe(groups -> {
+                for (GroupWithFields group : groups) {
+                    Log.d("mytag", group.toString());
+                }
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+            Toast.makeText(MainActivity.this, "Not Bound to DataManager", Toast.LENGTH_SHORT).show();
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +98,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        // Bind to DataManager
+        Intent intent = new Intent(this, DataManager.class);
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unbindService(connection);
+        mBound = false;
+    }
+
+    @Override
     public boolean onSupportNavigateUp() {
         NavHostFragment navHostFragment =
                 (NavHostFragment) getSupportFragmentManager()
@@ -60,4 +121,5 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
 }

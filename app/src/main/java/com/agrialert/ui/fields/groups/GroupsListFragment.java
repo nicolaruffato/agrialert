@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -39,7 +40,10 @@ public class GroupsListFragment extends Fragment {
 
         rvGroups = view.findViewById(R.id.rvGroups);
         btnAddGroup = view.findViewById(R.id.btnAddGroup);
-
+        /*btnAddGroup.setOnClickListener(v ->
+                NavHostFragment.findNavController(GroupsListFragment.this)
+                        .navigate(R.id.addGroupFragment)
+        );*/
         rvGroups.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new GroupsAdapter();
         rvGroups.setAdapter(adapter);
