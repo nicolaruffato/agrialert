@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
+import com.agrialert.AppDatabase.ActivatedAlerts;
+import com.agrialert.AppDatabase.AlertType;
+import com.agrialert.AppDatabase.AlertTypeCrossRef;
 import com.agrialert.AppDatabase.AppDatabase;
 import com.agrialert.AppDatabase.Field;
 import com.agrialert.AppDatabase.FieldsDao;
@@ -12,13 +15,13 @@ import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.AppDatabase.FieldsGroup;
 
 
-import org.reactivestreams.Publisher;
 
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class DataManager extends Service {
@@ -49,6 +52,19 @@ public class DataManager extends Service {
 
     public Completable insertField(Field field) {
         return fieldsDao.insetField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable addAlertToField(int fieldId, int alertTypeId, Integer treshold) {
+        return fieldsDao.insertFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold))
+                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable addAlertType(AlertType alertType) {
+        return fieldsDao.insertAlertType(alertType).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Single<ActivatedAlerts> getActivatedAlertsFromField(int fieldId) {
+        return fieldsDao.getAlertsFromField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
     /**

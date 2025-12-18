@@ -1,6 +1,5 @@
 package com.agrialert.AppDatabase;
 
-import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -30,5 +29,21 @@ public interface FieldsDao {
 
     @Insert
     Completable insetField(Field field);
+
+    @Insert
+    Completable insertAlertType(AlertType alertType);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    Completable insertFieldAlertRelation(AlertTypeCrossRef crossRef);
+
+    // Utile se devi inserire più relazioni contemporaneamente
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    Completable insertFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
+
+    @Transaction
+    @Query("SELECT * FROM Field WHERE id = :fieldId")
+    Single<ActivatedAlerts> getAlertsFromField(int fieldId);
+
+
 
 }

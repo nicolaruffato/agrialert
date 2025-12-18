@@ -16,8 +16,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import com.agrialert.AppDatabase.Field;
-import com.agrialert.AppDatabase.FieldsGroup;
+import com.agrialert.AppDatabase.AlertWithThreshold;
 import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
@@ -49,11 +48,21 @@ public class MainActivity extends AppCompatActivity {
                     () -> {},
                     error -> Log.d("mytag", "error: " + error)
             );*/
+            //dataManager.addAlertType(new AlertType("test", "test", 0)).subscribe();
+            //dataManager.addAlertToField(1, 1, 31).subscribe();
+
             dataManager.getAllGroups().subscribe(groups -> {
                 for (GroupWithFields group : groups) {
                     Log.d("mytag", group.toString());
                 }
             });
+
+            dataManager.getActivatedAlertsFromField(1).subscribe(alerts -> {
+                for (AlertWithThreshold alert : alerts.alerts) {
+                    Log.d("mytag", alert.toString());
+                }
+            });
+
         }
 
         @Override
