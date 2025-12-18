@@ -17,6 +17,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.agrialert.AppDatabase.AlertWithThreshold;
+import com.agrialert.AppDatabase.Field;
 import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
@@ -50,6 +51,12 @@ public class MainActivity extends AppCompatActivity {
             );*/
             //dataManager.addAlertType(new AlertType("test", "test", 0)).subscribe();
             //dataManager.addAlertToField(1, 1, 31).subscribe();
+
+            /*dataManager.getGroupByName("default").subscribe(defaultGroup -> {
+                Field test = defaultGroup.fields.get(0);
+                test.setAddress("bla vfsdfas");
+                dataManager.updateField(test).subscribe();
+            });*/
 
             dataManager.getAllGroups().subscribe(groups -> {
                 for (GroupWithFields group : groups) {

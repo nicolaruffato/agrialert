@@ -46,6 +46,10 @@ public class DataManager extends Service {
         return fieldsDao.getGroups().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    public Flowable<GroupWithFields> getGroupByName(String name) {
+        return fieldsDao.getGroupByName(name).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
     public Completable insertGroup(FieldsGroup group) {
         return fieldsDao.insertGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
@@ -63,9 +67,26 @@ public class DataManager extends Service {
         return fieldsDao.insertAlertType(alertType).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
-    public Single<ActivatedAlerts> getActivatedAlertsFromField(int fieldId) {
+    public Flowable<ActivatedAlerts> getActivatedAlertsFromField(int fieldId) {
         return fieldsDao.getAlertsFromField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
+
+    public Completable deleteField(Field field) {
+        return fieldsDao.deleteField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable deleteGroup(FieldsGroup group) {
+        return fieldsDao.deleteGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable updateField(Field field) {
+        return fieldsDao.updateField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable updateGroup(FieldsGroup group) {
+        return fieldsDao.updateGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
 
     /**
      * Class used for the client Binder.  Because we know this service always

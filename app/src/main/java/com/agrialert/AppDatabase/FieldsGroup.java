@@ -27,7 +27,7 @@ public class FieldsGroup {
     }
 
 
-    public void setName(@NotNull String name) {
+    protected void setName(@NotNull String name) {
         this.name = name;
     }
 

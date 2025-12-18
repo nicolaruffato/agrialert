@@ -1,10 +1,12 @@
 package com.agrialert.AppDatabase;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Transaction;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -21,7 +23,7 @@ public interface FieldsDao {
 
     @Transaction
     @Query("SELECT * FROM FieldsGroup WHERE name = :name")
-    Flowable<GroupWithFields> getGroup(String name);
+    Flowable<GroupWithFields> getGroupByName(String name);
 
 
     @Insert
@@ -40,9 +42,22 @@ public interface FieldsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     Completable insertFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
 
+    @Delete
+    Completable deleteGroup(FieldsGroup group);
+
+    @Delete
+    Completable deleteField(Field field);
+
+    @Update
+    Completable updateGroup(FieldsGroup group);
+
+    @Update
+    Completable updateField(Field field);
+
+
     @Transaction
     @Query("SELECT * FROM Field WHERE id = :fieldId")
-    Single<ActivatedAlerts> getAlertsFromField(int fieldId);
+    Flowable<ActivatedAlerts> getAlertsFromField(int fieldId);
 
 
 
