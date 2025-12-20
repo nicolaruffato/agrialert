@@ -1,25 +1,35 @@
-package com.agrialert.AppDatabase;
+package com.agrialert.data_manager;
 
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
 public class AlertWithThreshold {
     @Embedded
-    protected AlertTypeCrossRef crossRef; // Contiene il threshold e gli ID
+    AlertTypeCrossRef crossRef; // Contiene il threshold e gli ID
 
     @Relation(
             parentColumn = "alertTypeId",
             entityColumn = "id"
     )
-    public AlertType alertType; // Contiene i dettagli dell'alert
+    private AlertType alertType; // Contiene i dettagli dell'alert
+
+
 
     public Double getThreshold() {
-        if(crossRef.threshold != null) {
-            return crossRef.threshold;
+        if(crossRef.getThreshold() != null) {
+            return crossRef.getThreshold();
         }
         else {
             return alertType.getDefaultTreshold();
         }
+    }
+
+    public AlertType getAlertType() {
+        return alertType;
+    }
+
+    protected void setAlertType(AlertType alertType) {
+        this.alertType = alertType;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.agrialert.AppDatabase;
+package com.agrialert.data_manager;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;

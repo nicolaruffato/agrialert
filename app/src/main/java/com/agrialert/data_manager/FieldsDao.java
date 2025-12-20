@@ -1,4 +1,4 @@
-package com.agrialert.AppDatabase;
+package com.agrialert.data_manager;
 
 import androidx.room.Dao;
 import androidx.room.Delete;
@@ -12,10 +12,9 @@ import java.util.List;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
-import io.reactivex.rxjava3.core.Single;
 
 @Dao
-public interface FieldsDao {
+interface FieldsDao {
 
     @Transaction
     @Query("SELECT * FROM FieldsGroup")

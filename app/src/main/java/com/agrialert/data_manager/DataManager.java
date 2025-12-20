@@ -5,15 +5,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-import com.agrialert.AppDatabase.ActivatedAlerts;
-import com.agrialert.AppDatabase.AlertType;
-import com.agrialert.AppDatabase.AlertTypeCrossRef;
-import com.agrialert.AppDatabase.AppDatabase;
-import com.agrialert.AppDatabase.Field;
-import com.agrialert.AppDatabase.FieldsDao;
-import com.agrialert.AppDatabase.GroupWithFields;
-import com.agrialert.AppDatabase.FieldsGroup;
-
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.agrialert.AppDatabase;
+package com.agrialert.data_manager;
 
 import android.content.Context;
 
@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase;
 
 @Database(entities = {FieldsGroup.class, Field.class, AlertType.class, AlertTypeCrossRef.class}, version = 1)
 public abstract class AppDatabase extends RoomDatabase {
-    public abstract FieldsDao fieldsDao();
+    abstract FieldsDao fieldsDao();
 
     private static volatile AppDatabase INSTANCE;
 

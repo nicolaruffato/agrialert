@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.widget.Toast;
 
 
@@ -16,17 +15,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import com.agrialert.AppDatabase.AlertType;
-import com.agrialert.AppDatabase.AlertWithThreshold;
-import com.agrialert.AppDatabase.Field;
-import com.agrialert.AppDatabase.FieldsGroup;
-import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
-
-import io.reactivex.rxjava3.core.Observer;
 
 public class MainActivity extends AppCompatActivity {
 
