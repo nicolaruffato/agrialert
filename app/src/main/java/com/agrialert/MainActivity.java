@@ -16,8 +16,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.agrialert.AppDatabase.AlertType;
 import com.agrialert.AppDatabase.AlertWithThreshold;
 import com.agrialert.AppDatabase.Field;
+import com.agrialert.AppDatabase.FieldsGroup;
 import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
@@ -48,15 +50,15 @@ public class MainActivity extends AppCompatActivity {
             dataManager.insertField(new Field("test", 2d, 2d, "default")).subscribe(
                     () -> {},
                     error -> Log.d("mytag", "error: " + error)
-            );*/
-            //dataManager.addAlertType(new AlertType("test", "test", 0)).subscribe();
-            //dataManager.addAlertToField(1, 1, 31).subscribe();
+            );
+            dataManager.addAlertType(new AlertType("test", "test", 0)).subscribe();
+            dataManager.addAlertToField(1, 1, 31d).subscribe();
 
-            /*dataManager.getGroupByName("default").subscribe(defaultGroup -> {
+            dataManager.getGroupByName("default").subscribe(defaultGroup -> {
                 Field test = defaultGroup.fields.get(0);
                 test.setAddress("bla vfsdfas");
                 dataManager.updateField(test).subscribe();
-            });*/
+            });
 
             dataManager.getAllGroups().subscribe(groups -> {
                 for (GroupWithFields group : groups) {
@@ -65,10 +67,10 @@ public class MainActivity extends AppCompatActivity {
             });
 
             dataManager.getActivatedAlertsFromField(1).subscribe(alerts -> {
-                for (AlertWithThreshold alert : alerts.alerts) {
+                for (AlertWithThreshold alert : alerts.getAlerts()) {
                     Log.d("mytag", alert.toString());
                 }
-            });
+            });*/
 
         }
 

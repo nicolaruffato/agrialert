@@ -42,6 +42,12 @@ public interface FieldsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     Completable insertFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
 
+    @Update
+    Completable updateFieldAlertRelation(AlertTypeCrossRef crossRef);
+
+    @Update
+    Completable updateFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
+
     @Delete
     Completable deleteGroup(FieldsGroup group);
 

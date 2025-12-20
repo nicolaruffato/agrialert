@@ -6,14 +6,22 @@ import java.util.List;
 
 public class ActivatedAlerts {
     @Embedded
-    public Field field;
+    protected Field field;
 
     @Relation(
             entity = AlertTypeCrossRef.class, // Specifichiamo l'entità di partenza
             parentColumn = "id",              // ID di Field
             entityColumn = "fieldId"          // Colonna in AlertTypeCrossRef
     )
-    public List<AlertWithThreshold> alerts;
+    protected List<AlertWithThreshold> alerts;
+
+    public Field getField() {
+        return field;
+    }
+
+    public List<AlertWithThreshold> getAlerts() {
+        return alerts;
+    }
 
     @Override
     public String toString() {

@@ -13,6 +13,15 @@ public class AlertWithThreshold {
     )
     public AlertType alertType; // Contiene i dettagli dell'alert
 
+    public Double getThreshold() {
+        if(crossRef.threshold != null) {
+            return crossRef.threshold;
+        }
+        else {
+            return alertType.getDefaultTreshold();
+        }
+    }
+
     @Override
     public String toString() {
         return "AlertWithThreshold{" +

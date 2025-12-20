@@ -10,12 +10,13 @@ foreignKeys = {
         @ForeignKey(entity = Field.class, parentColumns = "id", childColumns = "fieldId")})
 public class AlertTypeCrossRef {
 
-    public int alertTypeId;
-    public int fieldId;
+    protected int alertTypeId;
+    protected int fieldId;
 
-    public int threshold;
+    // Cambiare tipo a Double
+    protected Double threshold;
 
-    public AlertTypeCrossRef(int alertTypeId, int fieldId, int threshold) {
+    public AlertTypeCrossRef(int alertTypeId, int fieldId, Double threshold) {
         this.alertTypeId = alertTypeId;
         this.fieldId = fieldId;
         this.threshold = threshold;

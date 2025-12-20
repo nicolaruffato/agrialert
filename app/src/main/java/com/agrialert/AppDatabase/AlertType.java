@@ -17,9 +17,9 @@ public class AlertType {
     private String description;
 
     @ColumnInfo(name = "defaultTreshold")
-    private int defaultTreshold;
+    private Double defaultTreshold;
 
-    public AlertType(String name, String description, int defaultTreshold) {
+    public AlertType(String name, String description, Double defaultTreshold) {
         this.name = name;
         this.description = description;
         this.defaultTreshold = defaultTreshold;
@@ -29,7 +29,7 @@ public class AlertType {
         return id;
     }
 
-    public void setId(int id) {
+    protected void setId(int id) {
         this.id = id;
     }
 
@@ -49,11 +49,11 @@ public class AlertType {
         this.description = description;
     }
 
-    public int getDefaultTreshold() {
+    public Double getDefaultTreshold() {
         return defaultTreshold;
     }
 
-    public void setDefaultTreshold(int defaultTreshold) {
+    protected void setDefaultTreshold(Double defaultTreshold) {
         this.defaultTreshold = defaultTreshold;
     }
 
