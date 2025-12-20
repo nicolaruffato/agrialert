@@ -4,24 +4,24 @@ import java.util.List;
 
 public class FieldUiModel {
 
-    public long id;                 // id del campo (in futuro dal DB)
-    public String address;          // indirizzo / nome campo inserito dal cliente
-    public String cropType;         // coltura (Ortaggi, Cereali, Leguminose, ecc.)
-    public String groupName;        // nome gruppo (può essere null o vuoto)
-    public int iconRes;             // icona principale in base alla coltura
-    public List<Integer> alertIcons; // lista di icone alert/meteo (max 6)
+    public long id;
+    public String address;
+    public String crop;          // es. "Ortaggi"
+    public String groupName;     // es. "Gruppo: Prova"
+    public int iconRes;          // icona grande della coltura
+    public List<Integer> icons;  // iconcine degli alert associati (max 6)
 
     public FieldUiModel(long id,
                         String address,
-                        String cropType,
+                        String crop,
                         String groupName,
                         int iconRes,
-                        List<Integer> alertIcons) {
+                        List<Integer> icons) {
         this.id = id;
         this.address = address;
-        this.cropType = cropType;
+        this.crop = crop;
         this.groupName = groupName;
         this.iconRes = iconRes;
-        this.alertIcons = alertIcons;
+        this.icons = icons;
     }
 }
