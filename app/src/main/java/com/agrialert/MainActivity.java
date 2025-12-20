@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.widget.Toast;
 
 
@@ -16,15 +15,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import com.agrialert.AppDatabase.Field;
-import com.agrialert.AppDatabase.FieldsGroup;
-import com.agrialert.AppDatabase.GroupWithFields;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
-
-import io.reactivex.rxjava3.core.Observer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,12 +42,28 @@ public class MainActivity extends AppCompatActivity {
             dataManager.insertField(new Field("test", 2d, 2d, "default")).subscribe(
                     () -> {},
                     error -> Log.d("mytag", "error: " + error)
-            );*/
+            );
+            dataManager.addAlertType(new AlertType("test", "test", 0)).subscribe();
+            dataManager.addAlertToField(1, 1, 31d).subscribe();
+
+            dataManager.getGroupByName("default").subscribe(defaultGroup -> {
+                Field test = defaultGroup.fields.get(0);
+                test.setAddress("bla vfsdfas");
+                dataManager.updateField(test).subscribe();
+            });
+
             dataManager.getAllGroups().subscribe(groups -> {
                 for (GroupWithFields group : groups) {
                     Log.d("mytag", group.toString());
                 }
             });
+
+            dataManager.getActivatedAlertsFromField(1).subscribe(alerts -> {
+                for (AlertWithThreshold alert : alerts.getAlerts()) {
+                    Log.d("mytag", alert.toString());
+                }
+            });*/
+
         }
 
         @Override

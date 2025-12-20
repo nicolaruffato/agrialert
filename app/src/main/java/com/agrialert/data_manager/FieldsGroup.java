@@ -1,8 +1,6 @@
-package com.agrialert.AppDatabase;
+package com.agrialert.data_manager;
 
-import androidx.room.ColumnInfo;
 import androidx.room.Entity;
-import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import org.jetbrains.annotations.NotNull;
@@ -27,7 +25,7 @@ public class FieldsGroup {
     }
 
 
-    public void setName(@NotNull String name) {
+    protected void setName(@NotNull String name) {
         this.name = name;
     }
 

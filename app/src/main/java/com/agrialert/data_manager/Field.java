@@ -1,4 +1,4 @@
-package com.agrialert.AppDatabase;
+package com.agrialert.data_manager;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -38,7 +38,7 @@ public class Field {
         return id;
     }
 
-    public void setId(int id) {
+    protected void setId(int id) {
         this.id = id;
     }
 
