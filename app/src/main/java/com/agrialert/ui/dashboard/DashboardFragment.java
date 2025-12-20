@@ -19,6 +19,7 @@ import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
 import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
@@ -54,10 +55,11 @@ public class DashboardFragment extends Fragment {
         TextView txtSeeAllAlerts = view.findViewById(R.id.txtSeeAllAlerts);
 
 
-        txtSeeAllAlerts.setOnClickListener(v ->
-                NavHostFragment.findNavController(DashboardFragment.this)
-                        .navigate(R.id.alertsListFragment)
-        );
+        txtSeeAllAlerts.setOnClickListener(v -> {
+            BottomNavigationView bottomNav =
+                    (BottomNavigationView) requireActivity().findViewById(R.id.bottom_nav);
+            bottomNav.setSelectedItemId(R.id.alertsListFragment);
+        });
 
         toggleDash = view.findViewById(R.id.toggleFieldsGroupsDash);
         btnDashFields = view.findViewById(R.id.btnDashFields);
@@ -229,41 +231,29 @@ public class DashboardFragment extends Fragment {
         list.add(new GroupUiModel(
                 1L,
                 "Gruppo A",
-                "3 campi",
+                "Descrizione",
                 R.drawable.ic_group_default,
-                Arrays.asList(
-                        R.drawable.ic_alert_vento,
-                        R.drawable.ic_alert_calore,
-                        R.drawable.ic_alert_ventilazione
-                )
+                Arrays.asList(R.drawable.ic_alert_vento, R.drawable.ic_alert_calore, R.drawable.ic_alert_ventilazione)
         ));
 
         list.add(new GroupUiModel(
                 2L,
                 "Gruppo B",
-                "2 campi",
+                "Descrizione",
                 R.drawable.ic_group_default,
-                Arrays.asList(
-                        R.drawable.ic_alert_gelo,
-                        R.drawable.ic_alert_pioggia
-                )
+                Arrays.asList(R.drawable.ic_alert_gelo, R.drawable.ic_alert_pioggia)
         ));
 
         list.add(new GroupUiModel(
                 3L,
                 "Gruppo Prova",
-                "1 campo",
+                "Descrizione",
                 R.drawable.ic_group_default,
-                Arrays.asList(
-                        R.drawable.ic_alert_temporale
-                )
+                Arrays.asList(R.drawable.ic_alert_pioggia)
         ));
 
         return list;
     }
-
-
-
 
 
     private List<String> getSampleActiveAlerts() {

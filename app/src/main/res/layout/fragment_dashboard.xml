@@ -117,22 +117,38 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:singleSelection="true">
+            app:singleSelection="true"
+            app:selectionRequired="true">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDashFields"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Campi"/>
+                android:text="Campi"
+                android:checkable="true"
+                android:checked="true"
+                android:backgroundTint="@color/toggle_selected"
+                android:textColor="@color/toggle_text"
+                app:cornerRadius="24dp"
+                app:checkedIcon="@null" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDashGroups"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Gruppi di campi"/>
+                android:text="Gruppi di campi"
+                android:checkable="true"
+                android:checked="false"
+                android:backgroundTint="@color/toggle_selected"
+                android:textColor="@color/toggle_text"
+                app:cornerRadius="24dp"
+                app:checkedIcon="@null" />
+
         </com.google.android.material.button.MaterialButtonToggleGroup>
+
+
 
         <!-- PREVIEW LISTA (3 elementi) -->
         <androidx.recyclerview.widget.RecyclerView

@@ -22,7 +22,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class FieldsListFragment extends Fragment implements GroupsAdapter.OnGroupClickListener {
+public class FieldsListFragment extends Fragment
+        implements GroupsAdapter.OnGroupClickListener, FieldsAdapter.OnFieldClickListener  {
 
 
     //quando true , al prossimo ritorno forziamo il tab "Gruppi"
@@ -63,7 +64,7 @@ public class FieldsListFragment extends Fragment implements GroupsAdapter.OnGrou
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         // adapter (usano submitList(...) per i dati)
-        fieldsAdapter = new FieldsAdapter();
+        fieldsAdapter = new FieldsAdapter(this);
         rvFields.setAdapter(fieldsAdapter);
         groupsAdapter = new GroupsAdapter(this);
 
@@ -86,6 +87,12 @@ public class FieldsListFragment extends Fragment implements GroupsAdapter.OnGrou
 
         // schermata iniziale: Campi
         showFields();
+    }
+
+    @Override
+    public void onFieldClick(FieldUiModel field) {
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.viewFieldFragment);
     }
 
 

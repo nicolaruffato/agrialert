@@ -22,11 +22,12 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
 
 public class MainActivity extends AppCompatActivity {
-
+    private BottomNavigationView bottomNav;
     private ActivityMainBinding binding;
     private AppBarConfiguration appBarConfiguration;
     private DataManager dataManager;
     private boolean mBound = false;
+
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -62,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
                 (NavHostFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
+        bottomNav = binding.bottomNav;
+        NavigationUI.setupWithNavController(bottomNav, navController);
 
         // DESTINAZIONI "TOP LEVEL" (non mostrano freccia indietro)
         appBarConfiguration = new AppBarConfiguration.Builder(
