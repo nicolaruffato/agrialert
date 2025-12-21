@@ -86,16 +86,16 @@ public class FieldsAdapter extends RecyclerView.Adapter<FieldsAdapter.FieldViewH
         void bind(@NonNull FieldUiModel field) {
             imgFieldIcon.setImageResource(field.iconRes);
             txtAddress.setText(field.address);
-            txtCrop.setText(field.cropType);
+            txtCrop.setText(field.crop);
             txtGroup.setText("Gruppo: " + (field.groupName == null ? "-" : field.groupName));
 
             // icone alert (a destra)
             layoutAlertIcons.removeAllViews();
-            if (field.alertIcons != null) {
+            if (field.icons != null) {
                 int sizePx = dpToPx(18);
                 int marginPx = dpToPx(4);
 
-                for (int resId : field.alertIcons) {
+                for (int resId : field.icons) {
                     ImageView iv = new ImageView(itemView.getContext());
                     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizePx, sizePx);
                     lp.setMargins(marginPx, 0, 0, 0);
