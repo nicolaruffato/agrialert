@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class GroupsListFragment extends Fragment {
+public class GroupsListFragment extends Fragment implements GroupsAdapter.OnGroupClickListener {
 
     private RecyclerView rvGroups;
     private MaterialButton btnAddGroup;
@@ -45,10 +45,14 @@ public class GroupsListFragment extends Fragment {
                         .navigate(R.id.addGroupFragment)
         );*/
         rvGroups.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new GroupsAdapter();
+        adapter = new GroupsAdapter( this);
         rvGroups.setAdapter(adapter);
 
         adapter.submitList(createSampleGroups());
+    }
+    public void onGroupClick(GroupUiModel group){
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.viewGroupFragment);
     }
 
     private List<GroupUiModel> createSampleGroups() {

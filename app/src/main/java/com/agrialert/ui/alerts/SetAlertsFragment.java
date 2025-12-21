@@ -66,7 +66,7 @@ public class SetAlertsFragment extends Fragment {
 
             // Torna alla lista Campi
             NavHostFragment.findNavController(SetAlertsFragment.this)
-                    .popBackStack(R.id.fieldsListFragment, false);
+                    .popBackStack();
         });
 
     }

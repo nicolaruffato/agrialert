@@ -1,6 +1,5 @@
 package com.agrialert.ui.fields.groups;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,27 +17,46 @@ import java.util.List;
 
 public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewHolder> {
 
+    public interface OnGroupClickListener {
+        void onGroupClick(GroupUiModel group);
+    }
+
     private final List<GroupUiModel> items = new ArrayList<>();
+    private final OnGroupClickListener listener;
+
+    public GroupsAdapter() {
+        this(null);
+    }
+
+    public GroupsAdapter(OnGroupClickListener listener) {
+        this.listener = listener;
+    }
 
     public void submitList(List<GroupUiModel> newItems) {
         items.clear();
-        if (newItems != null) {
-            items.addAll(newItems);
-        }
+        if (newItems != null) items.addAll(newItems);
         notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public GroupViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext())
+        View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_group, parent, false);
-        return new GroupViewHolder(v);
+        return new GroupViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull GroupViewHolder holder, int position) {
-        holder.bind(items.get(position));
+        GroupUiModel group = items.get(position);
+        holder.bind(group);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener == null) return;
+            int p = holder.getAdapterPosition();
+            if (p == RecyclerView.NO_POSITION) return;
+            listener.onGroupClick(items.get(p));
+        });
     }
 
     @Override
@@ -48,53 +66,42 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
 
     static class GroupViewHolder extends RecyclerView.ViewHolder {
 
-        ImageView imgGroupIcon;
-        TextView txtName, txtDescription;
-        LinearLayout layoutIcons;
+        private final ImageView imgGroupIcon;
+        private final TextView txtGroupName;
+        private final TextView txtGroupDescription;
+        private final LinearLayout layoutGroupAlertIcons;
 
-        public GroupViewHolder(@NonNull View itemView) {
+        GroupViewHolder(@NonNull View itemView) {
             super(itemView);
             imgGroupIcon = itemView.findViewById(R.id.imgGroupIcon);
-            txtName = itemView.findViewById(R.id.txtGroupName);
-            txtDescription = itemView.findViewById(R.id.txtGroupDescription);
-            layoutIcons = itemView.findViewById(R.id.layoutGroupIcons);
+            txtGroupName = itemView.findViewById(R.id.txtGroupName);
+            txtGroupDescription = itemView.findViewById(R.id.txtGroupDescription);
+            layoutGroupAlertIcons = itemView.findViewById(R.id.layoutGroupIcons);
         }
 
-        void bind(GroupUiModel item) {
-            Context ctx = itemView.getContext();
+        void bind(@NonNull GroupUiModel group) {
+            imgGroupIcon.setImageResource(group.iconRes);
+            txtGroupName.setText(group.name);
+            txtGroupDescription.setText(group.description);
 
-            imgGroupIcon.setImageResource(item.iconRes);
-            txtName.setText(item.name);
-            txtDescription.setText(item.description);
+            layoutGroupAlertIcons.removeAllViews();
+            if (group.icons != null) {
+                int sizePx = dpToPx(18);
+                int marginPx = dpToPx(4);
 
-            // svuota e rimette le iconcine
-            layoutIcons.removeAllViews();
-
-            if (item.icons != null && !item.icons.isEmpty()) {
-                for (int i = 0; i < item.icons.size(); i++) {
-                    Integer iconRes = item.icons.get(i);
-                    if (iconRes == null) continue;
-
-                    ImageView iv = new ImageView(ctx);
-
-                    int size = dpToPx(ctx, 24);
-                    LinearLayout.LayoutParams params =
-                            new LinearLayout.LayoutParams(size, size);
-
-                    if (i > 0) {
-                        params.setMarginStart(dpToPx(ctx, 4));
-                    }
-
-                    iv.setLayoutParams(params);
-                    iv.setImageResource(iconRes);
-
-                    layoutIcons.addView(iv);
+                for (int resId : group.icons) {
+                    ImageView iv = new ImageView(itemView.getContext());
+                    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizePx, sizePx);
+                    lp.setMargins(marginPx, 0, 0, 0);
+                    iv.setLayoutParams(lp);
+                    iv.setImageResource(resId);
+                    layoutGroupAlertIcons.addView(iv);
                 }
             }
         }
 
-        private int dpToPx(Context context, int dp) {
-            float density = context.getResources().getDisplayMetrics().density;
+        private int dpToPx(int dp) {
+            float density = itemView.getResources().getDisplayMetrics().density;
             return Math.round(dp * density);
         }
     }

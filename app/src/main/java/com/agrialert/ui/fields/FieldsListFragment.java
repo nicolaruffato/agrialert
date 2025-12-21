@@ -22,8 +22,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class FieldsListFragment extends Fragment {
+public class FieldsListFragment extends Fragment
+        implements GroupsAdapter.OnGroupClickListener, FieldsAdapter.OnFieldClickListener  {
 
+
+    //quando true , al prossimo ritorno forziamo il tab "Gruppi"
+    public static boolean forceGroupsTab = false;
     private MaterialButton btnFields;
     private MaterialButton btnFieldGroups;
     private MaterialButton btnAddField;
@@ -60,9 +64,9 @@ public class FieldsListFragment extends Fragment {
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         // adapter (usano submitList(...) per i dati)
-        fieldsAdapter = new FieldsAdapter();
+        fieldsAdapter = new FieldsAdapter(this);
         rvFields.setAdapter(fieldsAdapter);
-        groupsAdapter = new GroupsAdapter();
+        groupsAdapter = new GroupsAdapter(this);
 
         // toggle Campi / Gruppi di campi
         btnFields.setOnClickListener(v -> showFields());
@@ -73,7 +77,7 @@ public class FieldsListFragment extends Fragment {
             if (showingGroups) {
                 // siamo nella tab "Gruppi di campi"
                 NavHostFragment.findNavController(FieldsListFragment.this)
-                        .navigate(R.id.addFieldFragment);
+                        .navigate(R.id.addGroupFragment);
             } else {
                 // siamo nella tab "Campi"
                 NavHostFragment.findNavController(FieldsListFragment.this)
@@ -83,6 +87,29 @@ public class FieldsListFragment extends Fragment {
 
         // schermata iniziale: Campi
         showFields();
+    }
+
+    @Override
+    public void onFieldClick(FieldUiModel field) {
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.viewFieldFragment);
+    }
+
+
+    @Override
+    public void onGroupClick(GroupUiModel group){
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.viewGroupFragment);
+    }
+
+    @Override
+    public void onResume(){
+       super.onResume();
+       //se toogle "Gruppi" è selezionato mostra lista gruppi
+        if (forceGroupsTab){
+            showGroups();
+            forceGroupsTab = false;
+        }
     }
 
     // -------------------- UI helper --------------------

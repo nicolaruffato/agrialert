@@ -10,12 +10,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.R;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,9 @@ public class ViewFieldFragment extends Fragment {
     private TextView txtCrop;
     private TextView txtGroup;
     private RecyclerView rvFieldAlerts;
+
+    private MaterialButton btnEditField;
+    private MaterialButton btnDeleteField;
 
     public ViewFieldFragment() {
         // costruttore vuoto richiesto dal Fragment
@@ -50,7 +55,18 @@ public class ViewFieldFragment extends Fragment {
         txtCrop = view.findViewById(R.id.txtCrop);
         txtGroup = view.findViewById(R.id.txtGroup);
         rvFieldAlerts = view.findViewById(R.id.rvFieldAlerts);
+        btnEditField = view.findViewById(R.id.btnEditField);
+        btnDeleteField = view.findViewById(R.id.btnDeleteField);
 
+        //LISTENER
+        btnEditField.setOnClickListener(v ->
+                NavHostFragment.findNavController(ViewFieldFragment.this)
+                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment));
+
+        btnDeleteField.setOnClickListener(v ->
+                NavHostFragment.findNavController(ViewFieldFragment.this)
+                        .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment));
+        ;
         // DATI FINTI DEL CAMPO
         txtAddress.setText("Via Verdirdi, 15 - Mestre (VE)");
         txtCrop.setText("Ortaggi");

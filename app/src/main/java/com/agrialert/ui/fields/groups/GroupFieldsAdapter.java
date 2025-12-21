@@ -22,6 +22,14 @@ public class GroupFieldsAdapter extends RecyclerView.Adapter<GroupFieldsAdapter.
         this.items = items;
     }
 
+    public void submitList(List<GroupFieldUiModel> newItems) {
+        items.clear();
+        if (newItems != null) {
+            items.addAll(newItems);
+        }
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public FieldViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

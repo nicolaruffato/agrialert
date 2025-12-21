@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- HEADER ICONA + NOME + DESCRIZIONE -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <ImageView
+            android:id="@+id/imgGroupIcon"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:src="@drawable/ic_group_default"
+            android:contentDescription="Icona gruppo" />
+
+        <TextView
+            android:id="@+id/txtGroupName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Gruppo A"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtGroupDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Descrizione del gruppo..."
+            android:gravity="center_horizontal"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <!-- TITOLO LISTA CAMPI -->
+    <TextView
+        android:id="@+id/txtFieldsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="Lista campi"
+        android:textStyle="bold"
+        android:textSize="16sp" />
+
+    <!-- LISTA CAMPI DEL GRUPPO -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvGroupFields"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingBottom="8dp" />
+
+    <!-- BOTTONI IN BASSO -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEditGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Modifica gruppo" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDeleteGroup"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Elimina gruppo"
+        android:layout_marginBottom="30dp" />
+
+</LinearLayout>
