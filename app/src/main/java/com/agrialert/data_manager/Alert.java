@@ -22,6 +22,8 @@ public class Alert {
     private String title;
     private String description;
     private String fieldAddress;
+    /** Timestamp (ms) previsto per l'evento meteo che genera l'alert */
+    private long forecastAt;
     private long createdAt;
     private boolean resolved;
     private int iconRes;
@@ -35,6 +37,7 @@ public class Alert {
                  String title,
                  String description,
                  String fieldAddress,
+                 long forecastAt,
                  long createdAt,
                  boolean resolved,
                  int iconRes) {
@@ -44,6 +47,7 @@ public class Alert {
         this.title = title;
         this.description = description;
         this.fieldAddress = fieldAddress;
+        this.forecastAt = forecastAt;
         this.createdAt = createdAt;
         this.resolved = resolved;
         this.iconRes = iconRes;
@@ -103,6 +107,14 @@ public class Alert {
 
     public void setFieldAddress(String fieldAddress) {
         this.fieldAddress = fieldAddress;
+    }
+
+    public long getForecastAt() {
+        return forecastAt;
+    }
+
+    public void setForecastAt(long forecastAt) {
+        this.forecastAt = forecastAt;
     }
 
     public long getCreatedAt() {

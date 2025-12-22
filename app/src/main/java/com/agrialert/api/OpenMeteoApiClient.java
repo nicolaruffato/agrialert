@@ -14,6 +14,7 @@ public class OpenMeteoApiClient {
 
     private static final String TAG = "OpenMeteoApiClient";
     private static final String BASE_URL = "https://api.open-meteo.com/";
+    private static final int FORECAST_DAYS = 7;
     private final OpenMeteoService service;
 
     public OpenMeteoApiClient() {
@@ -36,7 +37,7 @@ public class OpenMeteoApiClient {
                             longitude,
                             true,
                             "temperature_2m,relativehumidity_2m,precipitation,windspeed_10m",
-                            1
+                            FORECAST_DAYS
                     )
                     .execute();
 
