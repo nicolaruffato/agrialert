@@ -3,14 +3,45 @@ package com.agrialert.data_manager;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import org.jetbrains.annotations.NotNull;
+
 @Entity
 public class FieldsGroup {
 
-    @PrimaryKey(autoGenerate = true)
-    public int id;
+    @PrimaryKey
+    @NotNull
+    private String name;
+    private String description;
 
-    public String name;
-    public String description;
+    public FieldsGroup(@NotNull String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
 
 
+    @NotNull
+    public String getName() {
+        return name;
+    }
+
+
+    protected void setName(@NotNull String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
+    public String toString() {
+        return "FieldsGroup{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

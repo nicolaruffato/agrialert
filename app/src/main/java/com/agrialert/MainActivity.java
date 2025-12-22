@@ -9,7 +9,6 @@ import android.os.IBinder;
 import android.widget.Toast;
 
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
@@ -36,6 +35,36 @@ public class MainActivity extends AppCompatActivity {
             DataManager.LocalBinder binder = (DataManager.LocalBinder) service;
             dataManager = binder.getService();
             mBound = true;
+            Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+            /*dataManager.insertGroup(new FieldsGroup("default", "default")).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );
+            dataManager.insertField(new Field("test", 2d, 2d, "default")).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );
+            dataManager.addAlertType(new AlertType("test", "test", 0)).subscribe();
+            dataManager.addAlertToField(1, 1, 31d).subscribe();
+
+            dataManager.getGroupByName("default").subscribe(defaultGroup -> {
+                Field test = defaultGroup.fields.get(0);
+                test.setAddress("bla vfsdfas");
+                dataManager.updateField(test).subscribe();
+            });
+
+            dataManager.getAllGroups().subscribe(groups -> {
+                for (GroupWithFields group : groups) {
+                    Log.d("mytag", group.toString());
+                }
+            });
+
+            dataManager.getActivatedAlertsFromField(1).subscribe(alerts -> {
+                for (AlertWithThreshold alert : alerts.getAlerts()) {
+                    Log.d("mytag", alert.toString());
+                }
+            });*/
+
         }
 
         @Override
@@ -105,4 +134,5 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
 }

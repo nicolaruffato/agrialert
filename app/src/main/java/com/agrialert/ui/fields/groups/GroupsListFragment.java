@@ -40,10 +40,10 @@ public class GroupsListFragment extends Fragment implements GroupsAdapter.OnGrou
 
         rvGroups = view.findViewById(R.id.rvGroups);
         btnAddGroup = view.findViewById(R.id.btnAddGroup);
-        btnAddGroup.setOnClickListener(v ->
+        /*btnAddGroup.setOnClickListener(v ->
                 NavHostFragment.findNavController(GroupsListFragment.this)
                         .navigate(R.id.addGroupFragment)
-        );
+        );*/
         rvGroups.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new GroupsAdapter( this);
         rvGroups.setAdapter(adapter);
