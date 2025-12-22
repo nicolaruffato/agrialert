@@ -12,6 +12,8 @@ import java.util.List;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Pair;
 
@@ -30,6 +32,7 @@ public class DataManager extends Service {
     private AppDatabase db;
 
     private FieldsDao fieldsDao;
+    private AlertDao alertDao;
 
     public DataManager() {
     }
@@ -39,6 +42,7 @@ public class DataManager extends Service {
         super.onCreate();
         db = AppDatabase.getDatabase(this);
         fieldsDao = db.fieldsDao();
+        alertDao = db.alertDao();
     }
 
     public Flowable<List<GroupWithFields>> getAllGroups() {
@@ -101,6 +105,52 @@ public class DataManager extends Service {
         return fieldsDao.updateGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    // --- Alert ---
+    public Flowable<List<Alert>> observeAlerts(boolean resolved) {
+        return alertDao.observeByResolved(resolved)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Flowable<List<Alert>> getResolvedAlerts() {
+        return observeAlerts(true);
+    }
+
+    public Flowable<List<Alert>> getActiveAlerts() {
+        return observeAlerts(false);
+    }
+
+    public Single<Long> insertAlert(Alert alert) {
+        return alertDao.insert(alert)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Single<List<Long>> insertAlerts(List<Alert> alerts) {
+        return alertDao.insertAll(alerts)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable setResolved(long id, boolean resolved) {
+        return alertDao.updateResolved(id, resolved)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable setAlertResolved(long id) {
+        return setResolved(id, true);
+    }
+
+    public Completable setAlertActive(long id) {
+        return setResolved(id, false);
+    }
+
+    public Maybe<Alert> findLatestByTypeAndGroup(int typeId, String groupName) {
+        return alertDao.findLatestByTypeAndGroup(typeId, groupName)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
 
     /**
      * Class used for the client Binder.  Because we know this service always
