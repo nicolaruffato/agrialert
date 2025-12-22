@@ -17,7 +17,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Field;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -40,16 +43,22 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
 
     // UI
     private TextInputLayout tilAddress, tilCropType, tilGroup;
+    private double selectedLat=0;
+    private double selectedLng=0;
     private TextInputEditText inputAddress;
     private AutoCompleteTextView dropCropType, dropGroup;
     private MaterialButton btnSetAlerts;
     private View mapContainer;
+    private MaterialButton btnSaveField;
+    private int savedFieldId = -1;
+
 
     // MAPPA
     private SupportMapFragment mapFragment;
     private GoogleMap googleMap;
     private Marker marker;
     private FusedLocationProviderClient fusedLocationClient;
+
 
     public AddFieldFragment() {
         // costruttore vuoto richiesto da Fragment
@@ -75,11 +84,13 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
         inputAddress = view.findViewById(R.id.inputAddress);
         dropCropType = view.findViewById(R.id.dropCropType);
         dropGroup = view.findViewById(R.id.dropGroup);
+        btnSaveField = view.findViewById(R.id.btnSaveField);
         btnSetAlerts = view.findViewById(R.id.btnSetAlerts);
 
         mapContainer = view.findViewById(R.id.mapContainer);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        btnSetAlerts.setEnabled(false);
 
         setupDropdowns();
         setupListeners();
@@ -129,18 +140,79 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
     // LISTENER
     // ----------------------------------------------------
     private void setupListeners() {
+
         // icona di localizzazione nell'input indirizzo
         tilAddress.setEndIconOnClickListener(v -> onLocationIconClicked());
 
-        // bottone "Imposta alert"
-        btnSetAlerts.setOnClickListener(v -> {
-            if (validateForm()) {
-                NavHostFragment.findNavController(AddFieldFragment.this)
-                        .navigate(R.id.setAlertsFragment);
-            }
+        // bottoni
+        btnSaveField.setOnClickListener(v -> {
+
+            MainActivity a = (MainActivity) requireActivity();
+            if (!a.vmsReady()) return;
+            FieldsViewModel vm = a.fieldsVM();
+
+            if (!validateForm()) return;
+
+            // usa i tuoi veri input (già presenti nel file)
+            String address = inputAddress.getText().toString().trim();
+
+            //String groupName = dropGroup.getText().toString().trim();
+            //if (groupName.isEmpty()) groupName = "default";
+            String groupName ="default";
+
+            double latitude = selectedLat;
+            double longitude = selectedLng;
+
+            Field field = new Field(address, latitude, longitude, groupName);
+
+            // 1) insert
+            vm.insertField(field)
+                    // 2) rileggi gruppo e trova fieldId
+                    .andThen(vm.getGroupByName(groupName).firstOrError())
+                    .subscribe(groupWithFields -> {
+
+                        int id = -1;
+                        for (Field f : groupWithFields.getFields()) {
+                            if (address.equals(f.getAddress())
+                                    && f.getLatitude() == latitude
+                                    && f.getLongitude() == longitude) {
+                                id = f.getId();
+                                break;
+                            }
+                        }
+
+                        if (id <= 0) {
+                            Toast.makeText(requireContext(), "Salvato ma ID non trovato", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        savedFieldId = id;
+                        Toast.makeText(requireContext(), "Campo salvato", Toast.LENGTH_SHORT).show();
+
+                        btnSetAlerts.setEnabled(true);
+                        btnSaveField.setEnabled(false); // opzionale: impedisce doppio insert
+
+                    }, err -> {
+                        android.util.Log.e("AddField","Errore Salvataggio Campo",err);
+                        Toast.makeText(requireContext(), "Errore : "+err.getMessage(), Toast.LENGTH_LONG).show();
+                    });
         });
 
+        btnSetAlerts.setOnClickListener(v -> {
+            if (savedFieldId <= 0) {
+                Toast.makeText(requireContext(), "Prima salva il campo", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Bundle b = new Bundle();
+            b.putInt("fieldId", savedFieldId);
+
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.setAlertsFragment, b);
+        });
+
+
     }
+
 
     private void onLocationIconClicked() {
         // mostra il frame mappa se nascosto
@@ -192,12 +264,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
             tilCropType.setError(null);
         }
 
-        if (TextUtils.isEmpty(group)) {
-            tilGroup.setError("*Campo obbligatorio");
-            ok = false;
-        } else {
-            tilGroup.setError(null);
-        }
+
 
         return ok;
     }

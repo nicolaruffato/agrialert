@@ -15,6 +15,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.agrialert.data_manager.AlertType;
+import com.agrialert.data_manager.FieldsGroup;
+import com.agrialert.viewmodel.FieldsViewModel;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -26,7 +30,14 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration appBarConfiguration;
     private DataManager dataManager;
     private boolean mBound = false;
+    private FieldsViewModel fieldsVM;
+    private AlertsViewModel alertsVM;
+    public FieldsViewModel fieldsVM() { return fieldsVM; }
+    public AlertsViewModel alertsVM() { return alertsVM; }
 
+    public boolean vmsReady() {
+        return mBound && dataManager != null && fieldsVM != null && alertsVM != null;
+    }
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -36,6 +47,105 @@ public class MainActivity extends AppCompatActivity {
             dataManager = binder.getService();
             mBound = true;
             Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+            fieldsVM = new FieldsViewModel(dataManager);
+            alertsVM = new AlertsViewModel(dataManager);
+
+            dataManager.insertGroup(new FieldsGroup("default","default")).subscribe(
+                    ()->{},
+                    e->{}
+            );
+
+            // 1) Ondata di calore
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Ondata di calore",
+                            "Temperature elevate che possono causare stress termico",
+                            26.0
+                    )
+            ).subscribe();
+
+            // 2) Gelo / Brina
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Gelo / Brina",
+                            "Rischio di danni da gelo su colture sensibili",
+                            0.0
+                    )
+            ).subscribe();
+
+            // 3) Pioggia intensa
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Pioggia intensa",
+                            "Precipitazioni elevate che possono provocare ristagno o erosione",
+                            30.0
+                    )
+            ).subscribe();
+
+            // 4) Vento forte
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Vento forte",
+                            "Raffiche che possono piegare o danneggiare le piante",
+                            50.0
+                    )
+            ).subscribe();
+
+            // 5) Temporale / Grandine
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Temporale / Grandine",
+                            "Eventi violenti con rischio di danni ai raccolti",
+                            60.0
+                    )
+            ).subscribe();
+
+            // 6) Siccità prolungata
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Siccità prolungata",
+                            "Carenza idrica dovuta a mancanza di piogge",
+                            5.0
+                    )
+            ).subscribe();
+
+            // 7) Umidità elevata
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Umidità elevata",
+                            "Rischio di malattie fungine dovute a eccesso di umidità",
+                            80.0
+                    )
+            ).subscribe();
+
+            // 8) Escursione termica elevata
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Escursione termica elevata",
+                            "Rischio di stress termico tra giorno e notte",
+                            12.0
+                    )
+            ).subscribe();
+
+            // 9) Rischio incendio
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Rischio incendio",
+                            "Condizioni di vento secco e terreno arido",
+                            30.0
+                    )
+            ).subscribe();
+
+            // 10) Scarsa ventilazione
+            dataManager.insertAlertType(
+                    new AlertType(
+                            "Scarsa ventilazione",
+                            "Stagnazione dell'aria con rischio muffe",
+                            5.0
+                    )
+            ).subscribe();
+
+
             /*dataManager.insertGroup(new FieldsGroup("default", "default")).subscribe(
                     () -> {},
                     error -> Log.d("mytag", "error: " + error)
@@ -121,9 +231,18 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        unbindService(connection);
-        mBound = false;
+        // NON fare unbind qui: l'Activity è ancora in uso (navigation)
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBound) {
+            unbindService(connection);
+            mBound = false;
+        }
+    }
+
 
     @Override
     public boolean onSupportNavigateUp() {

@@ -51,4 +51,62 @@ public class AlertSettingUiModel {
         this.secondaryValue = secondaryValue;
         this.secondaryUnit = secondaryUnit;
     }
+    // --- GETTERS comodi (per SetAlertsFragment / Adapter) ---
+
+    public int getId() {
+        return (int) id;
+    }
+
+    public long getIdLong() {
+        return id;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public boolean hasFirstThreshold() {
+        return hasPrimaryThreshold;
+    }
+
+    public int getFirstValue() {
+        return primaryValue;
+    }
+
+    public void setFirstValue(int v) {
+        this.primaryValue = v;
+    }
+
+    public double getFirstValueDouble() {
+        return (double) primaryValue;
+    }
+
+    public String getFirstUnit() {
+        return primaryUnit;
+    }
+
+    public boolean hasSecond() {
+        return hasSecondaryThreshold;
+    }
+
+    public int getSecondValue() {
+        return secondaryValue;
+    }
+
+    public void setSecondValue(int v) {
+        this.secondaryValue = v;
+    }
+
+    public double getSecondValueDouble() {
+        return (double) secondaryValue;
+    }
+
+    public String getSecondUnit() {
+        return secondaryUnit;
+    }
+
 }

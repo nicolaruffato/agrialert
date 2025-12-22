@@ -54,7 +54,7 @@ public class DataManager extends Service {
     }
 
     public Completable insertField(Field field) {
-        return fieldsDao.insetField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        return fieldsDao.insertField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
     public Completable addAlertToField(int fieldId, int alertTypeId, Double treshold) {
@@ -70,11 +70,21 @@ public class DataManager extends Service {
 
     public Completable updateAlertsToField(int fieldId, List<Pair<Integer, Double>> alertsTypeWithThresholds) {
         List<AlertTypeCrossRef> crossRefs = new ArrayList<>();
-        for(var pair : alertsTypeWithThresholds) {
-            crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, pair.getSecond()));
+
+        for (Pair<Integer, Double> pair : alertsTypeWithThresholds) {
+            crossRefs.add(
+                    new AlertTypeCrossRef(
+                            pair.getFirst(),   // alertTypeId
+                            fieldId,
+                            pair.getSecond()   // threshold
+                    )
+            );
         }
-        return fieldsDao.updateFieldAlertRelations(crossRefs)
-                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+
+        return fieldsDao.deleteAlertsForField(fieldId)
+                .andThen(fieldsDao.insertFieldAlertRelations(crossRefs))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     public Completable addAlertType(AlertType alertType) {
@@ -100,6 +110,18 @@ public class DataManager extends Service {
     public Completable updateGroup(FieldsGroup group) {
         return fieldsDao.updateGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
+    public Completable insertAlertType(AlertType alertType) {
+        return fieldsDao.insertAlertType(alertType)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Flowable<List<AlertType>> getAllAlertTypes() {
+        return fieldsDao.getAllAlertTypes()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
 
 
     /**

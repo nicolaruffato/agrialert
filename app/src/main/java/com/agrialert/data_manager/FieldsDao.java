@@ -28,8 +28,10 @@ interface FieldsDao {
     @Insert
     Completable insertGroup(FieldsGroup group);
 
+    @Query("DELETE FROM AlertTypeCrossRef WHERE fieldId = :fieldId")
+    Completable deleteAlertsForField(int fieldId);
     @Insert
-    Completable insetField(Field field);
+    Completable insertField(Field field);
 
     @Insert
     Completable insertAlertType(AlertType alertType);
@@ -63,6 +65,11 @@ interface FieldsDao {
     @Transaction
     @Query("SELECT * FROM Field WHERE id = :fieldId")
     Flowable<ActivatedAlerts> getAlertsFromField(int fieldId);
+
+    @Query("SELECT * FROM AlertType")
+    Flowable<List<AlertType>> getAllAlertTypes();
+
+
 
 
 

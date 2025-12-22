@@ -24,7 +24,7 @@ public class AlertSettingsAdapter extends RecyclerView.Adapter<AlertSettingsAdap
     private List<AlertSettingUiModel> items;
     private final OnDataChangedListener listener;
 
-    public AlertSettingsAdapter(List<AlertSettingUiModel> items, OnDataChangedListener listener) {
+    public AlertSettingsAdapter(List<AlertSettingUiModel> items,OnDataChangedListener listener) {
         this.items = items;
         this.listener = listener;
     }

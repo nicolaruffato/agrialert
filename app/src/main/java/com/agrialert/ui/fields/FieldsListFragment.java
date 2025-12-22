@@ -14,6 +14,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.agrialert.R;
 import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
+import com.agrialert.MainActivity;
+import com.agrialert.viewmodel.FieldsViewModel;
+import com.agrialert.data_manager.GroupWithFields;
+import com.agrialert.data_manager.Field;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 import com.google.android.material.button.MaterialButton;
 
 import androidx.navigation.fragment.NavHostFragment;
@@ -38,6 +45,9 @@ public class FieldsListFragment extends Fragment
 
     private FieldsAdapter fieldsAdapter;
     private GroupsAdapter groupsAdapter;
+    private FieldsViewModel vm;
+    private final CompositeDisposable cd = new CompositeDisposable();
+
 
     public FieldsListFragment() {
         // costruttore vuoto richiesto
@@ -122,7 +132,42 @@ public class FieldsListFragment extends Fragment
         btnAddField.setText("Aggiungi un nuovo campo");
 
         rvFields.setAdapter(fieldsAdapter);
-        fieldsAdapter.submitList(createSampleFields());
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+
+        vm = a.fieldsVM();
+
+        cd.clear();
+        cd.add(
+                vm.getAllGroups().subscribe(
+                        groups -> {
+                            List<FieldUiModel> uiList = new java.util.ArrayList<>();
+
+                            for (GroupWithFields g : groups) {
+                                if (g.getFields() == null) continue;
+
+                                for (Field f : g.getFields()) {
+                                    uiList.add(
+                                            new FieldUiModel(
+                                                    f.getId(),
+                                                    f.getAddress(),
+                                                    "", // crop → per ora vuoto non esiste in Field
+                                                    f.getGroupName(),
+                                                    R.drawable.ic_ortaggi, // icona fissa per ora
+                                                    Collections.emptyList() // icone alert → da fare
+                                            )
+                                    );
+                                }
+                            }
+
+                            fieldsAdapter.submitList(uiList);
+                        },
+                        err -> {
+                            android.util.Log.e("FieldsListFragment", "Errore DB", err);
+                        }
+                )
+        );
+
     }
 
     private void showGroups() {
@@ -134,6 +179,12 @@ public class FieldsListFragment extends Fragment
 
         rvFields.setAdapter(groupsAdapter);
         groupsAdapter.submitList(createSampleGroups());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        cd.clear();
     }
 
     // ------------------- DATI DI ESEMPIO CAMPi -------------------
