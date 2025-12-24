@@ -32,11 +32,12 @@ public class Field {
     private CropType cropType;
 
 
-    public Field(String address, Double latitude, Double longitude, String groupName) {
+    public Field(String address, Double latitude, Double longitude, String groupName, CropType cropType) {
         this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
         this.groupName = groupName;
+        this.cropType = cropType;
     }
 
     public int getId() {
@@ -90,11 +91,12 @@ public class Field {
     @Override
     public String toString() {
         return "Field{" +
-                "groupName='" + groupName + '\'' +
-                ", longitude=" + longitude +
-                ", latitude=" + latitude +
+                "id=" + id +
                 ", address='" + address + '\'' +
-                ", id=" + id +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", groupName='" + groupName + '\'' +
+                ", cropType=" + cropType +
                 '}';
     }
 }

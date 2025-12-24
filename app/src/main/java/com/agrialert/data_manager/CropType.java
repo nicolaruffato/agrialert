@@ -8,7 +8,8 @@ public enum CropType {
     LEGUMES(R.string.crop_legumes),
     ORCHARDS(R.string.crop_orchards),
     OILSEEDS(R.string.crop_Oilseeds),
-    AROMATIC_AND_MEDICINAL(R.string.crop_aromatic_and_medicinal);
+    AROMATIC_AND_MEDICINAL(R.string.crop_aromatic_and_medicinal),
+    NONE(R.string.crop_none);
 
 
     private final int resourceId;
