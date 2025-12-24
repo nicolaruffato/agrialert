@@ -28,6 +28,8 @@ public class DataManager extends Service {
     - Per il resto tutto e' stato implementato
 */
 
+    //TODO: controllare funzionamento e metodi interfaccia
+
     private final IBinder binder = new LocalBinder();
     private AppDatabase db;
 
