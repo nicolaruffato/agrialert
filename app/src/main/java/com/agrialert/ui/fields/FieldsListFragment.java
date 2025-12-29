@@ -101,8 +101,11 @@ public class FieldsListFragment extends Fragment
 
     @Override
     public void onFieldClick(FieldUiModel field) {
+        Bundle b = new Bundle();
+        b.putParcelable("field", field);
+
         NavHostFragment.findNavController(this)
-                .navigate(R.id.viewFieldFragment);
+                .navigate(R.id.viewFieldFragment, b);
     }
 
 
@@ -151,9 +154,11 @@ public class FieldsListFragment extends Fragment
                                             new FieldUiModel(
                                                     f.getId(),
                                                     f.getAddress(),
-                                                    "", // crop → per ora vuoto non esiste in Field
+                                                    f.getLatitude(),
+                                                    f.getLongitude(),
+                                                    f.getCropType().name(), // TODO: call displayName?
                                                     f.getGroupName(),
-                                                    R.drawable.ic_ortaggi, // icona fissa per ora
+                                                    f.getCropType().getImageResId(),
                                                     Collections.emptyList() // icone alert → da fare
                                             )
                                     );
@@ -167,7 +172,6 @@ public class FieldsListFragment extends Fragment
                         }
                 )
         );
-
     }
 
     private void showGroups() {
@@ -178,7 +182,27 @@ public class FieldsListFragment extends Fragment
         btnAddField.setText("Aggiungi un nuovo gruppo");
 
         rvFields.setAdapter(groupsAdapter);
-        groupsAdapter.submitList(createSampleGroups());
+
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+
+        vm = a.fieldsVM();
+        cd.add(vm.getAllGroups().subscribe(
+                groups -> {
+                    List<GroupUiModel> uiList = new java.util.ArrayList<>();
+
+                    for (GroupWithFields g : groups) {
+                        uiList.add(new GroupUiModel(
+                                0, // TODO: remove
+                                g.getGroup().getName(),
+                                g.getGroup().getDescription(),
+                                R.drawable.ic_group_default,
+                                Collections.emptyList() // TODO: list alert for group
+                        ));
+                    }
+
+                    groupsAdapter.submitList(uiList);
+                }));
     }
 
     @Override
@@ -186,47 +210,6 @@ public class FieldsListFragment extends Fragment
         super.onStop();
         cd.clear();
     }
-
-    // ------------------- DATI DI ESEMPIO CAMPi -------------------
-
-    private List<FieldUiModel> createSampleFields() {
-        return Arrays.asList(
-                new FieldUiModel(
-                        1L,
-                        "Via Verdirdi, 15 - Mestre (VE)",
-                        "Ortaggi",
-                        "Gruppo A",
-                        R.drawable.ic_ortaggi,
-                        Arrays.asList(
-                                R.drawable.ic_alert_vento,
-                                R.drawable.ic_alert_calore,
-                                R.drawable.ic_alert_gelo
-                        )
-                ),
-                new FieldUiModel(
-                        2L,
-                        "Via Giallo, 15 - Mestre (VE)",
-                        "Cereali",
-                        "Gruppo A",
-                        R.drawable.ic_cereali,
-                        Arrays.asList(
-                                R.drawable.ic_alert_calore,
-                                R.drawable.ic_alert_temporale
-                        )
-                ),
-                new FieldUiModel(
-                        3L,
-                        "Via Torino, 154 - Martellago (VE)",
-                        "Frutteti",
-                        "Gruppo B",
-                        R.drawable.ic_frutteti,
-                        Arrays.asList(
-                                R.drawable.ic_alert_vento
-                        )
-                )
-        );
-    }
-
 
     // ------------------- DATI DI ESEMPIO GRUPPI -------------------
 

@@ -92,9 +92,22 @@ public class SetAlertsFragment extends Fragment {
                         .subscribe(
                                 alertTypes -> {
                                     // costruisci items da DB (ID veri!)
+
                                     items.clear();
                                     items.addAll(mapAlertTypesToUi(alertTypes));
-                                    adapter.notifyDataSetChanged();
+                                    cd.add(avm.getActivatedAlertsFromField(fieldId).subscribe(activeList -> {
+                                        for (AlertSettingUiModel asUi : items) {
+                                            for (AlertWithThreshold activeAlert : activeList.getAlerts()) {
+                                                if (asUi.getId() == activeAlert.getAlertType().getId()) {
+                                                    asUi.enabled = true;
+                                                    asUi.hasPrimaryThreshold = true;
+                                                    asUi.primaryValue = activeAlert.getThreshold().intValue();
+                                                }
+                                            }
+                                        }
+
+                                        adapter.notifyDataSetChanged();
+                                    }));
                                 },
                                 err -> Log.e(TAG, "Errore getAllAlertTypes", err)
                         )

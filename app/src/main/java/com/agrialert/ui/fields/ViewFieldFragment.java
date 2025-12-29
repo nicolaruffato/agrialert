@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,16 +15,20 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ViewFieldFragment extends Fragment {
+import io.reactivex.rxjava3.disposables.Disposable;
 
+public class ViewFieldFragment extends Fragment {
+    private static final String TAG = "ViewField";
     private ImageView imgCrop;
     private TextView txtAddress;
     private TextView txtCrop;
@@ -58,20 +63,31 @@ public class ViewFieldFragment extends Fragment {
         btnEditField = view.findViewById(R.id.btnEditField);
         btnDeleteField = view.findViewById(R.id.btnDeleteField);
 
+        Bundle args = getArguments();
+        if (args == null) {
+            Log.e(TAG, "field mancante: passalo come arg a ViewFieldFragment!");
+            return;
+        }
+        FieldUiModel field = args.getParcelable("field");
+
+        Bundle b = new Bundle();
+        b.putParcelable("field", field);
+
+
+        // TODO: send whole field to edit
         //LISTENER
         btnEditField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
-                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment));
+                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment, b));
 
         btnDeleteField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
-                        .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment));
+                        .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment, b));
         ;
-        // DATI FINTI DEL CAMPO
-        txtAddress.setText("Via Verdirdi, 15 - Mestre (VE)");
-        txtCrop.setText("Ortaggi");
-        txtGroup.setText("Gruppo A");
-        imgCrop.setImageResource(R.drawable.ic_ortaggi);
+        txtAddress.setText(field.address);
+        txtCrop.setText(field.crop);
+        txtGroup.setText(field.groupName);
+        imgCrop.setImageResource(field.iconRes);
 
         // LISTA ALERT COLLEGATI AL CAMPO
         rvFieldAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));

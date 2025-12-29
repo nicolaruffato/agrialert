@@ -19,7 +19,9 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.CropType;
 import com.agrialert.data_manager.Field;
+import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -34,8 +36,11 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
 
@@ -100,40 +105,48 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
     // DROPDOWN
     // ----------------------------------------------------
     private void setupDropdowns() {
-        // Tipologia campo da arrays.xml
-        ArrayAdapter<CharSequence> cropAdapter = ArrayAdapter.createFromResource(
+
+        CropType[] cropTypes = CropType.values();
+
+        List<String> cropTypeNames = new ArrayList<>();
+        for (CropType crop : cropTypes) {
+            cropTypeNames.add(crop.name());
+        }
+
+        ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(
                 requireContext(),
-                R.array.crop_types,
-                android.R.layout.simple_list_item_1
+                android.R.layout.simple_list_item_1,
+                cropTypeNames
         );
         dropCropType.setAdapter(cropAdapter);
 
-        // Gruppi finti (in futuro dal DB utente)
-        List<String> groupNames = getUserGroups();
-        ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_list_item_1,
-                groupNames
-        );
-        dropGroup.setAdapter(groupAdapter);
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        FieldsViewModel vm = a.fieldsVM();
 
-        dropGroup.setOnItemClickListener((parent, view, position, id) -> {
-            String selected = groupNames.get(position);
-            if ("Inserisci nuovo gruppo".equals(selected)) {
-                Toast.makeText(requireContext(),
-                        "Qui apriremo 'Inserisci nuovo gruppo'",
-                        Toast.LENGTH_SHORT).show();
+        Disposable test = vm.getAllGroups().subscribe(groups -> {
+            List<String> groupNames = new ArrayList<>();
+            for(GroupWithFields group : groups) {
+               groupNames.add(group.getGroup().getName());
             }
-        });
-    }
 
-    private List<String> getUserGroups() {
-        // TODO: sostituire con i gruppi reali salvati dall'utente
-        return Arrays.asList(
-                "Gruppo A",
-                "Gruppo B",
-                "Inserisci nuovo gruppo"
-        );
+            ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(
+                    requireContext(),
+                    android.R.layout.simple_list_item_1,
+                    groupNames
+            );
+            dropGroup.setAdapter(groupAdapter);
+
+            dropGroup.setOnItemClickListener((parent, view, position, id) -> {
+                String selected = groupNames.get(position);
+                if ("Inserisci nuovo gruppo".equals(selected)) {
+                    Toast.makeText(requireContext(),
+                            "Qui apriremo 'Inserisci nuovo gruppo'",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
     }
 
     // ----------------------------------------------------
@@ -156,17 +169,20 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
             // usa i tuoi veri input (già presenti nel file)
             String address = inputAddress.getText().toString().trim();
 
-            //String groupName = dropGroup.getText().toString().trim();
-            //if (groupName.isEmpty()) groupName = "default";
-            String groupName ="default";
+            String selectedCropName = dropCropType.getText().toString().trim();
+            CropType selectedCrop = CropType.valueOf(selectedCropName);
+
+
+            String groupName = dropGroup.getText().toString().trim();
+            if (groupName.isEmpty()) groupName = "default";
 
             double latitude = selectedLat;
             double longitude = selectedLng;
 
-            Field field = new Field(address, latitude, longitude, groupName);
+            Field field = new Field(address, latitude, longitude, groupName, selectedCrop);
 
             // 1) insert
-            vm.insertField(field)
+            Disposable test = vm.insertField(field)
                     // 2) rileggi gruppo e trova fieldId
                     .andThen(vm.getGroupByName(groupName).firstOrError())
                     .subscribe(groupWithFields -> {
@@ -196,6 +212,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
                         android.util.Log.e("AddField","Errore Salvataggio Campo",err);
                         Toast.makeText(requireContext(), "Errore : "+err.getMessage(), Toast.LENGTH_LONG).show();
                     });
+            test.dispose();
         });
 
         btnSetAlerts.setOnClickListener(v -> {

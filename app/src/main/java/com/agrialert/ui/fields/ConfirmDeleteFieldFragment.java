@@ -11,7 +11,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 public class ConfirmDeleteFieldFragment extends Fragment {
@@ -35,9 +37,14 @@ public class ConfirmDeleteFieldFragment extends Fragment {
         MaterialButton btnCancel = view.findViewById(R.id.btnCancelDeleteField);
 
         btnConfirm.setOnClickListener(v -> {
+            MainActivity a = (MainActivity) requireActivity();
+            if (!a.vmsReady()) return;
+            FieldsViewModel vm = a.fieldsVM();
+
             Toast.makeText(requireContext(),
-                    "Campo eliminato (finto, niente database ancora)",
+                    "Campo eliminato",
                     Toast.LENGTH_SHORT).show();
+
 
             // Torna alla lista CAMPI
             NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
