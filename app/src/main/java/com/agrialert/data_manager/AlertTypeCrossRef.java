@@ -13,13 +13,14 @@ class AlertTypeCrossRef {
     private int alertTypeId;
     private int fieldId;
 
-    // Cambiare tipo a Double
-    private Double threshold;
+    private Double threshold1;
+    private Double threshold2;
 
-    AlertTypeCrossRef(int alertTypeId, int fieldId, Double threshold) {
+    AlertTypeCrossRef(int alertTypeId, int fieldId, Double threshold1, Double threshold2) {
         this.alertTypeId = alertTypeId;
         this.fieldId = fieldId;
-        this.threshold = threshold;
+        this.threshold1 = threshold1;
+        this.threshold2 = threshold2;
     }
 
     protected int getAlertTypeId() {
@@ -38,11 +39,19 @@ class AlertTypeCrossRef {
         this.fieldId = fieldId;
     }
 
-    protected Double getThreshold() {
-        return threshold;
+    protected Double getThreshold1() {
+        return threshold1;
     }
 
-    protected void setThreshold(Double threshold) {
-        this.threshold = threshold;
+    protected void setThreshold1(Double threshold1) {
+        this.threshold1 = threshold1;
+    }
+
+    protected Double getThreshold2() {
+        return threshold2;
+    }
+
+    protected void setThreshold2(Double threshold2) {
+        this.threshold2 = threshold2;
     }
 }

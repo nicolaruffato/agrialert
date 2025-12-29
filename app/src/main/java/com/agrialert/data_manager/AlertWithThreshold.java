@@ -1,5 +1,6 @@
 package com.agrialert.data_manager;
 
+import androidx.core.util.Pair;
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
@@ -15,12 +16,12 @@ public class AlertWithThreshold {
 
 
 
-    public Double getThreshold() {
-        if(crossRef.getThreshold() != null) {
-            return crossRef.getThreshold();
+    public Pair<Double, Double> getThreshold() {
+        if(crossRef.getThreshold1() != null) {
+            return new Pair<>(crossRef.getThreshold1(), crossRef.getThreshold2());
         }
         else {
-            return alertType.getDefaultTreshold();
+            return new Pair<>(alertType.getDefaultTreshold1(), alertType.getDefaultTreshold2());
         }
     }
 
