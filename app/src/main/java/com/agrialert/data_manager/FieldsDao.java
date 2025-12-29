@@ -25,7 +25,7 @@ interface FieldsDao {
     Flowable<GroupWithFields> getGroupByName(String name);
 
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     Completable insertGroup(FieldsGroup group);
 
     @Query("DELETE FROM AlertTypeCrossRef WHERE fieldId = :fieldId")

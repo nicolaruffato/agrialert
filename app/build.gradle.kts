@@ -59,6 +59,7 @@ android {
 dependencies {
     implementation("com.google.android.gms:play-services-maps:19.2.0")
     implementation(libs.play.services.location)
+    implementation(libs.work.runtime)
     val room_version = "2.8.4"
     implementation("androidx.room:room-runtime:${room_version}")
     annotationProcessor("androidx.room:room-compiler:$room_version")

@@ -8,8 +8,14 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.widget.Toast;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -19,6 +25,7 @@ import com.agrialert.data_manager.AlertType;
 import com.agrialert.data_manager.FieldsGroup;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.agrialert.viewmodel.AlertsViewModel;
+import com.agrialert.alert_manager.AlertManagerInitializer;
 import com.agrialert.data_manager.DataManager;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -30,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration appBarConfiguration;
     private DataManager dataManager;
     private boolean mBound = false;
+    private static final int REQ_NOTIFICATIONS = 1001;
     private FieldsViewModel fieldsVM;
     private AlertsViewModel alertsVM;
     public FieldsViewModel fieldsVM() { return fieldsVM; }
@@ -189,6 +197,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        AlertManagerInitializer.init(getApplicationContext());
+        requestNotificationPermissionIfNeeded();
+
         // VIEW BINDING
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -243,6 +254,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                REQ_NOTIFICATIONS
+        );
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_NOTIFICATIONS) {
+            // no-op: AlertNotificationManager logga e continua anche se negato
+        }
+    }
 
     @Override
     public boolean onSupportNavigateUp() {

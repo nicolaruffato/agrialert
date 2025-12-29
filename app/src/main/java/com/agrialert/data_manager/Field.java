@@ -26,12 +26,18 @@ public class Field {
     @ColumnInfo(name = "groupName", index = true, defaultValue = "default")
     private String groupName;
 
+// AGGIUNGERE TIPOLOGIA DI COLTURA!
+// TODO: inserire tipologia di coltura (enum?)
+    @ColumnInfo(name = "crop_type")
+    private CropType cropType;
 
-    public Field(String address, Double latitude, Double longitude, String groupName) {
+
+    public Field(String address, Double latitude, Double longitude, String groupName, CropType cropType) {
         this.address = address;
         this.latitude = latitude;
         this.longitude = longitude;
         this.groupName = groupName;
+        this.cropType = cropType;
     }
 
     public int getId() {
@@ -74,14 +80,23 @@ public class Field {
         this.groupName = groupName;
     }
 
+    public CropType getCropType() {
+        return cropType;
+    }
+
+    public void setCropType(CropType cropType) {
+        this.cropType = cropType;
+    }
+
     @Override
     public String toString() {
         return "Field{" +
-                "groupName='" + groupName + '\'' +
-                ", longitude=" + longitude +
-                ", latitude=" + latitude +
+                "id=" + id +
                 ", address='" + address + '\'' +
-                ", id=" + id +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", groupName='" + groupName + '\'' +
+                ", cropType=" + cropType +
                 '}';
     }
 }
