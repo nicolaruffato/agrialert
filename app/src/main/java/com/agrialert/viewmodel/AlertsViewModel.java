@@ -1,6 +1,7 @@
 package com.agrialert.viewmodel;
 
 import com.agrialert.data_manager.ActivatedAlerts;
+import com.agrialert.data_manager.Alert;
 import com.agrialert.data_manager.AlertType;
 import com.agrialert.data_manager.DataManager;
 
@@ -23,6 +24,14 @@ public class AlertsViewModel {
 
     public Flowable<ActivatedAlerts> getActivatedAlertsFromField(int fieldId) {
         return dm.getActivatedAlertsFromField(fieldId);
+    }
+
+    public Flowable<List<Alert>> getResolvedAlerts() {
+        return dm.getResolvedAlerts();
+    }
+
+    public Flowable<List<Alert>> getActiveAlerts() {
+        return dm.getActiveAlerts();
     }
 
 
