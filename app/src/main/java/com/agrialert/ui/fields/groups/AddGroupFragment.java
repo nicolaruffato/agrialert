@@ -14,7 +14,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.FieldsGroup;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -23,6 +26,9 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class AddGroupFragment extends Fragment {
 
@@ -57,6 +63,7 @@ public class AddGroupFragment extends Fragment {
         btnSaveGroup = view.findViewById(R.id.btnSaveGroup);
 
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // TODO: campi database?
         fields = createSampleFieldsForGroup();
         adapter = new GroupFieldsAdapter(fields);
         rvFields.setAdapter(adapter);
@@ -83,6 +90,11 @@ public class AddGroupFragment extends Fragment {
         for (GroupFieldUiModel f : fields) {
             if (f.selected) selectedCount++;
         }
+
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        FieldsViewModel vm = a.fieldsVM();
+        Completable test  = vm.insertGroup(new FieldsGroup(name, description));
 
         String msg = "Gruppo \"" + name + "\" salvato con " + selectedCount + " campi";
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();

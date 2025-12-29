@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields.groups;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,15 +16,22 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Field;
 import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
 import com.agrialert.ui.fields.FieldsListFragment;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class ViewGroupFragment extends Fragment {
 
@@ -60,17 +68,43 @@ public class ViewGroupFragment extends Fragment {
         btnEditGroup = view.findViewById(R.id.btnEditGroup);
         btnDeleteGroup = view.findViewById(R.id.btnDeleteGroup);
 
+        Bundle args = getArguments();
+        if (args == null) {
+            Log.e("ViewGroup", "Grouppo mancante: passalo come arg a ViewFieldFragment!");
+            return;
+        }
+        GroupUiModel group = args.getParcelable("group");
+
 
         // per ora dati finti
-        txtGroupName.setText("Gruppo A");
-        txtGroupDescription.setText("Descrizione di esempio del gruppo A.");
-        imgGroupIcon.setImageResource(R.drawable.ic_group_default);
+        txtGroupName.setText(group.name);
+        txtGroupDescription.setText(group.description);
+        imgGroupIcon.setImageResource(group.iconRes);
 
         // LISTA CAMPI DEL GRUPPO
         rvGroupFields.setLayoutManager(new LinearLayoutManager(requireContext()));
         FieldsAdapter adapter = new FieldsAdapter();
         rvGroupFields.setAdapter(adapter);
-        adapter.submitList(getSampleFields());
+
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        FieldsViewModel vm = a.fieldsVM();
+        Disposable test = vm.getGroupByName(group.name).subscribe(g -> {
+          List<FieldUiModel> fields = new ArrayList<>();
+          for(Field f : g.getFields()){
+             fields.add(new FieldUiModel(
+                 f.getId(),
+                 f.getAddress(),
+                 f.getCropType().name(), // TODO: call displayName?
+                 f.getGroupName(),
+                 f.getCropType().getImageResId(),
+                 Collections.emptyList() // icone alert → da fare
+             ));
+          }
+
+            adapter.submitList(fields);
+        });
+
 
         // bottoni  / TODO bottone salva
         btnEditGroup.setOnClickListener(v ->
@@ -83,51 +117,11 @@ public class ViewGroupFragment extends Fragment {
                     .navigate(R.id.confirmDeleteGroupFragment);
         });
 
-
-
     }
 
     @Override
     public void onPause(){
         super.onPause();
         FieldsListFragment.forceGroupsTab=true;
-    }
-
-    
-
-    private List<FieldUiModel> getSampleFields() {
-        return Arrays.asList(
-                new FieldUiModel(
-                        1L,
-                        "Via Verdiridi, 15 - Mestre (VE)",
-                        "Ortaggi",
-                        "Gruppo: Prova",
-                        R.drawable.ic_ortaggi,
-                        Arrays.asList(
-                                R.drawable.ic_alert_vento,
-                                R.drawable.ic_alert_calore
-                        )
-                ),
-                new FieldUiModel(
-                        2L,
-                        "Via Giallo, 15 - Mestre (VE)",
-                        "Leguminose",
-                        "Gruppo: Prova",
-                        R.drawable.ic_leguminose,
-                        Arrays.asList(
-                                R.drawable.ic_alert_gelo
-                        )
-                ),
-                new FieldUiModel(
-                        3L,
-                        "Via Torino, 154 - Martellago (VE)",
-                        "Cereali",
-                        "Gruppo: Prova",
-                        R.drawable.ic_cereali,
-                        Arrays.asList(
-                                R.drawable.ic_alert_siccita
-                        )
-                )
-        );
     }
 }

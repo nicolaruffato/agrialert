@@ -12,12 +12,18 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.GroupWithFields;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class GroupsListFragment extends Fragment implements GroupsAdapter.OnGroupClickListener {
 
@@ -48,37 +54,29 @@ public class GroupsListFragment extends Fragment implements GroupsAdapter.OnGrou
         adapter = new GroupsAdapter( this);
         rvGroups.setAdapter(adapter);
 
-        adapter.submitList(createSampleGroups());
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        FieldsViewModel vm = a.fieldsVM();
+
+        Disposable test = vm.getAllGroups().subscribe(groups -> {
+            List<GroupUiModel> uiGroups = new ArrayList<>();
+            for(GroupWithFields group : groups) {
+                uiGroups.add(new GroupUiModel(
+                   0,
+                   group.getGroup().getName(),
+                   group.getGroup().getDescription(),
+                   R.drawable.ic_group_default,
+                   Collections.emptyList()
+                ));
+            }
+            adapter.submitList(uiGroups);
+        });
     }
+
     public void onGroupClick(GroupUiModel group){
+        Bundle b = new Bundle();
+        b.putParcelable("group", group);
         NavHostFragment.findNavController(this)
-                .navigate(R.id.viewGroupFragment);
+                .navigate(R.id.viewGroupFragment, b);
     }
-
-    private List<GroupUiModel> createSampleGroups() {
-        return Arrays.asList(
-                new GroupUiModel(
-                        1,
-                        "Gruppo A",
-                        "Descrizione del gruppo A",
-                        R.drawable.ic_group_default,
-                        Arrays.asList(
-                                R.drawable.ic_alert_vento,
-                                R.drawable.ic_alert_calore,
-                                R.drawable.ic_alert_gelo
-                        )
-                ),
-                new GroupUiModel(
-                        2,
-                        "Gruppo B",
-                        "Descrizione del gruppo B",
-                        R.drawable.ic_group_default,
-                        Arrays.asList(
-                                R.drawable.ic_alert_pioggia,
-                                R.drawable.ic_alert_temporale
-                        )
-                )
-        );
-    }
-
 }
