@@ -1,6 +1,5 @@
 package com.agrialert.data_manager;
 
-import androidx.core.util.Pair;
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
