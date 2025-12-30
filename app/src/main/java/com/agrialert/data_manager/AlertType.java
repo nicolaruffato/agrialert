@@ -2,6 +2,7 @@ package com.agrialert.data_manager;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 @Entity
@@ -16,13 +17,17 @@ public class AlertType {
     @ColumnInfo(name = "description")
     private String description;
 
-    @ColumnInfo(name = "defaultTreshold")
-    private Double defaultTreshold;
+    @ColumnInfo(name = "defaultTreshold1")
+    private Double defaultTreshold1;
 
-    public AlertType(String name, String description, Double defaultTreshold) {
+    @ColumnInfo(name = "defaultTreshold2", defaultValue = "NULL")
+    private Double defaultTreshold2;
+
+    public AlertType(String name, String description, Double defaultTreshold1, Double defaultTreshold2) {
         this.name = name;
         this.description = description;
-        this.defaultTreshold = defaultTreshold;
+        this.defaultTreshold1 = defaultTreshold1;
+        this.defaultTreshold2 = defaultTreshold2;
     }
 
     public int getId() {
@@ -49,12 +54,29 @@ public class AlertType {
         this.description = description;
     }
 
-    public Double getDefaultTreshold() {
-        return defaultTreshold;
+    public void setDefaultThreshold(Threshold newThreshold) {
+        this.defaultTreshold1 = newThreshold.getThreshold1();
+        this.defaultTreshold2 = newThreshold.getThreshold2();
     }
 
-    protected void setDefaultTreshold(Double defaultTreshold) {
-        this.defaultTreshold = defaultTreshold;
+    public Threshold getDefaultThreshold() {
+        return new Threshold(defaultTreshold1, defaultTreshold2);
+    }
+
+    protected Double getDefaultTreshold2() {
+        return defaultTreshold2;
+    }
+
+    protected void setDefaultTreshold2(Double defaultTreshold2) {
+        this.defaultTreshold2 = defaultTreshold2;
+    }
+
+    protected Double getDefaultTreshold1() {
+        return defaultTreshold1;
+    }
+
+    protected void setDefaultTreshold1(Double defaultTreshold1) {
+        this.defaultTreshold1 = defaultTreshold1;
     }
 
     @Override
@@ -63,6 +85,8 @@ public class AlertType {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
+                ", defaultTreshold1=" + defaultTreshold1 +
+                ", defaultTreshold2=" + defaultTreshold2 +
                 '}';
     }
 }
