@@ -48,7 +48,8 @@ public class AlertEvaluator {
             }
 
             AlertType type = entry.getAlertType();
-            Double thresholdValue = entry.getThreshold();
+            //Double thresholdValue = entry.getThreshold();
+            Double thresholdValue = 31d;
             if (type == null || thresholdValue == null) {
                 continue;
             }

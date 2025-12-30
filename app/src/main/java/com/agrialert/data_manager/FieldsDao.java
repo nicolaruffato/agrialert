@@ -12,6 +12,7 @@ import java.util.List;
 
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
 
 @Dao
 interface FieldsDao {
@@ -31,13 +32,15 @@ interface FieldsDao {
     @Insert
     Completable insetField(Field field);
 
+    @Query("SELECT * FROM Field WHERE id = :fieldId")
+    Single<Field> getFieldById(int fieldId);
+
     @Insert
     Completable insertAlertType(AlertType alertType);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     Completable insertFieldAlertRelation(AlertTypeCrossRef crossRef);
 
-    // Utile se devi inserire più relazioni contemporaneamente
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     Completable insertFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
 

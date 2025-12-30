@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.widget.Toast;
 
 import android.Manifest;
@@ -22,7 +23,9 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.agrialert.alert_manager.AlertManagerInitializer;
+import com.agrialert.data_manager.CropType;
 import com.agrialert.data_manager.DataManager;
+import com.agrialert.data_manager.Field;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -44,6 +47,15 @@ public class MainActivity extends AppCompatActivity {
             dataManager = binder.getService();
             mBound = true;
             Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+
+            /*dataManager.insertField(new Field("test", 2d, 2d, "Default", CropType.CEREALS)).subscribe(
+                    () -> {},
+                    error -> Log.d("mytag", "error: " + error)
+            );
+            dataManager.getFieldById(1).subscribe(
+                    field -> Log.d("mytag", "field: " + field.toString()),
+                    error -> Log.d("mytag", "error: " + error)
+            );*/
             /*dataManager.insertGroup(new FieldsGroup("default", "default")).subscribe(
                     () -> {},
                     error -> Log.d("mytag", "error: " + error)

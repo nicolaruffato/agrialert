@@ -26,8 +26,6 @@ public class Field {
     @ColumnInfo(name = "groupName", index = true, defaultValue = "default")
     private String groupName;
 
-// AGGIUNGERE TIPOLOGIA DI COLTURA!
-// TODO: inserire tipologia di coltura (enum?)
     @ColumnInfo(name = "crop_type")
     private CropType cropType;
 

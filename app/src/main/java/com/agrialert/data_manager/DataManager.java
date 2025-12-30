@@ -18,17 +18,6 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Pair;
 
 public class DataManager extends Service {
-/*
-    COSE DA FARE:
-    - Creare un unico package dove ci sono tutte le classi di AppDatabase e data_manager insieme
-    - questo perche' risco a mettere pubbliche solo ed esclusivamente le classi che devono restare pubbliche
-    - In questo momento AlertTypeCrossRef e' pubblico con tutti campi protected, sarebbe meglio spostarlo a
-    package private ma per farlo DataManager deve risiedere nella stessa cartella
-
-    - Per il resto tutto e' stato implementato
-*/
-
-    //TODO: implementare getFieldById
 
     private final IBinder binder = new LocalBinder();
     private AppDatabase db;
@@ -61,6 +50,10 @@ public class DataManager extends Service {
 
     public Completable insertField(Field field) {
         return fieldsDao.insetField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Single<Field> getFieldById(int fieldId) {
+        return fieldsDao.getFieldById(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
     public Completable addAlertToField(int fieldId, int alertTypeId, Threshold treshold) {
