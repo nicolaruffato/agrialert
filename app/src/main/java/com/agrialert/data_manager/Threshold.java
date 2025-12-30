@@ -1,7 +1,4 @@
 package com.agrialert.data_manager;
-
-import java.util.List;
-
 public class Threshold {
 
     private Double threshold1;
@@ -9,7 +6,7 @@ public class Threshold {
 
 
     public Threshold(Double threshold) {
-        this.threshold1 = threshold1;
+        this.threshold1 = threshold;
         this.threshold2 = null;
     }
 
