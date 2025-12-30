@@ -54,20 +54,29 @@ public class AlertType {
         this.description = description;
     }
 
-    public Double getDefaultTreshold1() {
-        return defaultTreshold1;
+    public void setDefaultThreshold(Threshold newThreshold) {
+        this.defaultTreshold1 = newThreshold.getThreshold1();
+        this.defaultTreshold2 = newThreshold.getThreshold2();
     }
 
-    public void setDefaultTreshold1(Double defaultTreshold1) {
-        this.defaultTreshold1 = defaultTreshold1;
+    public Threshold getDefaultThreshold() {
+        return new Threshold(defaultTreshold1, defaultTreshold2);
     }
 
-    public Double getDefaultTreshold2() {
+    protected Double getDefaultTreshold2() {
         return defaultTreshold2;
     }
 
-    public void setDefaultTreshold2(Double defaultTreshold2) {
+    protected void setDefaultTreshold2(Double defaultTreshold2) {
         this.defaultTreshold2 = defaultTreshold2;
+    }
+
+    protected Double getDefaultTreshold1() {
+        return defaultTreshold1;
+    }
+
+    protected void setDefaultTreshold1(Double defaultTreshold1) {
+        this.defaultTreshold1 = defaultTreshold1;
     }
 
     @Override

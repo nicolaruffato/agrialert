@@ -16,12 +16,12 @@ public class AlertWithThreshold {
 
 
 
-    public Pair<Double, Double> getThreshold() {
+    public Threshold getThreshold() {
         if(crossRef.getThreshold1() != null) {
-            return new Pair<>(crossRef.getThreshold1(), crossRef.getThreshold2());
+            return new Threshold(crossRef.getThreshold1(), crossRef.getThreshold2());
         }
         else {
-            return new Pair<>(alertType.getDefaultTreshold1(), alertType.getDefaultTreshold2());
+            return alertType.getDefaultThreshold();
         }
     }
 

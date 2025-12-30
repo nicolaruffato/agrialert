@@ -2,12 +2,15 @@ package com.agrialert.data_manager;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 
 // ricordarsi di definire onDelete
-@Entity(primaryKeys = {"alertTypeId", "fieldId"},
+@Entity(primaryKeys = {"fieldId", "alertTypeId"},
 foreignKeys = {
         @ForeignKey(entity = AlertType.class, parentColumns = "id", childColumns = "alertTypeId"),
-        @ForeignKey(entity = Field.class, parentColumns = "id", childColumns = "fieldId")})
+        @ForeignKey(entity = Field.class, parentColumns = "id", childColumns = "fieldId")},
+        indices = {@Index("alertTypeId"), @Index("fieldId")}
+)
 class AlertTypeCrossRef {
 
     private int alertTypeId;
