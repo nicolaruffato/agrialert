@@ -55,6 +55,7 @@ public class SetAlertsFragment extends Fragment {
         Bundle args = getArguments();
         if (args != null) fieldId = args.getInt("fieldId", -1);
 
+        // TODO: remove
         if (fieldId == -1) {
             // fallback: se vuoi prenderlo dal FieldsViewModel (se ce l’hai)
             MainActivity a0 = (MainActivity) requireActivity();
@@ -105,14 +106,13 @@ public class SetAlertsFragment extends Fragment {
                                                 }
                                             }
                                         }
-
                                         adapter.notifyDataSetChanged();
                                     }));
                                 },
                                 err -> Log.e(TAG, "Errore getAllAlertTypes", err)
                         )
         );
-
+        // TODO: check for alerts with 2 threshold
         // 4) salva relazioni alert <-> field
         btnSaveField.setOnClickListener(v -> {
             MainActivity a2 = (MainActivity) requireActivity();
@@ -165,8 +165,11 @@ public class SetAlertsFragment extends Fragment {
                                                 "Alert salvati",
                                                 Toast.LENGTH_SHORT).show();
 
+                                        fvm.isFieldPending = false;
+
                                         NavHostFragment.findNavController(this)
                                                 .popBackStack(R.id.fieldsListFragment, false);
+
                                     },
                                     err -> {
                                         Log.e(TAG, "Errore save/read DB", err);

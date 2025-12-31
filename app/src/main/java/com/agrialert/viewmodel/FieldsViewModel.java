@@ -1,7 +1,5 @@
 package com.agrialert.viewmodel;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Pair;
 
 
@@ -10,20 +8,20 @@ import com.agrialert.data_manager.DataManager;
 import com.agrialert.data_manager.Field;
 import com.agrialert.data_manager.FieldsGroup;
 import com.agrialert.data_manager.GroupWithFields;
-import com.agrialert.data_manager.ActivatedAlerts;
+
 import io.reactivex.rxjava3.core.Flowable;
 
 
 import java.util.List;
 
 import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Flowable;
 
 public class FieldsViewModel {
 
     private final DataManager dm;
     // FIELD TEMPORANEO (non salvato)
     private Field pendingField;
+    public boolean isFieldPending = false;
 
     public FieldsViewModel(DataManager dm) {
         this.dm = dm;
