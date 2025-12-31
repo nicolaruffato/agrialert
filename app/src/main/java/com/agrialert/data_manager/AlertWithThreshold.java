@@ -15,12 +15,12 @@ public class AlertWithThreshold {
 
 
 
-    public Double getThreshold() {
-        if(crossRef.getThreshold() != null) {
-            return crossRef.getThreshold();
+    public Threshold getThreshold() {
+        if(crossRef.getThreshold1() != null) {
+            return new Threshold(crossRef.getThreshold1(), crossRef.getThreshold2());
         }
         else {
-            return alertType.getDefaultTreshold();
+            return alertType.getDefaultThreshold();
         }
     }
 

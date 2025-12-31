@@ -18,17 +18,6 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import kotlin.Pair;
 
 public class DataManager extends Service {
-/*
-    COSE DA FARE:
-    - Creare un unico package dove ci sono tutte le classi di AppDatabase e data_manager insieme
-    - questo perche' risco a mettere pubbliche solo ed esclusivamente le classi che devono restare pubbliche
-    - In questo momento AlertTypeCrossRef e' pubblico con tutti campi protected, sarebbe meglio spostarlo a
-    package private ma per farlo DataManager deve risiedere nella stessa cartella
-
-    - Per il resto tutto e' stato implementato
-*/
-
-    //TODO: controllare funzionamento e metodi interfaccia
 
     private final IBinder binder = new LocalBinder();
     private AppDatabase db;
@@ -63,28 +52,25 @@ public class DataManager extends Service {
         return fieldsDao.insertField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
-    public Completable addAlertToField(int fieldId, int alertTypeId, Double treshold) {
-        return fieldsDao.insertFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold))
+    public Single<Field> getFieldById(int fieldId) {
+        return fieldsDao.getFieldById(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable addAlertToField(int fieldId, int alertTypeId, Threshold treshold) {
+        return fieldsDao.insertFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold.getThreshold1(), treshold.getThreshold2()))
                 .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
     // creare modifica alert associati al campo
-    public Completable updateAlertToField(int fieldId, int alertTypeId, Double treshold) {
-        return fieldsDao.updateFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold))
+    public Completable updateAlertToField(int fieldId, int alertTypeId, Threshold treshold) {
+        return fieldsDao.updateFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold.getThreshold1(), treshold.getThreshold2()))
                 .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
-    public Completable updateAlertsToField(int fieldId, List<Pair<Integer, Double>> alertsTypeWithThresholds) {
+    public Completable updateAlertsToField(int fieldId, List<Pair<Integer, Threshold>> alertsTypeWithThresholds) {
         List<AlertTypeCrossRef> crossRefs = new ArrayList<>();
-
-        for (Pair<Integer, Double> pair : alertsTypeWithThresholds) {
-            crossRefs.add(
-                    new AlertTypeCrossRef(
-                            pair.getFirst(),   // alertTypeId
-                            fieldId,
-                            pair.getSecond()   // threshold
-                    )
-            );
+        for(var pair : alertsTypeWithThresholds) {
+            crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, pair.getSecond().getThreshold1(), pair.getSecond().getThreshold2()));
         }
 
         return fieldsDao.deleteAlertsForField(fieldId)
