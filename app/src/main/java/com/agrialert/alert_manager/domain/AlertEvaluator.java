@@ -6,7 +6,9 @@ import com.agrialert.data_manager.Alert;
 import com.agrialert.data_manager.AlertType;
 import com.agrialert.data_manager.AlertWithThreshold;
 import com.agrialert.data_manager.Field;
+import com.agrialert.data_manager.Threshold;
 
+import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,6 +23,8 @@ public class AlertEvaluator {
 
     private static final int DEFAULT_ICON_RES = R.drawable.ic_alert;
     private static final int HUMIDITY_MIN_SCARSA_VENTILAZIONE = 80;
+    private static final int DAILY_WINDOW_HOURS = 24;
+    private static final double PRECIPITATION_EPSILON = 0.1d;
 
     public List<Alert> evaluate(WeatherApiResponse weather,
                                 Field field,
@@ -28,7 +32,7 @@ public class AlertEvaluator {
                                 List<AlertWithThreshold> activeAlerts) {
         List<Alert> result = new ArrayList<>();
 
-        if (weather == null || weather.currentWeather == null || field == null) {
+        if (weather == null || field == null) {
             return result;
         }
         if (activeAlerts == null || activeAlerts.isEmpty()) {
@@ -41,6 +45,7 @@ public class AlertEvaluator {
         List<Double> humiditySeries = weather.hourly != null ? weather.hourly.relativeHumidity2m : null;
         List<Double> precipitationSeries = weather.hourly != null ? weather.hourly.precipitation : null;
         List<Double> windSeries = weather.hourly != null ? weather.hourly.windSpeed10m : null;
+        int weatherCode = weather.currentWeather != null ? weather.currentWeather.weathercode : -1;
 
         for (AlertWithThreshold entry : activeAlerts) {
             if (entry == null) {
@@ -48,62 +53,201 @@ public class AlertEvaluator {
             }
 
             AlertType type = entry.getAlertType();
-            //Double thresholdValue = entry.getThreshold();
-            Double thresholdValue = 31d;
-            if (type == null || thresholdValue == null) {
+            if (type == null) {
                 continue;
             }
-            double threshold = thresholdValue;
+
+            Threshold thresholds = entry.getThreshold();
+            Double threshold1 = thresholds != null ? thresholds.getThreshold1() : null;
+            Double threshold2 = thresholds != null ? thresholds.getThreshold2() : null;
+
             String key = normalizeTypeName(type.getName());
             if (key == null) {
                 continue;
             }
 
             switch (key) {
-                case "VENTO_FORTE":
-                    addIfForecastMatches(result, type, field, groupName, windSeries, timeSeries,
-                            value -> value > threshold,
-                            "Vento forte",
-                            value -> "Previsto vento " + formatValue(value, "km/h") + " (soglia " + threshold + ")",
-                            R.drawable.ic_alert_vento);
-                    break;
                 case "ONDATA_CALORE":
-                    addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries,
-                            value -> value > threshold,
-                            "Ondata di calore",
-                            value -> "Prevista T aria " + formatValue(value, "C") + " (soglia " + threshold + ")",
-                            R.drawable.ic_alert_calore);
+                    if (threshold1 == null) {
+                        break;
+                    }
+                    if (threshold2 == null || threshold2 <= 0d) {
+                        addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries,
+                                value -> value > threshold1,
+                                "Ondata di calore",
+                                value -> "Prevista temperatura " + formatValue(value, "C") +
+                                        " (soglia " + formatValue(threshold1, "C") + ")",
+                                R.drawable.ic_alert_calore);
+                    } else {
+                        int hours = toPositiveIntHours(threshold2);
+                        int idx = firstIndexStreak(tempSeries, value -> value > threshold1, hours);
+                        if (idx >= 0) {
+                            double value = safeGet(tempSeries, idx);
+                            long forecastAt = parseIsoTime(timeSeries, idx);
+                            String description = "Prevista temperatura " + formatValue(value, "C") +
+                                    " per almeno " + formatCount(hours, "h") +
+                                    " (soglia " + formatValue(threshold1, "C") + ")" +
+                                    formatWhen(forecastAt);
+                            result.add(build(type, "Ondata di calore", description,
+                                    R.drawable.ic_alert_calore, field, groupName, forecastAt));
+                        }
+                    }
                     break;
                 case "GELO_BRINA":
-                    addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries,
-                            value -> value < threshold,
-                            "Gelo / brina",
-                            value -> "Prevista T aria " + formatValue(value, "C") + " (soglia " + threshold + ")",
-                            R.drawable.ic_alert_gelo);
+                    if (threshold1 == null) {
+                        break;
+                    }
+                    if (threshold2 == null || threshold2 <= 0d) {
+                        addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries,
+                                value -> value < threshold1,
+                                "Gelo / brina",
+                                value -> "Prevista temperatura " + formatValue(value, "C") +
+                                        " (soglia " + formatValue(threshold1, "C") + ")",
+                                R.drawable.ic_alert_gelo);
+                    } else {
+                        int hours = toPositiveIntHours(threshold2);
+                        int idx = firstIndexStreak(tempSeries, value -> value < threshold1, hours);
+                        if (idx >= 0) {
+                            double value = safeGet(tempSeries, idx);
+                            long forecastAt = parseIsoTime(timeSeries, idx);
+                            String description = "Prevista temperatura " + formatValue(value, "C") +
+                                    " per almeno " + formatCount(hours, "h") +
+                                    " (soglia " + formatValue(threshold1, "C") + ")" +
+                                    formatWhen(forecastAt);
+                            result.add(build(type, "Gelo / brina", description,
+                                    R.drawable.ic_alert_gelo, field, groupName, forecastAt));
+                        }
+                    }
+                    break;
+                case "PIOGGIA_INTENSA":
+                    if (threshold1 == null) {
+                        break;
+                    }
+                    if (threshold2 == null || threshold2 <= 0d) {
+                        addIfForecastMatches(result, type, field, groupName, precipitationSeries, timeSeries,
+                                value -> value > threshold1,
+                                "Pioggia intensa",
+                                value -> "Previste precipitazioni " + formatValue(value, "mm/h") +
+                                        " (soglia " + formatValue(threshold1, "mm/h") + ")",
+                                R.drawable.ic_alert_pioggia);
+                    } else {
+                        int windowHours = toPositiveIntHours(threshold2);
+                        RollingWindowMatch match = firstIndexRollingSum(precipitationSeries, windowHours, threshold1);
+                        if (match != null) {
+                            long forecastAt = parseIsoTime(timeSeries, match.index);
+                            String description = "Previste precipitazioni " +
+                                    formatValue(match.sum, "mm") + " in " + formatCount(windowHours, "h") +
+                                    " (soglia " + formatValue(threshold1, "mm") + ")" +
+                                    formatWhen(forecastAt);
+                            result.add(build(type, "Pioggia intensa", description,
+                                    R.drawable.ic_alert_pioggia, field, groupName, forecastAt));
+                        }
+                    }
+                    break;
+                case "VENTO_FORTE":
+                    if (threshold1 == null) {
+                        break;
+                    }
+                    addIfForecastMatches(result, type, field, groupName, windSeries, timeSeries,
+                            value -> value > threshold1,
+                            "Vento forte",
+                            value -> "Previsto vento " + formatValue(value, "km/h") +
+                                    " (soglia " + formatValue(threshold1, "km/h") + ")",
+                            R.drawable.ic_alert_vento);
+                    break;
+                case "TEMPORALE_GRANDINE":
+                    if (threshold1 == null || threshold2 == null) {
+                        break;
+                    }
+                    StormHailMatch stormMatch = firstStormHailMatch(
+                            precipitationSeries, windSeries, humiditySeries, tempSeries,
+                            weatherCode, threshold1, threshold2);
+                    if (stormMatch != null) {
+                        long forecastAt = parseIsoTime(timeSeries, stormMatch.index);
+                        String description = "Previsto temporale/grandine con probabilita " +
+                                formatValue(stormMatch.stormProbability, "%") + " e " +
+                                formatValue(stormMatch.hailProbability, "%") +
+                                " (soglie " + formatValue(threshold1, "%") +
+                                ", " + formatValue(threshold2, "%") + ")" +
+                                formatWhen(forecastAt);
+                        result.add(build(type, "Temporale / grandine", description,
+                                R.drawable.ic_alert_temporale, field, groupName, forecastAt));
+                    }
+                    break;
+                case "SICCITA_PROLUNGATA":
+                    if (threshold1 == null || threshold1 <= 0d) {
+                        break;
+                    }
+                    int requiredHours = toPositiveIntHours(threshold1 * 24d);
+                    int droughtIdx = firstIndexStreak(precipitationSeries,
+                            value -> value <= PRECIPITATION_EPSILON, requiredHours);
+                    if (droughtIdx >= 0) {
+                        long forecastAt = parseIsoTime(timeSeries, droughtIdx);
+                        String description = "Previste condizioni senza pioggia per almeno " +
+                                formatCount(requiredHours, "h") +
+                                " (soglia " + formatValue(threshold1, "giorni") + ")" +
+                                formatWhen(forecastAt);
+                        result.add(build(type, "Siccita prolungata", description,
+                                R.drawable.ic_alert_siccita, field, groupName, forecastAt));
+                    }
+                    break;
+                case "UMIDITA_ELEVATA":
+                    if (threshold1 == null) {
+                        break;
+                    }
+                    addIfForecastMatches(result, type, field, groupName, humiditySeries, timeSeries,
+                            value -> value > threshold1,
+                            "Umidita elevata",
+                            value -> "Prevista umidita " + formatValue(value, "%") +
+                                    " (soglia " + formatValue(threshold1, "%") + ")",
+                            R.drawable.ic_alert_umidita);
+                    break;
+                case "ESCURSIONE_TERMICA_ELEVATA":
+                    if (threshold1 == null || threshold1 <= 0d) {
+                        break;
+                    }
+                    RangeMatch rangeMatch = firstDailyRangeMatch(tempSeries, DAILY_WINDOW_HOURS, threshold1);
+                    if (rangeMatch != null) {
+                        double delta = rangeMatch.max - rangeMatch.min;
+                        long forecastAt = parseIsoTime(timeSeries, rangeMatch.index);
+                        String description = "Prevista escursione termica " +
+                                formatValue(delta, "C") +
+                                " (soglia " + formatValue(threshold1, "C") + ")" +
+                                formatWhen(forecastAt);
+                        result.add(build(type, "Escursione termica elevata", description,
+                                R.drawable.ic_alert_escursione, field, groupName, forecastAt));
+                    }
+                    break;
+                case "RISCHIO_INCENDIO":
+                    if (threshold1 == null || threshold2 == null) {
+                        break;
+                    }
+                    addIfForecastMatchesPaired(result, type, field, groupName,
+                            tempSeries, humiditySeries, timeSeries,
+                            value -> value > threshold1,
+                            hum -> hum < threshold2,
+                            "Rischio incendio",
+                            (tempVal, humVal) -> "Prevista temperatura " + formatValue(tempVal, "C") +
+                                    " e umidita " + formatValue(humVal, "%") +
+                                    " (soglie " + formatValue(threshold1, "C") +
+                                    ", " + formatValue(threshold2, "%") + ")",
+                            R.drawable.ic_alert_incendio);
                     break;
                 case "SCARSA_VENTILAZIONE":
-                    addIfForecastMatchesPaired(result, type, field, groupName, windSeries, humiditySeries, timeSeries,
-                            value -> value < threshold,
-                            hum -> hum > HUMIDITY_MIN_SCARSA_VENTILAZIONE,
+                    if (threshold1 == null) {
+                        break;
+                    }
+                    double humidityMin = threshold2 != null ? threshold2 : HUMIDITY_MIN_SCARSA_VENTILAZIONE;
+                    addIfForecastMatchesPaired(result, type, field, groupName,
+                            windSeries, humiditySeries, timeSeries,
+                            value -> value < threshold1,
+                            hum -> hum > humidityMin,
                             "Scarsa ventilazione",
                             (windVal, humVal) -> "Previsti vento " + formatValue(windVal, "km/h") +
                                     " e umidita " + formatValue(humVal, "%") +
-                                    " (soglia vento " + threshold + ", umidita > " + HUMIDITY_MIN_SCARSA_VENTILAZIONE + "%)",
+                                    " (soglie " + formatValue(threshold1, "km/h") +
+                                    ", " + formatValue(humidityMin, "%") + ")",
                             R.drawable.ic_alert_ventilazione);
-                    break;
-                case "UMIDITA_ELEVATA":
-                    addIfForecastMatches(result, type, field, groupName, humiditySeries, timeSeries,
-                            value -> value > threshold,
-                            "Umidita elevata",
-                            value -> "Prevista umidita " + formatValue(value, "%") + " (soglia " + threshold + ")",
-                            R.drawable.ic_alert_umidita);
-                    break;
-                case "PIOGGIA_INTENSA":
-                    addIfForecastMatches(result, type, field, groupName, precipitationSeries, timeSeries,
-                            value -> value > threshold,
-                            "Pioggia intensa",
-                            value -> "Previste precipitazioni " + formatValue(value, "mm/h") + " (soglia " + threshold + ")",
-                            R.drawable.ic_alert_pioggia);
                     break;
                 default:
                     break;
@@ -179,6 +323,201 @@ public class AlertEvaluator {
         return -1;
     }
 
+    private int firstIndexStreak(List<Double> values, ThresholdPredicate predicate, int minLength) {
+        if (values == null || predicate == null || minLength <= 0) {
+            return -1;
+        }
+        if (minLength <= 1) {
+            return firstIndexMatching(values, predicate);
+        }
+        int streak = 0;
+        for (int i = 0; i < values.size(); i++) {
+            double v = safeGet(values, i);
+            if (!Double.isNaN(v) && predicate.test(v)) {
+                streak++;
+                if (streak >= minLength) {
+                    return i - minLength + 1;
+                }
+            } else {
+                streak = 0;
+            }
+        }
+        return -1;
+    }
+
+    private RollingWindowMatch firstIndexRollingSum(List<Double> values, int windowSize, double threshold) {
+        if (values == null || windowSize <= 0) {
+            return null;
+        }
+        int size = values.size();
+        if (size < windowSize) {
+            return null;
+        }
+        for (int start = 0; start <= size - windowSize; start++) {
+            double sum = 0d;
+            boolean valid = true;
+            for (int i = start; i < start + windowSize; i++) {
+                double v = safeGet(values, i);
+                if (Double.isNaN(v)) {
+                    valid = false;
+                    break;
+                }
+                sum += v;
+            }
+            if (valid && sum > threshold) {
+                return new RollingWindowMatch(start, sum);
+            }
+        }
+        return null;
+    }
+
+    private RangeMatch firstDailyRangeMatch(List<Double> values, int windowSize, double threshold) {
+        if (values == null || windowSize <= 0) {
+            return null;
+        }
+        int size = values.size();
+        if (size < windowSize) {
+            return null;
+        }
+        for (int start = 0; start <= size - windowSize; start++) {
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            boolean valid = true;
+            for (int i = start; i < start + windowSize; i++) {
+                double v = safeGet(values, i);
+                if (Double.isNaN(v)) {
+                    valid = false;
+                    break;
+                }
+                if (v < min) {
+                    min = v;
+                }
+                if (v > max) {
+                    max = v;
+                }
+            }
+            if (valid && max - min > threshold) {
+                return new RangeMatch(start, min, max);
+            }
+        }
+        return null;
+    }
+
+    private StormHailMatch firstStormHailMatch(List<Double> precipitationSeries,
+                                               List<Double> windSeries,
+                                               List<Double> humiditySeries,
+                                               List<Double> tempSeries,
+                                               int weatherCode,
+                                               double stormThreshold,
+                                               double hailThreshold) {
+        int size = Math.max(Math.max(sizeOf(precipitationSeries), sizeOf(windSeries)),
+                Math.max(sizeOf(humiditySeries), sizeOf(tempSeries)));
+        if (size == 0) {
+            return null;
+        }
+        for (int i = 0; i < size; i++) {
+            double precipitation = safeGet(precipitationSeries, i);
+            double wind = safeGet(windSeries, i);
+            double humidity = safeGet(humiditySeries, i);
+            double temperature = safeGet(tempSeries, i);
+            double stormProbability = computeStormProbability(precipitation, wind, humidity, weatherCode);
+            double hailProbability = computeHailProbability(precipitation, wind, humidity, temperature, weatherCode);
+            if (stormProbability > stormThreshold && hailProbability > hailThreshold) {
+                return new StormHailMatch(i, stormProbability, hailProbability);
+            }
+        }
+        return null;
+    }
+
+    private double computeStormProbability(double precipitation,
+                                           double wind,
+                                           double humidity,
+                                           int weatherCode) {
+        double value = 0d;
+        if (!Double.isNaN(precipitation)) {
+            value += precipitation * 8d;
+        }
+        if (!Double.isNaN(wind)) {
+            value += wind * 0.6d;
+        }
+        if (!Double.isNaN(humidity)) {
+            value += humidity * 0.3d;
+        }
+        value += weatherCodeStormBoost(weatherCode);
+        return clamp(value, 0d, 100d);
+    }
+
+    private double computeHailProbability(double precipitation,
+                                          double wind,
+                                          double humidity,
+                                          double temperature,
+                                          int weatherCode) {
+        double value = 0d;
+        if (!Double.isNaN(precipitation)) {
+            value += precipitation * 6d;
+        }
+        if (!Double.isNaN(wind)) {
+            value += wind * 0.7d;
+        }
+        if (!Double.isNaN(humidity)) {
+            value += humidity * 0.2d;
+        }
+        if (!Double.isNaN(temperature)) {
+            if (temperature <= 0d) {
+                value += 25d;
+            } else if (temperature <= 5d) {
+                value += 20d;
+            } else if (temperature <= 10d) {
+                value += 10d;
+            }
+        }
+        value += weatherCodeHailBoost(weatherCode);
+        return clamp(value, 0d, 100d);
+    }
+
+    private double weatherCodeStormBoost(int weatherCode) {
+        if (weatherCode >= 95 && weatherCode <= 99) {
+            return 25d;
+        }
+        if (weatherCode >= 80 && weatherCode <= 82) {
+            return 15d;
+        }
+        if (weatherCode >= 61 && weatherCode <= 67) {
+            return 10d;
+        }
+        return 0d;
+    }
+
+    private double weatherCodeHailBoost(int weatherCode) {
+        if (weatherCode >= 96 && weatherCode <= 99) {
+            return 30d;
+        }
+        if (weatherCode == 95) {
+            return 20d;
+        }
+        return 0d;
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private int sizeOf(List<Double> values) {
+        return values != null ? values.size() : 0;
+    }
+
+    private int toPositiveIntHours(Double hours) {
+        if (hours == null || hours.isNaN() || hours.isInfinite()) {
+            return 0;
+        }
+        int value = (int) Math.ceil(hours);
+        return Math.max(1, value);
+    }
+
+    private String formatCount(int value, String suffix) {
+        return String.format(Locale.getDefault(), "%d %s", value, suffix);
+    }
+
     private Alert build(AlertType type,
                         String title,
                         String description,
@@ -209,7 +548,39 @@ public class AlertEvaluator {
         if (name == null) return null;
         String trimmed = name.trim();
         if (trimmed.isEmpty()) return null;
-        return trimmed.toUpperCase(Locale.ROOT).replace(' ', '_');
+        String normalized = Normalizer.normalize(trimmed, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}+", "");
+        normalized = normalized.replace('/', ' ');
+        normalized = normalized.replaceAll("[^A-Za-z0-9]+", " ");
+        String[] parts = normalized.trim().toLowerCase(Locale.ROOT).split("\\s+");
+        if (parts.length == 0) return null;
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty() || isStopWord(part)) {
+                continue;
+            }
+            if (sb.length() > 0) {
+                sb.append('_');
+            }
+            sb.append(part.toUpperCase(Locale.ROOT));
+        }
+        if (sb.length() == 0) return null;
+        String key = sb.toString();
+        if ("ONDATA_DI_CALORE".equals(key)) {
+            return "ONDATA_CALORE";
+        }
+        return key;
+    }
+
+    private boolean isStopWord(String token) {
+        return "di".equals(token)
+                || "del".equals(token)
+                || "dello".equals(token)
+                || "della".equals(token)
+                || "dei".equals(token)
+                || "degli".equals(token)
+                || "delle".equals(token)
+                || "dell".equals(token);
     }
 
     private double safeGet(List<Double> list, int index) {
@@ -257,5 +628,39 @@ public class AlertEvaluator {
 
     private interface BiValueFormatter {
         String format(double valueA, double valueB);
+    }
+
+    private static class RollingWindowMatch {
+        private final int index;
+        private final double sum;
+
+        private RollingWindowMatch(int index, double sum) {
+            this.index = index;
+            this.sum = sum;
+        }
+    }
+
+    private static class RangeMatch {
+        private final int index;
+        private final double min;
+        private final double max;
+
+        private RangeMatch(int index, double min, double max) {
+            this.index = index;
+            this.min = min;
+            this.max = max;
+        }
+    }
+
+    private static class StormHailMatch {
+        private final int index;
+        private final double stormProbability;
+        private final double hailProbability;
+
+        private StormHailMatch(int index, double stormProbability, double hailProbability) {
+            this.index = index;
+            this.stormProbability = stormProbability;
+            this.hailProbability = hailProbability;
+        }
     }
 }
