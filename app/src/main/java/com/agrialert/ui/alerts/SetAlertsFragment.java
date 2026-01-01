@@ -15,6 +15,7 @@ import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.data_manager.AlertType;
 import com.agrialert.data_manager.AlertWithThreshold;
+import com.agrialert.data_manager.Threshold;
 import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
@@ -97,12 +98,17 @@ public class SetAlertsFragment extends Fragment {
                                     items.clear();
                                     items.addAll(mapAlertTypesToUi(alertTypes));
                                     cd.add(avm.getActivatedAlertsFromField(fieldId).subscribe(activeList -> {
+                                        List<AlertWithThreshold> active = activeList.getAlerts();
                                         for (AlertSettingUiModel asUi : items) {
-                                            for (AlertWithThreshold activeAlert : activeList.getAlerts()) {
+                                            for (AlertWithThreshold activeAlert : active) {
                                                 if (asUi.getId() == activeAlert.getAlertType().getId()) {
                                                     asUi.enabled = true;
                                                     asUi.hasPrimaryThreshold = true;
-                                                    asUi.primaryValue = activeAlert.getThreshold().intValue();
+                                                    asUi.primaryValue = activeAlert.getThreshold().getThreshold1().intValue();
+                                                    if(activeAlert.getThreshold().getThreshold2() != null) {
+                                                        asUi.hasSecondaryThreshold = true;
+                                                        asUi.secondaryValue = activeAlert.getThreshold().getThreshold2().intValue();
+                                                    }
                                                 }
                                             }
                                         }
@@ -117,8 +123,8 @@ public class SetAlertsFragment extends Fragment {
         btnSaveField.setOnClickListener(v -> {
             MainActivity a2 = (MainActivity) requireActivity();
             if (!a2.vmsReady()) return;
+            FieldsViewModel vm = a2.fieldsVM();
 
-            FieldsViewModel fvm = a2.fieldsVM();
             Log.d(TAG, "=== UI STATE | fieldId=" + fieldId + " ===");
 
             for (AlertSettingUiModel m : items) {
@@ -131,22 +137,22 @@ public class SetAlertsFragment extends Fragment {
                 );
             }
 
-            List<Pair<Integer, Double>> selected = new ArrayList<>();
+            List<Pair<Integer, Threshold>> selected = new ArrayList<>();
 
             for (AlertSettingUiModel m : items) {
                 if (m != null && m.enabled) {
-                    selected.add(new Pair<>(m.getId(), (double) m.getFirstValue()));
+                    selected.add(new Pair<>(m.getId(), new Threshold((double)m.primaryValue, (double)m.secondaryValue)));
                 }
             }
 
             Log.d(TAG, "=== SEND TO DB | fieldId=" + fieldId + " | count=" + selected.size() + " ===");
-            for (Pair<Integer, Double> p : selected) {
+            for (Pair<Integer, Threshold> p : selected) {
                 Log.d(TAG, "SEND -> alertTypeId=" + p.getFirst() + "  threshold=" + p.getSecond());
             }
 
             cd.add(
-                    fvm.updateAlertsToField(fieldId, selected)
-                            .andThen(fvm.getActivatedAlertsFromField(fieldId).firstOrError())
+                    vm.updateAlertsToField(fieldId, selected)
+                            .andThen(vm.getActivatedAlertsFromField(fieldId).firstOrError())
                             .subscribe(
                                     activated -> {
 
@@ -164,8 +170,6 @@ public class SetAlertsFragment extends Fragment {
                                         Toast.makeText(requireContext(),
                                                 "Alert salvati",
                                                 Toast.LENGTH_SHORT).show();
-
-                                        fvm.isFieldPending = false;
 
                                         NavHostFragment.findNavController(this)
                                                 .popBackStack(R.id.fieldsListFragment, false);
@@ -193,7 +197,8 @@ public class SetAlertsFragment extends Fragment {
 
             AlertMeta meta = metaFor(t.getName()); // <-- qui metti icona/label/unit/2a soglia dal sample
 
-            int primary = (t.getDefaultTreshold() == null) ? meta.primaryDefault : (int) Math.round(t.getDefaultTreshold());
+            int primary = (t.getDefaultThreshold().getThreshold1() == null) ? meta.primaryDefault : (int) Math.round(t.getDefaultThreshold().getThreshold1());
+            int secondary = (t.getDefaultThreshold().getThreshold2() == null) ? meta.secondaryDefault : (int) Math.round(t.getDefaultThreshold().getThreshold2());
 
             AlertSettingUiModel ui = new AlertSettingUiModel(
                     (long) t.getId(),                 // id
@@ -207,7 +212,7 @@ public class SetAlertsFragment extends Fragment {
                     meta.primaryUnit,                 // primaryUnit
                     meta.hasSecondary,                // hasSecondaryThreshold
                     meta.secondaryLabel,              // secondaryLabel
-                    meta.secondaryDefault,            // secondaryValue
+                    secondary,                        // secondaryValue
                     meta.secondaryUnit                // secondaryUnit
             );
 
@@ -216,6 +221,7 @@ public class SetAlertsFragment extends Fragment {
 
         return out;
     }
+
     private static class AlertMeta {
         int iconRes;
         String primaryLabel;

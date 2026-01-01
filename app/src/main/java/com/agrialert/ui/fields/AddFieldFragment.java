@@ -47,7 +47,6 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
 
     private static final int REQ_LOCATION = 1001;
     private final CompositeDisposable cd = new CompositeDisposable();
-
     // UI
     private TextInputLayout tilAddress, tilCropType, tilGroup;
     private double selectedLat=0;
@@ -66,7 +65,6 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationClient;
 
     private FieldsViewModel vm;
-
 
     public AddFieldFragment() {
         // costruttore vuoto richiesto da Fragment
@@ -109,7 +107,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
             btnSaveField.setEnabled(false);
         }
 
-        setupDropdowns();
+        view.post(this::setupDropdowns);
         setupListeners();
     }
 
@@ -117,7 +115,6 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
     // DROPDOWN
     // ----------------------------------------------------
     private void setupDropdowns() {
-
         // CropType Dropdown
         CropType[] cropTypes = CropType.values();
 
@@ -139,16 +136,8 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
                groupNames.add(group.getGroup().getName());
             }
 
-            Context c = getContext();
-            if (c != null) {
-                Log.e("AddField", "Il contest è:");
-                Log.e("AddField", getContext().toString());
-            } else {
-                Log.e("AddField", "Il Context è null!");
-            }
-
             ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(
-                    getContext(),
+                    requireContext(),
                     android.R.layout.simple_list_item_1,
                     groupNames
             );
@@ -164,7 +153,6 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
                 }
             });
         }));
-
     }
 
     // ----------------------------------------------------
@@ -180,7 +168,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
 
             MainActivity a = (MainActivity) requireActivity();
             if (!a.vmsReady()) return;
-            FieldsViewModel vm = a.fieldsVM();
+            vm = a.fieldsVM();
 
             if (!validateForm()) return;
 
@@ -191,7 +179,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
             CropType selectedCrop = CropType.valueOf(selectedCropName);
 
             String groupName = dropGroup.getText().toString().trim();
-            if (groupName.isEmpty()) groupName = "default";
+            if (groupName.isEmpty()) groupName = "Default";
 
             // TODO: call API convertion method from address to coordinates
             /*
@@ -213,8 +201,6 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
                     // 2) rileggi gruppo e trova fieldId
                     .andThen(vm.getGroupByName(groupName).firstOrError())
                     .subscribe(groupWithFields -> {
-                        vm.isFieldPending = true;
-
                         int id = -1;
                         for (Field f : groupWithFields.getFields()) {
                             if (address.equals(f.getAddress())
@@ -233,11 +219,10 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
                         savedFieldId = id;
                         Toast.makeText(requireContext(), "Campo salvato", Toast.LENGTH_SHORT).show();
 
-                        vm.isFieldPending = true;
                         btnSetAlerts.setEnabled(true);
                         btnSaveField.setEnabled(false); // opzionale: impedisce doppio insert
                     }, err -> {
-                        android.util.Log.e("AddField","Errore Salvataggio Campo",err);
+                        Log.e("AddField","Errore Salvataggio Campo",err);
                         Toast.makeText(requireContext(), "Errore : "+err.getMessage(), Toast.LENGTH_LONG).show();
                     }));
         });
@@ -247,6 +232,8 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
                 Toast.makeText(requireContext(), "Prima salva il campo", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            vm.isFieldPending = true;
             Bundle b = new Bundle();
             b.putInt("fieldId", savedFieldId);
 

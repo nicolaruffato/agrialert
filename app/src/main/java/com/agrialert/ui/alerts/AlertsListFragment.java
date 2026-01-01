@@ -69,6 +69,11 @@ public class AlertsListFragment extends Fragment {
 
         rvAlerts.setAdapter(adapter);
 
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+
+        avm = a.alertsVM();
+
         // default: tab "Attivi"
         showActiveAlerts();
 
@@ -76,10 +81,6 @@ public class AlertsListFragment extends Fragment {
         btnAlertsActive.setOnClickListener(v -> showActiveAlerts());
         btnAlertsResolved.setOnClickListener(v -> showResolvedAlerts());
 
-        MainActivity a = (MainActivity) requireActivity();
-        if (!a.vmsReady()) return;
-
-        avm = a.alertsVM();
     }
 
     // ------------------- FILTRI -------------------

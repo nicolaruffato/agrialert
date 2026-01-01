@@ -95,6 +95,14 @@ public class FieldsListFragment extends Fragment
             }
         });
 
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        vm = a.fieldsVM();
+
+
+        // Handle user from addField -> fieldList without setting alerts
+        vm.isFieldPending = false;
+
         // schermata iniziale: Campi
         showFields();
     }
@@ -135,10 +143,6 @@ public class FieldsListFragment extends Fragment
         btnAddField.setText("Aggiungi un nuovo campo");
 
         rvFields.setAdapter(fieldsAdapter);
-        MainActivity a = (MainActivity) requireActivity();
-        if (!a.vmsReady()) return;
-
-        vm = a.fieldsVM();
 
         cd.clear();
         cd.add(

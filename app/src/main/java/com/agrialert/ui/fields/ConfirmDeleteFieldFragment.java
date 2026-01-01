@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +17,11 @@ import com.agrialert.R;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+
 public class ConfirmDeleteFieldFragment extends Fragment {
+    private final CompositeDisposable cd = new CompositeDisposable();
 
     public ConfirmDeleteFieldFragment() { }
 
@@ -36,23 +41,36 @@ public class ConfirmDeleteFieldFragment extends Fragment {
         MaterialButton btnConfirm = view.findViewById(R.id.btnConfirmDeleteField);
         MaterialButton btnCancel = view.findViewById(R.id.btnCancelDeleteField);
 
+        Bundle args = getArguments();
+        assert(args != null);
+        int fieldId = args.getInt("fieldId");
+
         btnConfirm.setOnClickListener(v -> {
             MainActivity a = (MainActivity) requireActivity();
             if (!a.vmsReady()) return;
             FieldsViewModel vm = a.fieldsVM();
 
-            Toast.makeText(requireContext(),
-                    "Campo eliminato",
-                    Toast.LENGTH_SHORT).show();
+            cd.add(vm.getFieldById(fieldId).subscribe(f -> {
+                cd.add(vm.deleteField(f).subscribe(() -> {
+                    Toast.makeText(requireContext(),
+                            "Campo eliminato",
+                            Toast.LENGTH_SHORT).show();
 
-
-            // Torna alla lista CAMPI
-            NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
-                    .popBackStack(R.id.fieldsListFragment, false);
+                    // Torna alla lista CAMPI
+                    NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
+                            .popBackStack(R.id.fieldsListFragment, false);
+                }));
+            }));
         });
 
         btnCancel.setOnClickListener(v ->
                 NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
                         .popBackStack());
+    }
+
+    @Override
+    public void onDestroyView() {
+        cd.clear();
+        super.onDestroyView();
     }
 }

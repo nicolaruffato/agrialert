@@ -70,11 +70,10 @@ public class ViewFieldFragment extends Fragment {
         }
         FieldUiModel field = args.getParcelable("field");
 
+        // TODO: choose one
         Bundle b = new Bundle();
-        b.putParcelable("field", field);
+        b.putInt("fieldId", (int)field.id);
 
-
-        // TODO: send whole field to edit
         //LISTENER
         btnEditField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
