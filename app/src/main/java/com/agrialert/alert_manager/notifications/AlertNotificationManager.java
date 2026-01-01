@@ -22,14 +22,25 @@ import com.agrialert.data_manager.Alert;
 
 import java.util.List;
 
+/**
+ * Handles alert notification channel creation and dispatching of alert notifications.
+ */
 public final class AlertNotificationManager {
 
     private static final String CHANNEL_ID = "agri_alerts";
     private static final String TAG = "AlertNotificationMgr";
 
+    /**
+     * Prevents instantiation; this is a static utility class.
+     */
     private AlertNotificationManager() {
     }
 
+    /**
+     * Ensures the notification channel exists on Android O and above.
+     *
+     * @param context any context used to access system services
+     */
     public static void ensureChannel(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
 
@@ -48,6 +59,12 @@ public final class AlertNotificationManager {
         }
     }
 
+    /**
+     * Posts notifications for newly created alerts if notifications are permitted.
+     *
+     * @param context   any context used to build notifications
+     * @param newAlerts list of alerts to notify
+     */
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     public static void notifyNewAlerts(Context context, List<Alert> newAlerts) {
         if (newAlerts == null || newAlerts.isEmpty()) return;
@@ -87,6 +104,12 @@ public final class AlertNotificationManager {
         }
     }
 
+    /**
+     * Determines whether notifications can be posted for the current context and OS version.
+     *
+     * @param context context used to check permission and notification settings
+     * @return {@code true} when notifications are allowed, {@code false} otherwise
+     */
     private static boolean canNotify(Context context) {
         if (context == null) {
             return false;

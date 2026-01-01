@@ -19,27 +19,61 @@ import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 
 /**
- * Utility per bind/unbind a DataManager e ottenere i suoi metodi in Rx.
+ * Utility for binding to {@link DataManager} and exposing its operations through RxJava types.
+ * All bind operations are performed against the application context and released automatically.
  */
 public final class DataManagerConnector {
 
     private static final String TAG = "DataManagerConnector";
     private static final long DEFAULT_BIND_TIMEOUT_MS = 5_000L;
 
+    /**
+     * Prevents instantiation; this is a static utility class.
+     */
     private DataManagerConnector() {}
 
+    /**
+     * Binds to {@link DataManager} using the default timeout.
+     *
+     * @param context any context used to derive the application context
+     * @return a {@link Single} that emits a bound service wrapper
+     */
     public static Single<BoundDataManager> bind(Context context) {
         return bind(context, DEFAULT_BIND_TIMEOUT_MS);
     }
 
+    /**
+     * Binds to {@link DataManager} using a custom timeout.
+     *
+     * @param context   any context used to derive the application context
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @return a {@link Single} that emits a bound service wrapper
+     */
     public static Single<BoundDataManager> bind(Context context, long timeoutMs) {
         return bindInternal(context, timeoutMs);
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Single} operation, and unbinds when done.
+     *
+     * @param context any context used to derive the application context
+     * @param fn      function that uses the bound service to produce a {@link Single}
+     * @param <T>     the item type emitted by the {@link Single}
+     * @return a {@link Single} that mirrors {@code fn} and releases the service when finished
+     */
     public static <T> Single<T> withSingle(Context context, Function<DataManager, Single<T>> fn) {
         return withSingle(context, DEFAULT_BIND_TIMEOUT_MS, fn);
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Single} operation, and unbinds when done.
+     *
+     * @param context   any context used to derive the application context
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @param fn        function that uses the bound service to produce a {@link Single}
+     * @param <T>       the item type emitted by the {@link Single}
+     * @return a {@link Single} that mirrors {@code fn} and releases the service when finished
+     */
     public static <T> Single<T> withSingle(Context context,
                                            long timeoutMs,
                                            Function<DataManager, Single<T>> fn) {
@@ -49,10 +83,25 @@ public final class DataManagerConnector {
         );
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Completable}, and unbinds when done.
+     *
+     * @param context any context used to derive the application context
+     * @param fn      function that uses the bound service to produce a {@link Completable}
+     * @return a {@link Completable} that mirrors {@code fn} and releases the service when finished
+     */
     public static Completable withCompletable(Context context, Function<DataManager, Completable> fn) {
         return withCompletable(context, DEFAULT_BIND_TIMEOUT_MS, fn);
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Completable}, and unbinds when done.
+     *
+     * @param context   any context used to derive the application context
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @param fn        function that uses the bound service to produce a {@link Completable}
+     * @return a {@link Completable} that mirrors {@code fn} and releases the service when finished
+     */
     public static Completable withCompletable(Context context,
                                               long timeoutMs,
                                               Function<DataManager, Completable> fn) {
@@ -62,10 +111,27 @@ public final class DataManagerConnector {
         );
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Flowable}, and unbinds when done.
+     *
+     * @param context any context used to derive the application context
+     * @param fn      function that uses the bound service to produce a {@link Flowable}
+     * @param <T>     the item type emitted by the {@link Flowable}
+     * @return a {@link Flowable} that mirrors {@code fn} and releases the service when finished
+     */
     public static <T> Flowable<T> withFlowable(Context context, Function<DataManager, Flowable<T>> fn) {
         return withFlowable(context, DEFAULT_BIND_TIMEOUT_MS, fn);
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Flowable}, and unbinds when done.
+     *
+     * @param context   any context used to derive the application context
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @param fn        function that uses the bound service to produce a {@link Flowable}
+     * @param <T>       the item type emitted by the {@link Flowable}
+     * @return a {@link Flowable} that mirrors {@code fn} and releases the service when finished
+     */
     public static <T> Flowable<T> withFlowable(Context context,
                                                long timeoutMs,
                                                Function<DataManager, Flowable<T>> fn) {
@@ -75,10 +141,27 @@ public final class DataManagerConnector {
         );
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Maybe}, and unbinds when done.
+     *
+     * @param context any context used to derive the application context
+     * @param fn      function that uses the bound service to produce a {@link Maybe}
+     * @param <T>     the item type emitted by the {@link Maybe}
+     * @return a {@link Maybe} that mirrors {@code fn} and releases the service when finished
+     */
     public static <T> Maybe<T> withMaybe(Context context, Function<DataManager, Maybe<T>> fn) {
         return withMaybe(context, DEFAULT_BIND_TIMEOUT_MS, fn);
     }
 
+    /**
+     * Binds to {@link DataManager}, executes a {@link Maybe}, and unbinds when done.
+     *
+     * @param context   any context used to derive the application context
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @param fn        function that uses the bound service to produce a {@link Maybe}
+     * @param <T>       the item type emitted by the {@link Maybe}
+     * @return a {@link Maybe} that mirrors {@code fn} and releases the service when finished
+     */
     public static <T> Maybe<T> withMaybe(Context context,
                                          long timeoutMs,
                                          Function<DataManager, Maybe<T>> fn) {
@@ -88,6 +171,15 @@ public final class DataManagerConnector {
         );
     }
 
+    /**
+     * Performs the actual bind operation and wraps the bound service in a {@link BoundDataManager}.
+     *
+     * @param context   any context used to derive the application context
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @return a {@link Single} that emits the bound service wrapper
+     * @throws IllegalArgumentException if {@code context} is {@code null}
+     * @throws IllegalStateException    if the service cannot be bound or disconnects unexpectedly
+     */
     private static Single<BoundDataManager> bindInternal(Context context, long timeoutMs) {
         if (context == null) {
             return Single.error(new IllegalArgumentException("Context necessario per bind DataManager"));
@@ -133,6 +225,13 @@ public final class DataManagerConnector {
         }).timeout(safeTimeout, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Attempts to unbind the service connection if it is currently bound.
+     *
+     * @param context    application context used to unbind
+     * @param connection the service connection to unbind
+     * @param bound      flag tracking the current bound state
+     */
     private static void tryUnbind(Context context, ServiceConnection connection, AtomicBoolean bound) {
         if (bound.compareAndSet(true, false)) {
             try {
@@ -142,12 +241,23 @@ public final class DataManagerConnector {
         }
     }
 
+    /**
+     * Holds a bound {@link DataManager} instance and the connection used to release it.
+     */
     public static final class BoundDataManager {
         private final Context appContext;
         private final ServiceConnection connection;
         private final DataManager service;
         private final AtomicBoolean bound;
 
+        /**
+         * Creates a bound wrapper for the {@link DataManager} service.
+         *
+         * @param appContext application context used for unbinding
+         * @param connection service connection used for unbinding
+         * @param service    bound {@link DataManager} instance
+         * @param bound      flag tracking the current bound state
+         */
         BoundDataManager(Context appContext,
                          ServiceConnection connection,
                          DataManager service,
@@ -158,10 +268,18 @@ public final class DataManagerConnector {
             this.bound = bound;
         }
 
+        /**
+         * Returns the bound {@link DataManager} instance.
+         *
+         * @return the bound service
+         */
         public DataManager getService() {
             return service;
         }
 
+        /**
+         * Releases the service connection if it is still bound.
+         */
         void release() {
             tryUnbind(appContext, connection, bound);
         }
