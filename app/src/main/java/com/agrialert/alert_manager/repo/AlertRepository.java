@@ -30,8 +30,9 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
- * Orchestratore per fetch meteo, valutazione soglie, persistenza e toggling stato.
- * Tutte le operazioni passano dal servizio bound DataManager (tramite DataManagerConnector).
+ * Orchestrates weather fetch, threshold evaluation, persistence, and alert state updates.
+ * All operations are executed through the bound {@link DataManager} service via
+ * {@link DataManagerConnector}.
  */
 public class AlertRepository {
 
@@ -45,6 +46,15 @@ public class AlertRepository {
     private final Scheduler ioScheduler;
     private final Scheduler mainScheduler;
 
+    /**
+     * Creates a new repository with explicit dependencies and schedulers.
+     *
+     * @param context       any context used to derive the application context
+     * @param apiClient     client used to fetch weather data
+     * @param evaluator     evaluator used to turn weather into alerts
+     * @param ioScheduler   scheduler for IO work; defaults to {@link Schedulers#io()} when null
+     * @param mainScheduler scheduler for UI observation; falls back to IO when null
+     */
     public AlertRepository(Context context,
                            OpenMeteoApiClient apiClient,
                            AlertEvaluator evaluator,
@@ -57,20 +67,43 @@ public class AlertRepository {
         this.mainScheduler = mainScheduler;
     }
 
+    /**
+     * Returns the scheduler used for downstream observation.
+     *
+     * @return the main scheduler if available, otherwise the IO scheduler
+     */
     private Scheduler observeScheduler() {
         return mainScheduler != null ? mainScheduler : ioScheduler;
     }
 
     // ------------------- OBSERVE -------------------
 
+    /**
+     * Observes alerts as a stream of lists.
+     *
+     * @param resolved whether to observe resolved alerts
+     * @return a {@link Flowable} emitting alert lists
+     */
     public Flowable<List<Alert>> observeAlertsStream(boolean resolved) {
         return observeAlerts(resolved);
     }
 
+    /**
+     * Observes alerts as a model list for UI consumption.
+     *
+     * @param resolved whether to observe resolved alerts
+     * @return a {@link Flowable} emitting alert lists
+     */
     public Flowable<List<Alert>> observeAlertsModel(boolean resolved) {
         return observeAlerts(resolved);
     }
 
+    /**
+     * Observes alerts from {@link DataManager} with the configured schedulers.
+     *
+     * @param resolved whether to observe resolved alerts
+     * @return a {@link Flowable} emitting alert lists
+     */
     public Flowable<List<Alert>> observeAlerts(boolean resolved) {
         return DataManagerConnector.withFlowable(appContext, dm ->
                 dm.observeAlerts(resolved)
@@ -81,6 +114,13 @@ public class AlertRepository {
 
     // ------------------- MUTATE -------------------
 
+    /**
+     * Updates the resolved flag for an alert using reactive semantics.
+     *
+     * @param id       alert identifier
+     * @param resolved resolved state to set
+     * @return a {@link Completable} that completes when the update is applied
+     */
     public Completable setResolvedRx(long id, boolean resolved) {
         return DataManagerConnector.withCompletable(appContext, dm ->
                 dm.setResolved(id, resolved)
@@ -89,6 +129,12 @@ public class AlertRepository {
         );
     }
 
+    /**
+     * Updates the resolved flag for an alert in a fire-and-forget manner.
+     *
+     * @param id       alert identifier
+     * @param resolved resolved state to set
+     */
     public void setResolved(long id, boolean resolved) {
         setResolvedRx(id, resolved).subscribe();
     }
@@ -96,7 +142,9 @@ public class AlertRepository {
     // ------------------- SYNC METEO -------------------
 
     /**
-     * Recupera i gruppi dal DataManager e lancia una sync completa.
+     * Fetches groups from {@link DataManager} and performs a full sync.
+     *
+     * @return a {@link Single} emitting the sync result
      */
     public Single<WeatherSyncResult> syncAllGroups() {
         return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm ->
@@ -109,7 +157,10 @@ public class AlertRepository {
     }
 
     /**
-     * Esegue la sync partendo da una lista di gruppi gia' nota.
+     * Performs a sync for a known list of groups.
+     *
+     * @param groups groups with their fields
+     * @return a {@link Single} emitting the sync result
      */
     public Single<WeatherSyncResult> syncWeatherForGroups(List<GroupWithFields> groups) {
         if (groups == null || groups.isEmpty()) {
@@ -119,7 +170,10 @@ public class AlertRepository {
     }
 
     /**
-     * Compatibilita: sync a partire da una lista di campi (senza passare per i gruppi).
+     * Performs a sync from a list of fields without requiring group objects.
+     *
+     * @param fields list of fields to process
+     * @return a {@link Single} emitting the sync result
      */
     public Single<WeatherSyncResult> syncWeatherForFields(List<Field> fields) {
         if (fields == null || fields.isEmpty()) {
@@ -128,6 +182,13 @@ public class AlertRepository {
         return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm -> syncFields(dm, fields));
     }
 
+    /**
+     * Runs a sync for the provided fields and emits a summary to the callback.
+     *
+     * @param fields       list of fields to process
+     * @param infoCallback optional callback to receive a textual summary
+     * @return a {@link Completable} that completes when the sync finishes
+     */
     public Completable syncWeatherAsyncCompletable(List<Field> fields, Consumer<String> infoCallback) {
         return syncWeatherForFields(fields)
                 .map(result -> buildSummary(result.response, result.created))
@@ -142,15 +203,31 @@ public class AlertRepository {
                 .ignoreElement();
     }
 
+    /**
+     * Runs a sync for the provided fields without a callback.
+     *
+     * @param fields list of fields to process
+     */
     public void syncWeatherAsync(List<Field> fields) {
         syncWeatherAsync(fields, null);
     }
 
+    /**
+     * Runs a sync for the provided fields and optionally notifies a callback.
+     *
+     * @param fields       list of fields to process
+     * @param infoCallback optional callback to receive a textual summary
+     */
     public void syncWeatherAsync(List<Field> fields, Consumer<String> infoCallback) {
         syncWeatherAsyncCompletable(fields, infoCallback).subscribe();
     }
 
     // Usa DataManager per recuperare i gruppi reali e lanciare la sync
+    /**
+     * Runs a full sync across all groups and optionally notifies a callback.
+     *
+     * @param infoCallback optional callback to receive a textual summary
+     */
     public void syncWeatherAsync(Consumer<String> infoCallback) {
         syncAllGroups()
                 .map(result -> buildSummary(result.response, result.created))
@@ -166,6 +243,9 @@ public class AlertRepository {
                 .subscribe();
     }
 
+    /**
+     * Runs a full sync across all groups without a callback.
+     */
     public void syncWeatherAsync() {
         syncAllGroups()
                 .subscribeOn(ioScheduler)
@@ -177,20 +257,42 @@ public class AlertRepository {
 
     // ------------------- MODEL -------------------
 
+    /**
+     * Holds the outcome of a weather sync, including the response and created alerts.
+     */
     public static class WeatherSyncResult {
         public final WeatherApiResponse response;
         public final List<Alert> created;
 
+        /**
+         * Creates a new sync result.
+         *
+         * @param response weather response used during the sync
+         * @param created  alerts created during the sync
+         */
         public WeatherSyncResult(WeatherApiResponse response, List<Alert> created) {
             this.response = response;
             this.created = created;
         }
     }
 
+    /**
+     * Returns {@code true} if a timestamp is within the last 12 hours.
+     *
+     * @param timestamp epoch milliseconds
+     * @return {@code true} when recent, {@code false} otherwise
+     */
     private boolean isRecent(long timestamp) {
         return System.currentTimeMillis() - timestamp < TimeUnit.HOURS.toMillis(12);
     }
 
+    /**
+     * Syncs weather for all provided groups and persists any new alerts.
+     *
+     * @param dm     bound {@link DataManager} instance
+     * @param groups groups with their fields
+     * @return a {@link Single} emitting the sync result
+     */
     private Single<WeatherSyncResult> syncWithDataManager(DataManager dm, List<GroupWithFields> groups) {
         if (groups == null || groups.isEmpty()) {
             return Single.just(new WeatherSyncResult(null, Collections.emptyList()));
@@ -211,6 +313,13 @@ public class AlertRepository {
                 .observeOn(ioScheduler);
     }
 
+    /**
+     * Syncs weather for a list of fields and persists any new alerts.
+     *
+     * @param dm     bound {@link DataManager} instance
+     * @param fields fields to process
+     * @return a {@link Single} emitting the sync result
+     */
     private Single<WeatherSyncResult> syncFields(DataManager dm, List<Field> fields) {
         if (fields == null || fields.isEmpty()) {
             return Single.just(new WeatherSyncResult(null, Collections.emptyList()));
@@ -225,6 +334,13 @@ public class AlertRepository {
                 .observeOn(ioScheduler);
     }
 
+    /**
+     * Resolves the group name from a {@link GroupWithFields} or falls back to the fields list.
+     *
+     * @param group  group wrapper that may include a name
+     * @param fields fields used as a fallback
+     * @return resolved group name
+     */
     private String resolveGroupName(GroupWithFields group, List<Field> fields) {
         if (group != null && group.getGroup() != null && group.getGroup().getName() != null) {
             return group.getGroup().getName();
@@ -232,6 +348,12 @@ public class AlertRepository {
         return deriveGroupName(fields);
     }
 
+    /**
+     * Derives a group name from the provided fields list.
+     *
+     * @param fields fields used as a source for group name
+     * @return resolved group name, or a default label when missing
+     */
     private String deriveGroupName(List<Field> fields) {
         if (fields != null && !fields.isEmpty()) {
             String candidate = fields.get(0).getGroupName();
@@ -242,6 +364,12 @@ public class AlertRepository {
         return "Gruppo";
     }
 
+    /**
+     * Computes the aggregation threshold for a group based on the number of fields.
+     *
+     * @param fields fields in the group
+     * @return threshold used to aggregate alerts
+     */
     private int computeThreshold(List<Field> fields) {
         if (fields == null || fields.isEmpty()) {
             return 1;
@@ -249,6 +377,15 @@ public class AlertRepository {
         return (fields.size() / 2) + 1;
     }
 
+    /**
+     * Evaluates alerts for each field, then aggregates by group and threshold.
+     *
+     * @param dm         bound {@link DataManager} instance
+     * @param fields     fields to process
+     * @param groupName  group name to apply to aggregated alerts
+     * @param threshold  minimum count required to aggregate by type
+     * @return a {@link Single} emitting the aggregated list of alerts
+     */
     private Single<List<Alert>> processFields(DataManager dm,
                                               List<Field> fields,
                                               String groupName,
@@ -266,6 +403,14 @@ public class AlertRepository {
                 .map(alerts -> aggregateByGroup(alerts, resolvedGroup, groupThreshold));
     }
 
+    /**
+     * Evaluates alerts for a single field by fetching weather and active thresholds.
+     *
+     * @param dm        bound {@link DataManager} instance
+     * @param field     field to evaluate
+     * @param groupName group name applied to created alerts
+     * @return a {@link Single} emitting alert candidates for the field
+     */
     private Single<List<Alert>> evalFieldAlerts(DataManager dm, Field field, String groupName) {
         if (field == null) {
             return Single.just(Collections.emptyList());
@@ -305,6 +450,14 @@ public class AlertRepository {
                 });
     }
 
+    /**
+     * Aggregates alerts by type and emits a group-level alert when the threshold is met.
+     *
+     * @param alerts    alert candidates
+     * @param groupName group name to apply to aggregated alerts
+     * @param threshold minimum count required to emit an aggregated alert
+     * @return aggregated alerts for the group
+     */
     private List<Alert> aggregateByGroup(List<Alert> alerts, String groupName, int threshold) {
         if (alerts == null || alerts.isEmpty()) return Collections.emptyList();
         Map<Integer, Integer> counts = new HashMap<>();
@@ -337,6 +490,13 @@ public class AlertRepository {
         return result;
     }
 
+    /**
+     * Persists candidate alerts, filtering out duplicates based on recent history.
+     *
+     * @param dm         bound {@link DataManager} instance
+     * @param candidates alert candidates to persist
+     * @return a {@link Single} emitting the saved alerts
+     */
     private Single<List<Alert>> persistCandidates(DataManager dm, List<Alert> candidates) {
         if (candidates == null || candidates.isEmpty()) {
             return Single.just(Collections.emptyList());
@@ -350,6 +510,13 @@ public class AlertRepository {
                 .observeOn(ioScheduler);
     }
 
+    /**
+     * Inserts a candidate alert only if no recent unresolved alert of the same type exists.
+     *
+     * @param dm        bound {@link DataManager} instance
+     * @param candidate alert candidate to insert
+     * @return a {@link Single} emitting the inserted alert or {@code null} when skipped
+     */
     private Single<Alert> insertIfNew(DataManager dm, Alert candidate) {
         Alert sentinel = new Alert();
         sentinel.setId(NO_ALERT_ID);
@@ -372,12 +539,27 @@ public class AlertRepository {
                 });
     }
 
+    /**
+     * Retrieves the most recent alert for a type and group.
+     *
+     * @param dm        bound {@link DataManager} instance
+     * @param typeId    alert type identifier
+     * @param groupName group name filter
+     * @return a {@link Maybe} emitting the latest alert if present
+     */
     private Maybe<Alert> latestByTypeAndGroup(DataManager dm, int typeId, String groupName) {
         return dm.findLatestByTypeAndGroup(typeId, groupName)
                 .subscribeOn(ioScheduler)
                 .observeOn(ioScheduler);
     }
 
+    /**
+     * Builds a human-readable summary for a sync execution.
+     *
+     * @param response weather response used during the sync
+     * @param created  alerts created during the sync
+     * @return formatted summary text
+     */
     private String buildSummary(WeatherApiResponse response, List<Alert> created) {
         int newAlerts = created != null ? created.size() : 0;
         if (response == null || response.currentWeather == null) {
@@ -400,11 +582,24 @@ public class AlertRepository {
                 tempStr, windStr, humStr, rainStr, newAlerts);
     }
 
+    /**
+     * Formats a numeric value with one decimal and a suffix.
+     *
+     * @param value  numeric value
+     * @param suffix suffix to append
+     * @return formatted string, or "-" when the value is not a number
+     */
     private String formatValue(double value, String suffix) {
         if (Double.isNaN(value)) return "-";
         return String.format(Locale.getDefault(), "%.1f %s", value, suffix);
     }
 
+    /**
+     * Returns the first value in the list or {@link Double#NaN} when unavailable.
+     *
+     * @param list list to read from
+     * @return first value or {@link Double#NaN}
+     */
     private double firstOrNaN(List<Double> list) {
         if (list == null || list.isEmpty() || list.get(0) == null) {
             return Double.NaN;

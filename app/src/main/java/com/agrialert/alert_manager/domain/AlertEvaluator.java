@@ -17,7 +17,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Converte i dati meteo in potenziali alert applicando semplici soglie.
+ * Evaluates weather data against configured thresholds to produce candidate alerts
+ * for the alert manager workflow.
  */
 public class AlertEvaluator {
 
@@ -26,6 +27,16 @@ public class AlertEvaluator {
     private static final int DAILY_WINDOW_HOURS = 24;
     private static final double PRECIPITATION_EPSILON = 0.1d;
 
+    /**
+     * Generates alert candidates for the given field based on the supplied weather response
+     * and active alert thresholds. Returned alerts are not persisted.
+     *
+     * @param weather      weather response providing current and hourly forecasts
+     * @param field        field metadata used for identifiers and location context
+     * @param groupName    optional group name override; falls back to the field group name
+     * @param activeAlerts active alert definitions with their thresholds
+     * @return a list of alert candidates, or an empty list when inputs are missing or no match occurs
+     */
     public List<Alert> evaluate(WeatherApiResponse weather,
                                 Field field,
                                 String groupName,
@@ -257,6 +268,20 @@ public class AlertEvaluator {
         return result;
     }
 
+    /**
+     * Adds a new alert to the result list if the first matching forecast value is found.
+     *
+     * @param result               destination list for new alerts
+     * @param type                 alert type metadata
+     * @param field                field context for the alert
+     * @param groupName            optional group name override
+     * @param values               hourly series to scan
+     * @param times                ISO timestamps aligned with the series
+     * @param predicate            condition used to match a forecast value
+     * @param title                alert title to use
+     * @param descriptionFormatter formatter for the alert description
+     * @param iconRes              icon resource identifier
+     */
     private void addIfForecastMatches(List<Alert> result,
                                       AlertType type,
                                       Field field,
@@ -275,6 +300,22 @@ public class AlertEvaluator {
         result.add(build(type, title, description, iconRes, field, groupName, forecastAt));
     }
 
+    /**
+     * Adds a new alert to the result list if the first matching pair of forecast values is found.
+     *
+     * @param result               destination list for new alerts
+     * @param type                 alert type metadata
+     * @param field                field context for the alert
+     * @param groupName            optional group name override
+     * @param seriesA              first hourly series to scan
+     * @param seriesB              second hourly series to scan
+     * @param times                ISO timestamps aligned with the series
+     * @param predicateA           condition for the first series
+     * @param predicateB           condition for the second series
+     * @param title                alert title to use
+     * @param descriptionFormatter formatter for the alert description
+     * @param iconRes              icon resource identifier
+     */
     private void addIfForecastMatchesPaired(List<Alert> result,
                                             AlertType type,
                                             Field field,
@@ -296,6 +337,13 @@ public class AlertEvaluator {
         result.add(build(type, title, description, iconRes, field, groupName, forecastAt));
     }
 
+    /**
+     * Returns the first index where the value satisfies the predicate.
+     *
+     * @param values    series to scan
+     * @param predicate condition to apply
+     * @return the first matching index, or -1 when no match is found
+     */
     private int firstIndexMatching(List<Double> values, ThresholdPredicate predicate) {
         if (values == null || predicate == null) return -1;
         for (int i = 0; i < values.size(); i++) {
@@ -307,6 +355,15 @@ public class AlertEvaluator {
         return -1;
     }
 
+    /**
+     * Returns the first index where both series satisfy their predicates.
+     *
+     * @param seriesA    first series to scan
+     * @param predicateA predicate for the first series
+     * @param seriesB    second series to scan
+     * @param predicateB predicate for the second series
+     * @return the first matching index, or -1 when no match is found
+     */
     private int firstIndexMatching(List<Double> seriesA,
                                    ThresholdPredicate predicateA,
                                    List<Double> seriesB,
@@ -323,6 +380,14 @@ public class AlertEvaluator {
         return -1;
     }
 
+    /**
+     * Returns the first index of a contiguous streak that satisfies the predicate.
+     *
+     * @param values    series to scan
+     * @param predicate condition to apply
+     * @param minLength minimum contiguous length required
+     * @return the starting index of the streak, or -1 when no match is found
+     */
     private int firstIndexStreak(List<Double> values, ThresholdPredicate predicate, int minLength) {
         if (values == null || predicate == null || minLength <= 0) {
             return -1;
@@ -345,6 +410,14 @@ public class AlertEvaluator {
         return -1;
     }
 
+    /**
+     * Returns the first rolling window whose sum exceeds the provided threshold.
+     *
+     * @param values     series to scan
+     * @param windowSize size of the rolling window
+     * @param threshold  minimum sum required
+     * @return a {@link RollingWindowMatch} when a match is found; {@code null} otherwise
+     */
     private RollingWindowMatch firstIndexRollingSum(List<Double> values, int windowSize, double threshold) {
         if (values == null || windowSize <= 0) {
             return null;
@@ -371,6 +444,14 @@ public class AlertEvaluator {
         return null;
     }
 
+    /**
+     * Returns the first window whose min/max range exceeds the provided threshold.
+     *
+     * @param values     series to scan
+     * @param windowSize size of the window in hours
+     * @param threshold  minimum range required
+     * @return a {@link RangeMatch} when a match is found; {@code null} otherwise
+     */
     private RangeMatch firstDailyRangeMatch(List<Double> values, int windowSize, double threshold) {
         if (values == null || windowSize <= 0) {
             return null;
@@ -403,6 +484,18 @@ public class AlertEvaluator {
         return null;
     }
 
+    /**
+     * Finds the first index where both storm and hail probabilities exceed thresholds.
+     *
+     * @param precipitationSeries hourly precipitation values
+     * @param windSeries          hourly wind speed values
+     * @param humiditySeries      hourly humidity values
+     * @param tempSeries          hourly temperature values
+     * @param weatherCode         current weather code used as a boost
+     * @param stormThreshold      minimum storm probability required
+     * @param hailThreshold       minimum hail probability required
+     * @return a {@link StormHailMatch} when a match is found; {@code null} otherwise
+     */
     private StormHailMatch firstStormHailMatch(List<Double> precipitationSeries,
                                                List<Double> windSeries,
                                                List<Double> humiditySeries,
@@ -429,6 +522,15 @@ public class AlertEvaluator {
         return null;
     }
 
+    /**
+     * Computes a storm probability percentage from precipitation, wind, humidity, and weather code.
+     *
+     * @param precipitation precipitation value (mm/h)
+     * @param wind          wind speed value (km/h)
+     * @param humidity      relative humidity percentage
+     * @param weatherCode   current weather code used as a boost
+     * @return a probability in the range [0, 100]
+     */
     private double computeStormProbability(double precipitation,
                                            double wind,
                                            double humidity,
@@ -447,6 +549,17 @@ public class AlertEvaluator {
         return clamp(value, 0d, 100d);
     }
 
+    /**
+     * Computes a hail probability percentage from precipitation, wind, humidity, temperature,
+     * and weather code.
+     *
+     * @param precipitation precipitation value (mm/h)
+     * @param wind          wind speed value (km/h)
+     * @param humidity      relative humidity percentage
+     * @param temperature   air temperature (C)
+     * @param weatherCode   current weather code used as a boost
+     * @return a probability in the range [0, 100]
+     */
     private double computeHailProbability(double precipitation,
                                           double wind,
                                           double humidity,
@@ -475,6 +588,12 @@ public class AlertEvaluator {
         return clamp(value, 0d, 100d);
     }
 
+    /**
+     * Computes a boost for storm probability based on the weather code.
+     *
+     * @param weatherCode weather code from the API
+     * @return additive boost to apply
+     */
     private double weatherCodeStormBoost(int weatherCode) {
         if (weatherCode >= 95 && weatherCode <= 99) {
             return 25d;
@@ -488,6 +607,12 @@ public class AlertEvaluator {
         return 0d;
     }
 
+    /**
+     * Computes a boost for hail probability based on the weather code.
+     *
+     * @param weatherCode weather code from the API
+     * @return additive boost to apply
+     */
     private double weatherCodeHailBoost(int weatherCode) {
         if (weatherCode >= 96 && weatherCode <= 99) {
             return 30d;
@@ -498,14 +623,34 @@ public class AlertEvaluator {
         return 0d;
     }
 
+    /**
+     * Clamps a value within the provided bounds.
+     *
+     * @param value input value
+     * @param min   minimum allowed value
+     * @param max   maximum allowed value
+     * @return the clamped value
+     */
     private double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
     }
 
+    /**
+     * Returns the size of a list or zero when the list is {@code null}.
+     *
+     * @param values list to measure
+     * @return list size, or zero when {@code null}
+     */
     private int sizeOf(List<Double> values) {
         return values != null ? values.size() : 0;
     }
 
+    /**
+     * Converts a floating-point hour count to a positive integer, rounding up.
+     *
+     * @param hours hour count that may be {@code null} or non-finite
+     * @return a positive integer value, or zero when the input is invalid
+     */
     private int toPositiveIntHours(Double hours) {
         if (hours == null || hours.isNaN() || hours.isInfinite()) {
             return 0;
@@ -514,10 +659,29 @@ public class AlertEvaluator {
         return Math.max(1, value);
     }
 
+    /**
+     * Formats a numeric count with a suffix using the default locale.
+     *
+     * @param value  numeric value to format
+     * @param suffix suffix to append
+     * @return a formatted string
+     */
     private String formatCount(int value, String suffix) {
         return String.format(Locale.getDefault(), "%d %s", value, suffix);
     }
 
+    /**
+     * Builds an {@link Alert} instance from the provided metadata.
+     *
+     * @param type        alert type metadata
+     * @param title       title override; falls back to type name when {@code null}
+     * @param description description override; falls back to type description when empty
+     * @param iconRes     icon resource identifier
+     * @param field       field context for identifiers and location
+     * @param groupName   optional group name override
+     * @param forecastAt  forecast timestamp in milliseconds
+     * @return a populated {@link Alert} instance
+     */
     private Alert build(AlertType type,
                         String title,
                         String description,
@@ -544,6 +708,12 @@ public class AlertEvaluator {
         return alert;
     }
 
+    /**
+     * Normalizes an alert type name into an uppercase, underscore-separated key.
+     *
+     * @param name raw alert type name
+     * @return normalized key, or {@code null} when the input is empty
+     */
     private String normalizeTypeName(String name) {
         if (name == null) return null;
         String trimmed = name.trim();
@@ -572,6 +742,12 @@ public class AlertEvaluator {
         return key;
     }
 
+    /**
+     * Returns {@code true} if the token is an Italian stop word to be skipped.
+     *
+     * @param token normalized token
+     * @return {@code true} when the token should be skipped
+     */
     private boolean isStopWord(String token) {
         return "di".equals(token)
                 || "del".equals(token)
@@ -583,6 +759,13 @@ public class AlertEvaluator {
                 || "dell".equals(token);
     }
 
+    /**
+     * Safely retrieves a numeric value or {@link Double#NaN} when missing.
+     *
+     * @param list  list to read from
+     * @param index index to access
+     * @return the value at the index, or {@link Double#NaN} when unavailable
+     */
     private double safeGet(List<Double> list, int index) {
         if (list == null || index < 0 || index >= list.size()) {
             return Double.NaN;
@@ -591,6 +774,13 @@ public class AlertEvaluator {
         return value != null ? value : Double.NaN;
     }
 
+    /**
+     * Parses an ISO-8601 timestamp (UTC) into epoch milliseconds.
+     *
+     * @param times list of ISO timestamps
+     * @param index index to parse
+     * @return epoch milliseconds, or zero when parsing fails
+     */
     private long parseIsoTime(List<String> times, int index) {
         if (times == null || index < 0 || index >= times.size()) {
             return 0L;
@@ -607,44 +797,104 @@ public class AlertEvaluator {
         }
     }
 
+    /**
+     * Formats a timestamp for display in the current locale.
+     *
+     * @param timestampMs epoch milliseconds
+     * @return a formatted suffix, or an empty string when timestamp is not valid
+     */
     private String formatWhen(long timestampMs) {
         if (timestampMs <= 0L) return "";
         SimpleDateFormat df = new SimpleDateFormat("dd/MM HH:mm", Locale.getDefault());
         return " - previsto per " + df.format(new Date(timestampMs));
     }
 
+    /**
+     * Formats a numeric value with one decimal and a suffix.
+     *
+     * @param value  numeric value
+     * @param suffix suffix to append
+     * @return formatted string, or "-" when the value is not a number
+     */
     private String formatValue(double value, String suffix) {
         if (Double.isNaN(value)) return "-";
         return String.format(Locale.getDefault(), "%.1f %s", value, suffix);
     }
 
+    /**
+     * Predicate for threshold evaluation.
+     */
     private interface ThresholdPredicate {
+        /**
+         * Evaluates the predicate against a numeric value.
+         *
+         * @param value value to test
+         * @return {@code true} when the value satisfies the predicate
+         */
         boolean test(double value);
     }
 
+    /**
+     * Formats a single value for inclusion in an alert description.
+     */
     private interface ValueFormatter {
+        /**
+         * Formats a numeric value.
+         *
+         * @param value value to format
+         * @return formatted string
+         */
         String format(double value);
     }
 
+    /**
+     * Formats a pair of values for inclusion in an alert description.
+     */
     private interface BiValueFormatter {
+        /**
+         * Formats a pair of numeric values.
+         *
+         * @param valueA first value
+         * @param valueB second value
+         * @return formatted string
+         */
         String format(double valueA, double valueB);
     }
 
+    /**
+     * Holds the index and sum for a rolling-window threshold match.
+     */
     private static class RollingWindowMatch {
         private final int index;
         private final double sum;
 
+        /**
+         * Creates a rolling window match record.
+         *
+         * @param index start index of the window
+         * @param sum   sum of values in the window
+         */
         private RollingWindowMatch(int index, double sum) {
             this.index = index;
             this.sum = sum;
         }
     }
 
+    /**
+     * Holds the index and range values for a windowed min/max match.
+     */
     private static class RangeMatch {
         private final int index;
         private final double min;
         private final double max;
 
+        /**
+         * Creates a range match record.
+         *
+         * @param index start index of the window
+         * @param min   minimum value in the window
+         * @param max   maximum value in the window
+         */
         private RangeMatch(int index, double min, double max) {
             this.index = index;
             this.min = min;
@@ -652,11 +902,21 @@ public class AlertEvaluator {
         }
     }
 
+    /**
+     * Holds the index and probabilities for a storm/hail match.
+     */
     private static class StormHailMatch {
         private final int index;
         private final double stormProbability;
         private final double hailProbability;
 
+        /**
+         * Creates a storm/hail match record.
+         *
+         * @param index            index of the match
+         * @param stormProbability storm probability percentage
+         * @param hailProbability  hail probability percentage
+         */
         private StormHailMatch(int index, double stormProbability, double hailProbability) {
             this.index = index;
             this.stormProbability = stormProbability;
