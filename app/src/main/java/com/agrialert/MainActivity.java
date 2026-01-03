@@ -38,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean mBound = false;
     private static final int REQ_NOTIFICATIONS = 1001;
 
-
     private ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {

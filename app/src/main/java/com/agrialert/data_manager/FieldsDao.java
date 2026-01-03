@@ -58,6 +58,12 @@ interface FieldsDao {
     Completable updateFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
 
     @Delete
+    Completable deleteFieldAlertRelation(AlertTypeCrossRef crossRef);
+
+    @Delete
+    Completable deleteFieldAlertRelations(List<AlertTypeCrossRef> crossRefs);
+
+    @Delete
     Completable deleteGroup(FieldsGroup group);
 
     @Delete

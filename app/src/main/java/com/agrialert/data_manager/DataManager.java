@@ -125,6 +125,19 @@ public class DataManager extends Service {
         }
     }
 
+
+    public Completable deleteAlertToField(int alertTypeId, int fieldId) {
+        return fieldsDao.deleteFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, null, null));
+    }
+
+    public Completable deleteAlertsToField(List<Pair<Integer, Integer>> fieldAlertId) {
+        List<AlertTypeCrossRef> crossRefs = new ArrayList<>();
+        for(var pair : fieldAlertId) {
+            crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), pair.getSecond(), null, null));
+        }
+        return fieldsDao.deleteFieldAlertRelations(crossRefs);
+    }
+
     /**
      * Updates multiple alert relations and their associated thresholds for a specific field.
      * If a threshold is null the default alertType treshold will be used.

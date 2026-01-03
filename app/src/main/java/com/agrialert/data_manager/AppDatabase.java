@@ -12,8 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-//TODO : controllare le impostazioni dal build.gradle per il salvataggio dello schema
-// in formato JSON
+//TODO : parlare dell'exportSchema nella prossima chiamata di gruppo
 
 /**
  * Main database configuration for the AgriAlert application.
@@ -26,7 +25,7 @@ import java.util.concurrent.Executors;
  *
  * @see RoomDatabase
  */
-@Database(entities = {FieldsGroup.class, Field.class, AlertType.class, AlertTypeCrossRef.class, Alert.class}, version = 1)
+@Database(entities = {FieldsGroup.class, Field.class, AlertType.class, AlertTypeCrossRef.class, Alert.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     abstract FieldsDao fieldsDao();
