@@ -2,6 +2,7 @@ package com.agrialert.data_manager;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 /**
@@ -28,6 +29,13 @@ public class AlertType {
     private Double defaultTreshold2;
 
 
+    AlertType(String name, String description, Double defaultTreshold1, Double defaultTreshold2) {
+        this.name = name;
+        this.description = description;
+        this.defaultTreshold1 = defaultTreshold1;
+        this.defaultTreshold2 = defaultTreshold2;
+    }
+
     /**
      * Constructs a new AlertType with the specified name, description, and default thresholds.
      *
@@ -35,6 +43,7 @@ public class AlertType {
      * @param description      A brief description of the alert type.
      * @param defaultTreshold  The default threshold values for this alert type.
      */
+    @Ignore
     public AlertType(String name, String description, Threshold defaultTreshold) {
         this.name = name;
         this.description = description;

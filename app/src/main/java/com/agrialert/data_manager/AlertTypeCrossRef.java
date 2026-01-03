@@ -13,7 +13,6 @@ import androidx.room.Index;
  * Represents a cross-reference join table between {@link AlertType} and {@link Field}.
  * This entity establishes a many-to-many relationship, allowing specific alert configurations
  * to be associated with different fields, including customizable threshold values.
- *
  * This class should not be exposed outside its package.
  *
  * <p>The primary key is a composite of {@code fieldId} and {@code alertTypeId}.</p>
