@@ -12,6 +12,20 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+//TODO : controllare le impostazioni dal build.gradle per il salvataggio dello schema
+// in formato JSON
+
+/**
+ * Main database configuration for the AgriAlert application.
+ * This class defines the Room database persistent state and serves as the main access point
+ * for the underlying SQLite database.
+ *
+ * <p>It includes tables for fields, field groups, alerts, user alerts, and alert types.
+ * The database is initialized with default data for field groups and various
+ * agricultural alert types upon first creation.</p>
+ *
+ * @see RoomDatabase
+ */
 @Database(entities = {FieldsGroup.class, Field.class, AlertType.class, AlertTypeCrossRef.class, Alert.class}, version = 1)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
@@ -21,6 +35,17 @@ public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase INSTANCE;
 
 
+    /**
+     * Gets the singleton instance of the AppDatabase.
+     * <p>
+     * If the instance does not exist, it is created using the Room database builder.
+     * This method includes an {@link RoomDatabase.Callback} to prepopulate the database
+     * with a default group and several predefined alert types upon its initial creation.
+     * </p>
+     *
+     * @param context The application context used to create or open the database.
+     * @return The singleton instance of {@code AppDatabase}.
+     */
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
