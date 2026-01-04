@@ -15,17 +15,13 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
-import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import io.reactivex.rxjava3.disposables.Disposable;
 
 public class ViewFieldFragment extends Fragment {
     private static final String TAG = "ViewField";

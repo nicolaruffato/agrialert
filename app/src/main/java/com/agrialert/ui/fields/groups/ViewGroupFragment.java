@@ -8,7 +8,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -23,14 +22,13 @@ import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
 import com.agrialert.ui.fields.FieldsListFragment;
 import com.agrialert.viewmodel.FieldsViewModel;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 
 public class ViewGroupFragment extends Fragment {
@@ -41,7 +39,7 @@ public class ViewGroupFragment extends Fragment {
     private RecyclerView rvGroupFields;
     private MaterialButton btnEditGroup;
     private MaterialButton btnDeleteGroup;
-    private MaterialToolbar toolbar;
+    private final CompositeDisposable cd = new CompositeDisposable();
 
     public ViewGroupFragment() {
         // costruttore vuoto richiesto
@@ -49,15 +47,12 @@ public class ViewGroupFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_view_group, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         // findView
@@ -70,58 +65,64 @@ public class ViewGroupFragment extends Fragment {
 
         Bundle args = getArguments();
         if (args == null) {
-            Log.e("ViewGroup", "Grouppo mancante: passalo come arg a ViewFieldFragment!");
+            Log.e("ViewGroup", "Gruppo mancante: passalo come arg a ViewFieldFragment!");
             return;
         }
+
         GroupUiModel group = args.getParcelable("group");
 
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        FieldsViewModel vm = a.fieldsVM();
 
-        // per ora dati finti
-        txtGroupName.setText(group.name);
-        txtGroupDescription.setText(group.description);
-        imgGroupIcon.setImageResource(group.iconRes);
+        cd.add(vm.getGroupByName(group.name).subscribe(g -> {
+            txtGroupName.setText(g.getGroup().getName());
+            txtGroupDescription.setText(g.getGroup().getDescription());
+            imgGroupIcon.setImageResource(R.drawable.ic_group_default);
+        }));
 
         // LISTA CAMPI DEL GRUPPO
         rvGroupFields.setLayoutManager(new LinearLayoutManager(requireContext()));
         FieldsAdapter adapter = new FieldsAdapter();
         rvGroupFields.setAdapter(adapter);
 
-        MainActivity a = (MainActivity) requireActivity();
-        if (!a.vmsReady()) return;
-        FieldsViewModel vm = a.fieldsVM();
-        Disposable test = vm.getGroupByName(group.name).subscribe(g -> {
-          List<FieldUiModel> fields = new ArrayList<>();
-          for(Field f : g.getFields()){
-             fields.add(new FieldUiModel(
-                 f.getId(),
-                 f.getAddress(),
-                 f.getCropType().name(), // TODO: call displayName?
-                 f.getGroupName(),
-                 f.getCropType().getImageResId(),
-                 Collections.emptyList() // icone alert → da fare
-             ));
-          }
-
+        cd.add(vm.getGroupByName(group.name).subscribe(g -> {
+            List<FieldUiModel> fields = new ArrayList<>();
+            for (Field f : g.getFields()) {
+                fields.add(new FieldUiModel(
+                        f.getId(),
+                        f.getAddress(),
+                        requireContext().getString(f.getCropType().getResourceId()),
+                        f.getGroupName(),
+                        f.getCropType().getImageResId(),
+                        Collections.emptyList()
+                ));
+            }
             adapter.submitList(fields);
-        });
+        }));
 
+        // Bottoni
+        if(group.name.equals("Default")) {
+            btnDeleteGroup.setEnabled(false);
+            btnEditGroup.setEnabled(false);
+        }
 
-        // bottoni  / TODO bottone salva
-        btnEditGroup.setOnClickListener(v ->
-                NavHostFragment.findNavController(this)
-                        .navigate(R.id.editGroupFragment)
-        );
+        Bundle b = new Bundle();
+        b.putString("groupName", group.name);
 
-        btnDeleteGroup.setOnClickListener(v -> {
-            NavHostFragment.findNavController(ViewGroupFragment.this)
-                    .navigate(R.id.confirmDeleteGroupFragment);
-        });
-
+        btnEditGroup.setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.editGroupFragment, b));
+        btnDeleteGroup.setOnClickListener(v -> NavHostFragment.findNavController(ViewGroupFragment.this).navigate(R.id.confirmDeleteGroupFragment, b));
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
-        FieldsListFragment.forceGroupsTab=true;
+        FieldsListFragment.forceGroupsTab = true;
+    }
+
+    @Override
+    public void onDestroyView() {
+        cd.clear();
+        super.onDestroyView();
     }
 }

@@ -99,12 +99,16 @@ public class FieldsListFragment extends Fragment
         if (!a.vmsReady()) return;
         vm = a.fieldsVM();
 
-
         // Handle user from addField -> fieldList without setting alerts
         vm.isFieldPending = false;
 
         // schermata iniziale: Campi
-        showFields();
+
+        view.post(() -> {
+            btnFieldGroups.setChecked(false);
+            btnFields.setChecked(true);
+            showFields();
+        });
     }
 
     @Override
@@ -119,8 +123,11 @@ public class FieldsListFragment extends Fragment
 
     @Override
     public void onGroupClick(GroupUiModel group){
+        // TODO: Passare solo nome
+        Bundle b = new Bundle();
+        b.putParcelable("group", group);
         NavHostFragment.findNavController(this)
-                .navigate(R.id.viewGroupFragment);
+                .navigate(R.id.viewGroupFragment, b);
     }
 
     @Override
@@ -160,7 +167,7 @@ public class FieldsListFragment extends Fragment
                                                     f.getAddress(),
                                                     f.getLatitude(),
                                                     f.getLongitude(),
-                                                    f.getCropType().name(), // TODO: call displayName?
+                                                    requireContext().getString(f.getCropType().getResourceId()),
                                                     f.getGroupName(),
                                                     f.getCropType().getImageResId(),
                                                     Collections.emptyList() // icone alert → da fare

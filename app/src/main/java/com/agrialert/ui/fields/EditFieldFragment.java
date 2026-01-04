@@ -17,17 +17,14 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.data_manager.CropType;
-import com.agrialert.data_manager.Field;
 import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
@@ -35,7 +32,7 @@ public class EditFieldFragment extends Fragment {
 
     private TextInputLayout tilAddress, tilCropType, tilGroup;
     TextInputEditText edtAddress;
-    MaterialAutoCompleteTextView ddlCrop;
+    AutoCompleteTextView ddlCrop;
     AutoCompleteTextView ddlGroup;
 
     private final CompositeDisposable cd = new CompositeDisposable();
@@ -79,7 +76,7 @@ public class EditFieldFragment extends Fragment {
 
         cd.add(vm.getFieldById(fieldId).subscribe(f -> {
             edtAddress.setText(f.getAddress());
-            ddlCrop.setText(f.getCropType().name(), false);
+            ddlCrop.setText(requireContext().getString(f.getCropType().getResourceId()), false);
             ddlGroup.setText(f.getGroupName(), false);
 
             setupDropdowns();
@@ -91,7 +88,7 @@ public class EditFieldFragment extends Fragment {
                 String address = edtAddress.getText().toString().trim();
 
                 String selectedCropName = ddlCrop.getText().toString().trim();
-                CropType selectedCrop = CropType.valueOf(selectedCropName);
+                CropType selectedCrop = CropType.getFromName(selectedCropName, requireContext());
 
                 String groupName = ddlGroup.getText().toString().trim();
                 if (groupName.isEmpty()) groupName = "Default";
@@ -127,7 +124,7 @@ public class EditFieldFragment extends Fragment {
 
         List<String> cropTypeNames = new ArrayList<>();
         for (CropType crop : cropTypes) {
-            cropTypeNames.add(crop.name());
+            cropTypeNames.add(requireContext().getString(crop.getResourceId()));
         }
 
         ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(

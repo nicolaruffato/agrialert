@@ -201,7 +201,7 @@ public class SetAlertsFragment extends Fragment {
             int secondary = (t.getDefaultThreshold().getThreshold2() == null) ? meta.secondaryDefault : (int) Math.round(t.getDefaultThreshold().getThreshold2());
 
             AlertSettingUiModel ui = new AlertSettingUiModel(
-                    (long) t.getId(),                 // id
+                    t.getId(),                 // id
                     meta.iconRes,                     // iconRes (DAL SAMPLE)
                     t.getName(),                      // title
                     t.getDescription(),               // description

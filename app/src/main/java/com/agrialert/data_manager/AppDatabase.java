@@ -31,7 +31,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                 @Override
                                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
                                     super.onCreate(db);
-                                    db.execSQL("INSERT INTO FieldsGroup VALUES ('Default', 'Default Group')");
+                                    db.execSQL("INSERT INTO FieldsGroup VALUES ('Default', 'Gruppo di Default')");
                                     db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Ondata di calore', 'Temperature elevate che possono causare stress termico', 35, NULL)");
                                     db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Gelo / Brina', 'Rischio di danni da gelo su colture sensibili', 0, NULL)");
                                     db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Pioggia intensa', 'Precipitazioni elevate che possono provocare ristagno o erosione', 30, NULL)");

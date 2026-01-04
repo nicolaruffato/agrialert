@@ -1,7 +1,6 @@
 package com.agrialert.ui.fields;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -120,7 +119,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
 
         List<String> cropTypeNames = new ArrayList<>();
         for (CropType crop : cropTypes) {
-            cropTypeNames.add(crop.name());
+            cropTypeNames.add(getContext().getString(crop.getResourceId()));
         }
 
         ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(
@@ -176,7 +175,7 @@ public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
             String address = inputAddress.getText().toString().trim();
 
             String selectedCropName = dropCropType.getText().toString().trim();
-            CropType selectedCrop = CropType.valueOf(selectedCropName);
+            CropType selectedCrop = CropType.getFromName(selectedCropName, requireContext());
 
             String groupName = dropGroup.getText().toString().trim();
             if (groupName.isEmpty()) groupName = "Default";

@@ -1,5 +1,7 @@
 package com.agrialert.data_manager;
 
+import android.content.Context;
+
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 
@@ -32,4 +34,14 @@ public enum CropType {
     public int getImageResId() {
         return imageResId;
     }
+
+    public static CropType getFromName(@NonNull String displayName, @NonNull Context ctx) {
+        for (CropType type : values()) {
+           if (ctx.getString(type.resourceId).equals(displayName)) {
+               return type;
+           }
+        }
+        return NONE;
+    }
+
 }

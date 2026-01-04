@@ -1,6 +1,8 @@
 package com.agrialert.ui.fields.groups;
 
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,23 +16,33 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Field;
+import com.agrialert.data_manager.GroupWithFields;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 public class EditGroupFragment extends Fragment {
 
     private ImageView imgGroupIcon;
+    private TextInputLayout layoutGroupName;
     private TextInputEditText edtGroupName;
     private TextInputEditText edtDescription;
     private RecyclerView rvFields;
     private MaterialButton btnSaveGroup;
-
     private GroupFieldsAdapter fieldsAdapter;
     private List<GroupFieldUiModel> fields;
+    private FieldsViewModel vm;
+    private final CompositeDisposable cd = new CompositeDisposable();
 
     //  QUI gonfiamo il layout
     @Nullable
@@ -47,67 +59,106 @@ public class EditGroupFragment extends Fragment {
 
         // --- TROVA LE VIEW ---
         imgGroupIcon   = view.findViewById(R.id.imgGroupIcon);
+        layoutGroupName = view.findViewById(R.id.layoutGroupName);
         edtGroupName   = view.findViewById(R.id.edtGroupName);
         edtDescription = view.findViewById(R.id.edtDescription);
         rvFields       = view.findViewById(R.id.rvFields);
         btnSaveGroup   = view.findViewById(R.id.btnSaveGroup);
 
-        // --- DATI FINTI DEL GRUPPO (per ora) ---
-        edtGroupName.setText("Gruppo A");
-        edtDescription.setText("Descrizione finta del gruppo A...");
-        imgGroupIcon.setImageResource(R.drawable.ic_group_default);
+        Bundle args = getArguments();
+        if (args == null) {
+            Log.e("EditGroup", "Gruppo mancante: passalo come arg a EditGroupFragment!");
+            return;
+        }
+        String groupName = args.getString("groupName");
 
-        // --- LISTA CAMPI DEL GRUPPO (FINTA) ---
-        fields = createSampleFieldsForEdit();
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        vm = a.fieldsVM();
 
-        rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
-        fieldsAdapter = new GroupFieldsAdapter(fields);
-        rvFields.setAdapter(fieldsAdapter);
+        cd.add(vm.getGroupByName(groupName).subscribe(g -> {
+            edtGroupName.setText(g.getGroup().getName());
+            edtDescription.setText(g.getGroup().getDescription());
+            imgGroupIcon.setImageResource(R.drawable.ic_group_default);
 
-        // --- CLICK SU "SALVA GRUPPO" ---
-        btnSaveGroup.setOnClickListener(v -> onSaveGroup());
+            fields = new ArrayList<>();
+            for(Field f : g.getFields()) {
+                fields.add(new GroupFieldUiModel(
+                            f.getId(),
+                            f.getCropType().getImageResId(),
+                            f.getAddress(),
+                            requireContext().getString(f.getCropType().getResourceId()), // TODO: call displayName?
+                            f.getGroupName(),
+                            true
+                        )
+                );
+            }
+
+            rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
+            fieldsAdapter = new GroupFieldsAdapter(fields);
+            rvFields.setAdapter(fieldsAdapter);
+
+            // --- CLICK SU "SALVA GRUPPO" ---
+            btnSaveGroup.setOnClickListener(v -> onSaveGroup(g));
+        }));
     }
 
-    private List<GroupFieldUiModel> createSampleFieldsForEdit() {
-        List<GroupFieldUiModel> list = new ArrayList<>();
+    private void onSaveGroup(GroupWithFields group) {
+        layoutGroupName.setError(null);
 
-        list.add(new GroupFieldUiModel(
-                1L,
-                R.drawable.ic_ortaggi,
-                "Via Verdirrì, 15 - Mestre (VE)",
-                "Ortaggi",
-                "Gruppo A",
-                true
-        ));
+        String name = edtGroupName.getText() != null ? edtGroupName.getText().toString().trim() : "";
+        String description = edtDescription.getText() != null ? edtDescription.getText().toString().trim() : "";
 
-        list.add(new GroupFieldUiModel(
-                2L,
-                R.drawable.ic_cereali,
-                "Via Giallo, 10 - Mestre (VE)",
-                "Cereali",
-                "Gruppo B",
-                false
-        ));
+        if (TextUtils.isEmpty(name)) {
+            layoutGroupName.setError("*Campo obbligatorio");
+            return;
+        }
 
-        list.add(new GroupFieldUiModel(
-                3L,
-                R.drawable.ic_frutteti,
-                "Via Torino, 154 - Mestre (VE)",
-                "Frutteti",
-                "Gruppo C",
-                false
-        ));
+        cd.add(vm.getAllGroups().subscribe(groups -> {
+            for (GroupWithFields g : groups) {
+                if (!group.getGroup().getName().equals(name) && g.getGroup().getName().equals(name)) {
+                    layoutGroupName.setError("Nome già esistente");
+                    return;
+                }
+            }
+            // TODO: e' possibile modificare il nome del gruppo?
+            //group.getGroup().setName(name);
+            group.getGroup().setDescription(description);
 
-        return list;
+            cd.add(vm.updateGroup(group.getGroup()).subscribe(() -> {
+                List<Completable> comp = new ArrayList<>();
+
+                for (GroupFieldUiModel f : fields) {
+                    if(f.selected) {
+                        comp.add(vm.getFieldById((int)f.id).flatMapCompletable(field -> {
+                            field.setGroupName(name);
+                            return vm.updateField(field);
+                    }));
+                    } else {
+                        // Groups not selected are moved to Default
+                        comp.add(vm.getFieldById((int)f.id).flatMapCompletable(field -> {
+                            field.setGroupName("Default");
+                            return vm.updateField(field);
+                        }));
+                    }
+                }
+
+                Completable updateFields = Completable.mergeArray(comp.toArray(new Completable[0]));
+                cd.add(updateFields.subscribe(() -> {
+                    String msg = "Gruppo \"" + name + "\" modificato con ";
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+
+                    // Torna alla schermata precedente (lista gruppi)
+                    NavHostFragment.findNavController(EditGroupFragment.this)
+                            .navigateUp();
+                }));
+            }));
+        }));
     }
 
-    private void onSaveGroup() {
-        // ---TOAST DI CONFERMA ---
-        Toast.makeText(requireContext(),
-                "Gruppo salvato (finto, per ora)",
-                Toast.LENGTH_SHORT).show();
-        // ---TORNA A VISUALIZZA GRUPPO---
-        NavHostFragment.findNavController(EditGroupFragment.this)
-                .navigate(R.id.viewGroupFragment);
+    @Override
+    public void onDestroyView() {
+        cd.clear();
+        super.onDestroyView();
     }
 }
