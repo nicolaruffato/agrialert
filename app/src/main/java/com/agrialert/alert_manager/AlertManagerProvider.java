@@ -10,15 +10,26 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
- * Fornisce singleton per repository/risorse senza dipendere da DI framework.
+ * Provides lazily initialized singletons for alert manager components without using
+ * a dependency injection framework.
  */
 public final class AlertManagerProvider {
 
     private static volatile AlertRepository repository;
 
+    /**
+     * Prevents instantiation; this is a static provider class.
+     */
     private AlertManagerProvider() {
     }
 
+    /**
+     * Returns the singleton {@link AlertRepository}, initializing it on first use.
+     * This method also triggers initialization of background work.
+     *
+     * @param context any context used to derive the application context
+     * @return the shared {@link AlertRepository} instance
+     */
     public static AlertRepository getRepository(Context context) {
         if (repository == null) {
             synchronized (AlertManagerProvider.class) {

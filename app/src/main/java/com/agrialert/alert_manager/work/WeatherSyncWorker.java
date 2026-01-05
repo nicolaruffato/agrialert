@@ -16,16 +16,27 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Worker che ogni 15 minuti sincronizza il meteo e genera alert.
+ * WorkManager worker that periodically synchronizes weather data and generates alerts.
  */
 public class WeatherSyncWorker extends Worker {
 
     private static final String TAG = "WeatherSyncWorker";
 
+    /**
+     * Creates a new worker instance.
+     *
+     * @param context      worker context
+     * @param workerParams runtime parameters supplied by WorkManager
+     */
     public WeatherSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
     }
 
+    /**
+     * Executes a synchronous weather sync and posts notifications for any new alerts.
+     *
+     * @return {@link Result#success()} on completion, or {@link Result#retry()} on failure
+     */
     @NonNull
     @Override
     public Result doWork() {

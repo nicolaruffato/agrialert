@@ -16,7 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Centralizza la registrazione dei worker periodici per sincronizzare meteo/alert.
+ * Coordinates registration of WorkManager jobs that synchronize weather data
+ * and generate alerts for the alert manager subsystem.
  */
 public final class AlertManagerInitializer {
 
@@ -24,9 +25,18 @@ public final class AlertManagerInitializer {
     private static final String ONE_TIME_WORK_NAME = "weather_sync_now";
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
+    /**
+     * Prevents instantiation; this is a static utility class.
+     */
     private AlertManagerInitializer() {
     }
 
+    /**
+     * Initializes the alert manager background work for the current process.
+     * This method is idempotent and will only schedule work once per process.
+     *
+     * @param context any context used to derive the application context
+     */
     public static void init(Context context) {
         if (!initialized.compareAndSet(false, true)) {
             return;
@@ -51,12 +61,20 @@ public final class AlertManagerInitializer {
     }
 
     /**
-     * Permette di forzare una sync immediata (es. dopo l'inserimento di un nuovo campo).
+     * Enqueues a one-off sync immediately, replacing any existing immediate sync work.
+     *
+     * @param context any context used to derive the application context
      */
     public static void triggerImmediateSync(Context context) {
         enqueueImmediate(context.getApplicationContext(), buildConstraints());
     }
 
+    /**
+     * Enqueues a unique one-time WeatherSyncWorker with the provided constraints.
+     *
+     * @param context     application context used to access WorkManager
+     * @param constraints constraints that must be satisfied for execution
+     */
     private static void enqueueImmediate(Context context, Constraints constraints) {
         OneTimeWorkRequest immediateSync = new OneTimeWorkRequest.Builder(WeatherSyncWorker.class)
                 .setConstraints(constraints)
@@ -69,6 +87,11 @@ public final class AlertManagerInitializer {
         );
     }
 
+    /**
+     * Builds the default constraints for weather synchronization work.
+     *
+     * @return the constraints requiring a network connection
+     */
     private static Constraints buildConstraints() {
         return new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
