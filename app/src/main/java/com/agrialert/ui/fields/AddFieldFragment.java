@@ -1,380 +1,310 @@
 package com.agrialert.ui.fields;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.BuildConfig;
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.api.ApiManager;
 import com.agrialert.data_manager.CropType;
 import com.agrialert.data_manager.Field;
 import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.viewmodel.FieldsViewModel;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.mapbox.common.MapboxOptions;
+import com.mapbox.geojson.Point;
+import com.mapbox.maps.CameraOptions;
+import com.mapbox.maps.MapView;
+import com.mapbox.maps.Style;
+import com.mapbox.maps.plugin.Plugin;
+import com.mapbox.maps.plugin.annotation.AnnotationPlugin;
+import static com.mapbox.maps.plugin.annotation.AnnotationsUtils.getAnnotations;
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager;
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManagerKt;
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions;
+import com.mapbox.maps.plugin.gestures.GesturesPlugin;
+import static com.mapbox.maps.plugin.gestures.GesturesUtils.getGestures;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
 
-public class AddFieldFragment extends Fragment implements OnMapReadyCallback {
+public class AddFieldFragment extends Fragment {
 
-    private static final int REQ_LOCATION = 1001;
     private final CompositeDisposable cd = new CompositeDisposable();
+
     // UI
-    private TextInputLayout tilAddress, tilCropType, tilGroup;
-    private double selectedLat=0;
-    private double selectedLng=0;
+    private TextInputLayout tilAddress;
     private TextInputEditText inputAddress;
     private AutoCompleteTextView dropCropType, dropGroup;
-    private MaterialButton btnSetAlerts;
-    private View mapContainer;
-    private MaterialButton btnSaveField;
+    private MaterialButton btnSaveField, btnSetAlerts;
+    private RecyclerView rvSearchResults;
     private int savedFieldId = -1;
 
-    // MAPPA
-    private SupportMapFragment mapFragment;
-    private GoogleMap googleMap;
-    private Marker marker;
-    private FusedLocationProviderClient fusedLocationClient;
+    // Mapbox
+    private MapView mapView;
+    private PointAnnotationManager pointAnnotationManager;
 
     private FieldsViewModel vm;
+    private double selectedLat = 0;
+    private double selectedLng = 0;
+    private boolean coordsFromMap;
 
     public AddFieldFragment() {
-        // costruttore vuoto richiesto da Fragment
+        // Required empty public constructor
     }
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_add_field, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // ----- COLLEGAMENTO VIEW -----
+        // --- View Binding ---
         tilAddress = view.findViewById(R.id.tilAddress);
-        tilCropType = view.findViewById(R.id.tilCropType);
-        tilGroup = view.findViewById(R.id.tilGroup);
-
         inputAddress = view.findViewById(R.id.inputAddress);
         dropCropType = view.findViewById(R.id.dropCropType);
         dropGroup = view.findViewById(R.id.dropGroup);
         btnSaveField = view.findViewById(R.id.btnSaveField);
         btnSetAlerts = view.findViewById(R.id.btnSetAlerts);
+        mapView = view.findViewById(R.id.mapView);
 
-        mapContainer = view.findViewById(R.id.mapContainer);
+        coordsFromMap = false;
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         btnSetAlerts.setEnabled(false);
 
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;
         vm = a.fieldsVM();
 
-        if(vm.isFieldPending) {
+        if (vm.isFieldPending) {
             btnSetAlerts.setEnabled(true);
             btnSaveField.setEnabled(false);
         }
 
         view.post(this::setupDropdowns);
         setupListeners();
+
+        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS, style -> {
+            mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                    .center(Point.fromLngLat(12.5, 42.5))
+                    .zoom(5.0)
+                    .build());
+
+            AnnotationPlugin annotationPlugin = getAnnotations(mapView);
+            pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationPlugin, null);
+
+            GesturesPlugin gesturesPlugin = getGestures(mapView);
+            gesturesPlugin.addOnMapClickListener(point -> {
+                addOrUpdateMarker(point);
+                return true;
+            });
+        });
     }
 
-    // ----------------------------------------------------
-    // DROPDOWN
-    // ----------------------------------------------------
+    private void addOrUpdateMarker(Point point) {
+        // Rimuovi eventuali marker precedenti per averne solo uno sulla mappa
+        pointAnnotationManager.deleteAll();
+
+        // Crea il bitmap per l'icona del marker
+        Bitmap markerBitmap = bitmapFromDrawableRes(getContext(), R.drawable.ic_location_pin);
+        if (markerBitmap == null) {
+            Log.e("AddFieldFragment", "Impossibile creare il bitmap per il marker");
+            return;
+        }
+
+        // Definisci le opzioni per il nuovo marker
+        PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
+                .withPoint(point)
+                .withIconImage(markerBitmap);
+
+        // Crea e aggiungi il marker alla mappa
+        pointAnnotationManager.create(pointAnnotationOptions);
+
+        // Salva le coordinate del punto cliccato
+        selectedLat = point.latitude();
+        selectedLng = point.longitude();
+        try {
+            cd.add(ApiManager.getAddressFromCoordinates(selectedLat, selectedLng).subscribe(address -> {
+                inputAddress.setText(address);
+            }));
+            coordsFromMap = true;
+        } catch (IOException e) {
+            Log.e("AddFieldFragment", "Error getting address", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Metodo helper per convertire un drawable in un Bitmap
+    private Bitmap bitmapFromDrawableRes(Context context, @DrawableRes int resourceId) {
+        if (context == null) return null;
+        Drawable drawable = AppCompatResources.getDrawable(context, resourceId);
+        if (drawable == null) return null;
+
+        Canvas canvas = new Canvas();
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        canvas.setBitmap(bitmap);
+        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
+
+    // --- Dropdowns ---
     private void setupDropdowns() {
         // CropType Dropdown
         CropType[] cropTypes = CropType.values();
-
         List<String> cropTypeNames = new ArrayList<>();
         for (CropType crop : cropTypes) {
             cropTypeNames.add(getContext().getString(crop.getResourceId()));
         }
-
-        ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_list_item_1,
-                cropTypeNames
-        );
+        ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, cropTypeNames);
         dropCropType.setAdapter(cropAdapter);
 
+        // Group Dropdown
         cd.add(vm.getAllGroups().subscribe(groups -> {
             List<String> groupNames = new ArrayList<>();
-            for(GroupWithFields group : groups) {
-               groupNames.add(group.getGroup().getName());
+            for (GroupWithFields group : groups) {
+                groupNames.add(group.getGroup().getName());
             }
-
-            ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(
-                    requireContext(),
-                    android.R.layout.simple_list_item_1,
-                    groupNames
-            );
+            ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, groupNames);
             dropGroup.setAdapter(groupAdapter);
-
-            dropGroup.setOnItemClickListener((parent, view, position, id) -> {
-                String selected = groupNames.get(position);
-                // TODO: Capire meglio come fare
-                if ("Inserisci nuovo gruppo".equals(selected)) {
-                    Toast.makeText(requireContext(),
-                            "Qui apriremo 'Inserisci nuovo gruppo'",
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
         }));
     }
 
-    // ----------------------------------------------------
-    // LISTENER
-    // ----------------------------------------------------
+    // --- Listeners ---
     private void setupListeners() {
-
-        // icona di localizzazione nell'input indirizzo
-        tilAddress.setEndIconOnClickListener(v -> onLocationIconClicked());
-
-        // bottoni
         btnSaveField.setOnClickListener(v -> {
-
-            MainActivity a = (MainActivity) requireActivity();
-            if (!a.vmsReady()) return;
-            vm = a.fieldsVM();
-
             if (!validateForm()) return;
 
-            // usa i tuoi veri input (già presenti nel file)
             String address = inputAddress.getText().toString().trim();
-
             String selectedCropName = dropCropType.getText().toString().trim();
             CropType selectedCrop = CropType.getFromName(selectedCropName, requireContext());
-
             String groupName = dropGroup.getText().toString().trim();
             if (groupName.isEmpty()) groupName = "Default";
 
-            // TODO: call API convertion method from address to coordinates
-            /*
-            Pair<Double, Double> coords = new Pair<>(0.0, 0.0);
-            try {
-                 coords = ApiManager.getCoordinatesFromAddress(address);
-            } catch (IOException e) {
-                Log.e("AddField", "Errore nella chiamata API");
-                throw new RuntimeException(e);
-            }
-            */
-            double latitude = selectedLat;
-            double longitude = selectedLng;
+            if (!coordsFromMap) {
+                try {
+                    String finalGroupName = groupName;
+                    cd.add(ApiManager.getCoordinatesFromAddress(address).subscribe(coords -> {
+                        selectedLat = coords.first;
+                        selectedLng = coords.second;
+                        Log.e("AddField", "Coords: " + selectedLat + ", " + selectedLng);
 
-            Field field = new Field(address, latitude, longitude, groupName, selectedCrop);
+                        Field field = new Field(address, selectedLat, selectedLng, finalGroupName, selectedCrop);
 
-            // 1) insert
-            cd.add(vm.insertField(field)
-                    // 2) rileggi gruppo e trova fieldId
-                    .andThen(vm.getGroupByName(groupName).firstOrError())
-                    .subscribe(groupWithFields -> {
-                        int id = -1;
-                        for (Field f : groupWithFields.getFields()) {
-                            if (address.equals(f.getAddress())
-                                    && f.getLatitude() == latitude
-                                    && f.getLongitude() == longitude) {
-                                id = f.getId();
-                                break;
-                            }
-                        }
-
-                        if (id <= 0) {
-                            Toast.makeText(requireContext(), "Salvato ma ID non trovato", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-
-                        savedFieldId = id;
-                        Toast.makeText(requireContext(), "Campo salvato", Toast.LENGTH_SHORT).show();
-
-                        btnSetAlerts.setEnabled(true);
-                        btnSaveField.setEnabled(false); // opzionale: impedisce doppio insert
-                    }, err -> {
-                        Log.e("AddField","Errore Salvataggio Campo",err);
-                        Toast.makeText(requireContext(), "Errore : "+err.getMessage(), Toast.LENGTH_LONG).show();
+                        cd.add(vm.insertField(field)
+                                .andThen(vm.getGroupByName(finalGroupName).firstOrError())
+                                .subscribe(groupWithFields -> {
+                                    int id = -1;
+                                    for (Field f : groupWithFields.getFields()) {
+                                        if (address.equals(f.getAddress()) && f.getLatitude() == selectedLat && f.getLongitude() == selectedLng) {
+                                            id = f.getId();
+                                            break;
+                                        }
+                                    }
+                                    if (id <= 0) {
+                                        Toast.makeText(requireContext(), "Il salvataggio non e' andato a buon fine", Toast.LENGTH_LONG).show();
+                                        return;
+                                    }
+                                    savedFieldId = id;
+                                    Toast.makeText(requireContext(), "Campo Salvato", Toast.LENGTH_SHORT).show();
+                                    btnSetAlerts.setEnabled(true);
+                                    btnSaveField.setEnabled(false);
+                                }, err -> {
+                                    Log.e("AddField", "Error Saving Field", err);
+                                    Toast.makeText(requireContext(), "Error: " + err.getMessage(), Toast.LENGTH_LONG).show();
+                                }));
                     }));
+                }catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                Field field = new Field(address, selectedLat, selectedLng, groupName, selectedCrop);
+
+                cd.add(vm.insertField(field)
+                        .andThen(vm.getGroupByName(groupName).firstOrError())
+                        .subscribe(groupWithFields -> {
+                            int id = -1;
+                            for (Field f : groupWithFields.getFields()) {
+                                if (address.equals(f.getAddress()) && f.getLatitude() == selectedLat && f.getLongitude() == selectedLng) {
+                                    id = f.getId();
+                                    break;
+                                }
+                            }
+                            if (id <= 0) {
+                                Toast.makeText(requireContext(), "Il salvataggio non e' andato a buon fine", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            savedFieldId = id;
+                            Toast.makeText(requireContext(), "Campo Salvato", Toast.LENGTH_SHORT).show();
+                            btnSetAlerts.setEnabled(true);
+                            btnSaveField.setEnabled(false);
+                        }, err -> {
+                            Log.e("AddField", "Error Saving Field", err);
+                            Toast.makeText(requireContext(), "Error: " + err.getMessage(), Toast.LENGTH_LONG).show();
+                        }));
+            }
         });
 
         btnSetAlerts.setOnClickListener(v -> {
             if (savedFieldId <= 0) {
-                Toast.makeText(requireContext(), "Prima salva il campo", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Save the field first", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             vm.isFieldPending = true;
             Bundle b = new Bundle();
             b.putInt("fieldId", savedFieldId);
-
-            NavHostFragment.findNavController(this)
-                    .navigate(R.id.setAlertsFragment, b);
+            NavHostFragment.findNavController(this).navigate(R.id.setAlertsFragment, b);
         });
-
-
     }
 
-    // TODO: fix map
-    private void onLocationIconClicked() {
-        // mostra il frame mappa se nascosto
-        if (mapContainer.getVisibility() != View.VISIBLE) {
-            mapContainer.setVisibility(View.VISIBLE);
-        }
-
-        // inizializza la mappa se necessario
-        if (mapFragment == null) {
-            mapFragment = (SupportMapFragment) getChildFragmentManager()
-                    .findFragmentById(R.id.mapContainer);
-
-            if (mapFragment == null) {
-                mapFragment = SupportMapFragment.newInstance();
-                getChildFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.mapContainer, mapFragment)
-                        .commitNow();
-            }
-
-            mapFragment.getMapAsync(this);
-        } else if (googleMap != null) {
-            // se la mappa c'è già, ricentriamo
-            moveCameraToUser();
-        }
-    }
-
-    // ----------------------------------------------------
-    // VALIDAZIONE
-    // ----------------------------------------------------
+    // --- Validation & Helpers ---
     private boolean validateForm() {
         boolean ok = true;
-
-        String address = textOrEmpty(inputAddress);
-        String crop = textOrEmpty(dropCropType);
-        String group = textOrEmpty(dropGroup);
-
-        if (TextUtils.isEmpty(address)) {
-            tilAddress.setError("*Campo obbligatorio");
+        if (TextUtils.isEmpty(inputAddress.getText())) {
+            tilAddress.setError("*Required field");
             ok = false;
         } else {
             tilAddress.setError(null);
         }
-
-        if (TextUtils.isEmpty(crop)) {
-            tilCropType.setError("*Campo obbligatorio");
+        if (TextUtils.isEmpty(dropCropType.getText())) {
             ok = false;
-        } else {
-            tilCropType.setError(null);
         }
-
         return ok;
-    }
-
-    private String textOrEmpty(TextInputEditText edit) {
-        return edit.getText() != null ? edit.getText().toString().trim() : "";
-    }
-
-    private String textOrEmpty(AutoCompleteTextView edit) {
-        return edit.getText() != null ? edit.getText().toString().trim() : "";
-    }
-
-    // ----------------------------------------------------
-    // MAPPA
-    // ----------------------------------------------------
-    @Override
-    public void onMapReady(@NonNull GoogleMap map) {
-        googleMap = map;
-
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
-
-        // marker trascinabile
-        googleMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
-            @Override public void onMarkerDragStart(@NonNull Marker marker) {}
-            @Override public void onMarkerDrag(@NonNull Marker marker) {}
-            @Override public void onMarkerDragEnd(@NonNull Marker marker) {
-                // qui potresti salvare le coordinate finali del campo
-            }
-        });
-
-        moveCameraToUser();
-    }
-
-    private void moveCameraToUser() {
-        if (ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(requireContext(),
-                        Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            requestPermissions(
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION},
-                    REQ_LOCATION
-            );
-            return;
-        }
-
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(location -> {
-                    LatLng target;
-                    if (location != null) {
-                        target = new LatLng(location.getLatitude(), location.getLongitude());
-                    } else {
-                        // fallback: centro Italia
-                        target = new LatLng(42.5, 12.5);
-                    }
-
-                    if (googleMap == null) return;
-
-                    if (marker == null) {
-                        marker = googleMap.addMarker(new MarkerOptions()
-                                .position(target)
-                                .draggable(true));
-                    } else {
-                        marker.setPosition(target);
-                    }
-
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(target, 14f));
-                });
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == REQ_LOCATION &&
-                grantResults.length > 0 &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            moveCameraToUser();
-        }
     }
 
     @Override

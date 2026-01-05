@@ -14,18 +14,25 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Field;
+import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
 import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class DashboardFragment extends Fragment {
 
@@ -42,6 +49,8 @@ public class DashboardFragment extends Fragment {
     // riuso adapter già esistenti
     private FieldsAdapter fieldsAdapter;
     private GroupsAdapter groupsAdapter;
+    private CompositeDisposable cd = new CompositeDisposable();
+    FieldsViewModel vm;
 
 
     @Override
@@ -68,7 +77,7 @@ public class DashboardFragment extends Fragment {
 
         rvDashboardPreview.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-// IMPORTANTISSIMO: qui usi gli adapter che hai già (quelli della lista)
+        // IMPORTANTISSIMO: qui usi gli adapter che hai già (quelli della lista)
         fieldsAdapter = new FieldsAdapter(field -> {
             // preview click -> visualizza campo (per ora senza id veri)
             NavHostFragment.findNavController(this).navigate(R.id.viewFieldFragment);
@@ -79,22 +88,28 @@ public class DashboardFragment extends Fragment {
             NavHostFragment.findNavController(this).navigate(R.id.viewGroupFragment);
         });
 
-        btnDashFields.setChecked(true);
-        showDashFields();
 
-        toggleDash.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (!isChecked) return;
+        MainActivity a = (MainActivity) requireActivity();
+        a.isBound().subscribe(isReady -> {
+            vm = a.fieldsVM();
 
-            if (checkedId == R.id.btnDashFields) {
-                showDashFields();
-            } else if (checkedId == R.id.btnDashGroups) {
-                showDashGroups();
-            }
+            btnDashFields.setChecked(true);
+            showDashFields();
+
+            toggleDash.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+                if (!isChecked) return;
+
+                if (checkedId == R.id.btnDashFields) {
+                    showDashFields();
+                } else if (checkedId == R.id.btnDashGroups) {
+                    showDashGroups();
+                }
+            });
+
+
+            List<String> activeAlerts = getSampleActiveAlerts(); // per ora finto
+            renderActiveAlerts(activeAlerts);
         });
-
-
-        List<String> activeAlerts = getSampleActiveAlerts(); // per ora finto
-        renderActiveAlerts(activeAlerts);
     }
 
     private void renderActiveAlerts(List<String> activeAlerts) {
@@ -172,89 +187,49 @@ public class DashboardFragment extends Fragment {
     }
 
     private void showDashFields() {
-        rvDashboardPreview.setAdapter(fieldsAdapter);
-        fieldsAdapter.submitList(getSampleFieldsPreview()); // 3 elementi
+        cd.add(vm.getAllGroups().subscribe(groups -> {
+            List<FieldUiModel> uiFields = new ArrayList<>();
+            int count = 0;
+            for(GroupWithFields group : groups) {
+                if (count >= 3) break;
+                for (Field field : group.getFields()) {
+                    if (count >= 3) break;
+                    uiFields.add(new FieldUiModel(
+                            field.getId(),
+                            field.getAddress(),
+                            getContext().getString(field.getCropType().getResourceId()),
+                            field.getGroupName(),
+                            field.getCropType().getImageResId(),
+                            Collections.emptyList())
+                    );
+                    count++;
+                }
+            }
+
+            rvDashboardPreview.setAdapter(fieldsAdapter);
+            fieldsAdapter.submitList(uiFields);
+        }));
     }
 
     private void showDashGroups() {
-        rvDashboardPreview.setAdapter(groupsAdapter);
-        groupsAdapter.submitList(getSampleGroupsPreview()); // 3 elementi
+        cd.add(vm.getAllGroups().subscribe(groups -> {
+            List<GroupUiModel> uiGroups = new ArrayList<>();
+            int count = 0;
+            for(GroupWithFields group : groups) {
+                if (count >= 3) break;
+                uiGroups.add(new GroupUiModel(
+                        0,
+                        group.getGroup().getName(),
+                        group.getGroup().getDescription(),
+                        R.drawable.ic_group_default,
+                        Collections.emptyList()
+                ));
+                count++;
+            }
+            rvDashboardPreview.setAdapter(groupsAdapter);
+            groupsAdapter.submitList(uiGroups);
+        }));
     }
-
-
-    private List<FieldUiModel> getSampleFieldsPreview() {
-        List<FieldUiModel> list = new ArrayList<>();
-
-        list.add(new FieldUiModel(
-                1L,
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Ortaggi",
-                "Gruppo A",
-                R.drawable.ic_ortaggi,
-                Arrays.asList(
-                        R.drawable.ic_alert_vento,
-                        R.drawable.ic_alert_calore,
-                        R.drawable.ic_alert_ventilazione
-                )
-        ));
-
-        list.add(new FieldUiModel(
-                2L,
-                "Via Giallo, 10 - Mestre (VE)",
-                "Cereali",
-                "Gruppo B",
-                R.drawable.ic_cereali,
-                Arrays.asList(
-                        R.drawable.ic_alert_gelo,
-                        R.drawable.ic_alert_pioggia
-                )
-        ));
-
-        list.add(new FieldUiModel(
-                3L,
-                "Via Torino, 154 - Martellago (VE)",
-                "Leguminose",
-                "Gruppo Prova",
-                R.drawable.ic_leguminose,
-                Arrays.asList(
-                        R.drawable.ic_alert_temporale
-                )
-        ));
-
-        return list;
-    }
-
-
-    private List<GroupUiModel> getSampleGroupsPreview() {
-        List<GroupUiModel> list = new ArrayList<>();
-
-        list.add(new GroupUiModel(
-                1L,
-                "Gruppo A",
-                "Descrizione",
-                R.drawable.ic_group_default,
-                Arrays.asList(R.drawable.ic_alert_vento, R.drawable.ic_alert_calore, R.drawable.ic_alert_ventilazione)
-        ));
-
-        list.add(new GroupUiModel(
-                2L,
-                "Gruppo B",
-                "Descrizione",
-                R.drawable.ic_group_default,
-                Arrays.asList(R.drawable.ic_alert_gelo, R.drawable.ic_alert_pioggia)
-        ));
-
-        list.add(new GroupUiModel(
-                3L,
-                "Gruppo Prova",
-                "Descrizione",
-                R.drawable.ic_group_default,
-                Arrays.asList(R.drawable.ic_alert_pioggia)
-        ));
-
-        return list;
-    }
-
 
     private List<String> getSampleActiveAlerts() {
         List<String> list = new ArrayList<>();
@@ -263,5 +238,11 @@ public class DashboardFragment extends Fragment {
         list.add("Gelo/Brina");
         list.add("Scarsa ventilazione");
         return list;
+    }
+
+    @Override
+    public void onDestroyView() {
+        cd.clear();
+        super.onDestroyView();
     }
 }

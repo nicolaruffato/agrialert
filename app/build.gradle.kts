@@ -41,9 +41,11 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("String", "MAPS_API_KEY", getProps("MAPS_API_KEY"))
+            buildConfigField("String", "MAPBOX_API_KEY", getProps("MAPBOX_API_KEY"))
         }
         debug {
             buildConfigField("String", "MAPS_API_KEY", getProps("MAPS_API_KEY"))
+            buildConfigField("String", "MAPBOX_API_KEY", getProps("MAPBOX_API_KEY"))
         }
     }
     compileOptions {
@@ -77,5 +79,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation("com.mapbox.maps:android-ndk27:11.17.1")
 }
 

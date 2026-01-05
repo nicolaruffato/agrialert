@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import kotlin.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +14,11 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Threshold;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
+
+import java.util.ArrayList;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
@@ -48,15 +52,17 @@ public class ConfirmDeleteFieldFragment extends Fragment {
             if (!a.vmsReady()) return;
             FieldsViewModel vm = a.fieldsVM();
 
-            cd.add(vm.getFieldById(fieldId).subscribe(f -> {
-                cd.add(vm.deleteField(f).subscribe(() -> {
-                    Toast.makeText(requireContext(),
-                            "Campo eliminato",
-                            Toast.LENGTH_SHORT).show();
+            cd.add(vm.updateAlertsToField(fieldId, new ArrayList<Pair<Integer, Threshold>>()).subscribe(() -> {
+                cd.add(vm.getFieldById(fieldId).subscribe(f -> {
+                    cd.add(vm.deleteField(f).subscribe(() -> {
+                        Toast.makeText(requireContext(),
+                                "Campo eliminato",
+                                Toast.LENGTH_SHORT).show();
 
-                    // Torna alla lista CAMPI
-                    NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
-                            .popBackStack(R.id.fieldsListFragment, false);
+                        // Torna alla lista CAMPI
+                        NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
+                                .popBackStack(R.id.fieldsListFragment, false);
+                    }));
                 }));
             }));
         });
