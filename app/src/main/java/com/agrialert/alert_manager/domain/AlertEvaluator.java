@@ -26,6 +26,7 @@ public class AlertEvaluator {
     private static final int HUMIDITY_MIN_SCARSA_VENTILAZIONE = 80;
     private static final int DAILY_WINDOW_HOURS = 24;
     private static final double PRECIPITATION_EPSILON = 0.1d;
+    private static final long HOUR_MS = 3_600_000L;
 
     /**
      * Generates alert candidates for the given field based on the supplied weather response
@@ -57,6 +58,8 @@ public class AlertEvaluator {
         List<Double> precipitationSeries = weather.hourly != null ? weather.hourly.precipitation : null;
         List<Double> windSeries = weather.hourly != null ? weather.hourly.windSpeed10m : null;
         int weatherCode = weather.currentWeather != null ? weather.currentWeather.weathercode : -1;
+        long startTimeMs = nextHourEpochMs(System.currentTimeMillis());
+        int startIndex = firstIndexAtOrAfter(timeSeries, startTimeMs);
 
         for (AlertWithThreshold entry : activeAlerts) {
             if (entry == null) {
@@ -83,7 +86,7 @@ public class AlertEvaluator {
                         break;
                     }
                     if (threshold2 == null || threshold2 <= 0d) {
-                        addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries,
+                        addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries, startIndex,
                                 value -> value > threshold1,
                                 "Ondata di calore",
                                 value -> "Prevista temperatura " + formatValue(value, "C") +
@@ -91,7 +94,7 @@ public class AlertEvaluator {
                                 R.drawable.ic_alert_calore);
                     } else {
                         int hours = toPositiveIntHours(threshold2);
-                        int idx = firstIndexStreak(tempSeries, value -> value > threshold1, hours);
+                        int idx = firstIndexStreak(tempSeries, value -> value > threshold1, hours, startIndex);
                         if (idx >= 0) {
                             double value = safeGet(tempSeries, idx);
                             long forecastAt = parseIsoTime(timeSeries, idx);
@@ -109,7 +112,7 @@ public class AlertEvaluator {
                         break;
                     }
                     if (threshold2 == null || threshold2 <= 0d) {
-                        addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries,
+                        addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries, startIndex,
                                 value -> value < threshold1,
                                 "Gelo / brina",
                                 value -> "Prevista temperatura " + formatValue(value, "C") +
@@ -117,7 +120,7 @@ public class AlertEvaluator {
                                 R.drawable.ic_alert_gelo);
                     } else {
                         int hours = toPositiveIntHours(threshold2);
-                        int idx = firstIndexStreak(tempSeries, value -> value < threshold1, hours);
+                        int idx = firstIndexStreak(tempSeries, value -> value < threshold1, hours, startIndex);
                         if (idx >= 0) {
                             double value = safeGet(tempSeries, idx);
                             long forecastAt = parseIsoTime(timeSeries, idx);
@@ -135,7 +138,7 @@ public class AlertEvaluator {
                         break;
                     }
                     if (threshold2 == null || threshold2 <= 0d) {
-                        addIfForecastMatches(result, type, field, groupName, precipitationSeries, timeSeries,
+                        addIfForecastMatches(result, type, field, groupName, precipitationSeries, timeSeries, startIndex,
                                 value -> value > threshold1,
                                 "Pioggia intensa",
                                 value -> "Previste precipitazioni " + formatValue(value, "mm/h") +
@@ -143,7 +146,7 @@ public class AlertEvaluator {
                                 R.drawable.ic_alert_pioggia);
                     } else {
                         int windowHours = toPositiveIntHours(threshold2);
-                        RollingWindowMatch match = firstIndexRollingSum(precipitationSeries, windowHours, threshold1);
+                        RollingWindowMatch match = firstIndexRollingSum(precipitationSeries, windowHours, threshold1, startIndex);
                         if (match != null) {
                             long forecastAt = parseIsoTime(timeSeries, match.index);
                             String description = "Previste precipitazioni " +
@@ -159,7 +162,7 @@ public class AlertEvaluator {
                     if (threshold1 == null) {
                         break;
                     }
-                    addIfForecastMatches(result, type, field, groupName, windSeries, timeSeries,
+                    addIfForecastMatches(result, type, field, groupName, windSeries, timeSeries, startIndex,
                             value -> value > threshold1,
                             "Vento forte",
                             value -> "Previsto vento " + formatValue(value, "km/h") +
@@ -172,7 +175,7 @@ public class AlertEvaluator {
                     }
                     StormHailMatch stormMatch = firstStormHailMatch(
                             precipitationSeries, windSeries, humiditySeries, tempSeries,
-                            weatherCode, threshold1, threshold2);
+                            weatherCode, threshold1, threshold2, startIndex);
                     if (stormMatch != null) {
                         long forecastAt = parseIsoTime(timeSeries, stormMatch.index);
                         String description = "Previsto temporale/grandine con probabilita " +
@@ -191,7 +194,7 @@ public class AlertEvaluator {
                     }
                     int requiredHours = toPositiveIntHours(threshold1 * 24d);
                     int droughtIdx = firstIndexStreak(precipitationSeries,
-                            value -> value <= PRECIPITATION_EPSILON, requiredHours);
+                            value -> value <= PRECIPITATION_EPSILON, requiredHours, startIndex);
                     if (droughtIdx >= 0) {
                         long forecastAt = parseIsoTime(timeSeries, droughtIdx);
                         String description = "Previste condizioni senza pioggia per almeno " +
@@ -206,7 +209,7 @@ public class AlertEvaluator {
                     if (threshold1 == null) {
                         break;
                     }
-                    addIfForecastMatches(result, type, field, groupName, humiditySeries, timeSeries,
+                    addIfForecastMatches(result, type, field, groupName, humiditySeries, timeSeries, startIndex,
                             value -> value > threshold1,
                             "Umidita elevata",
                             value -> "Prevista umidita " + formatValue(value, "%") +
@@ -217,7 +220,7 @@ public class AlertEvaluator {
                     if (threshold1 == null || threshold1 <= 0d) {
                         break;
                     }
-                    RangeMatch rangeMatch = firstDailyRangeMatch(tempSeries, DAILY_WINDOW_HOURS, threshold1);
+                    RangeMatch rangeMatch = firstDailyRangeMatch(tempSeries, DAILY_WINDOW_HOURS, threshold1, startIndex);
                     if (rangeMatch != null) {
                         double delta = rangeMatch.max - rangeMatch.min;
                         long forecastAt = parseIsoTime(timeSeries, rangeMatch.index);
@@ -234,7 +237,7 @@ public class AlertEvaluator {
                         break;
                     }
                     addIfForecastMatchesPaired(result, type, field, groupName,
-                            tempSeries, humiditySeries, timeSeries,
+                            tempSeries, humiditySeries, timeSeries, startIndex,
                             value -> value > threshold1,
                             hum -> hum < threshold2,
                             "Rischio incendio",
@@ -250,7 +253,7 @@ public class AlertEvaluator {
                     }
                     double humidityMin = threshold2 != null ? threshold2 : HUMIDITY_MIN_SCARSA_VENTILAZIONE;
                     addIfForecastMatchesPaired(result, type, field, groupName,
-                            windSeries, humiditySeries, timeSeries,
+                            windSeries, humiditySeries, timeSeries, startIndex,
                             value -> value < threshold1,
                             hum -> hum > humidityMin,
                             "Scarsa ventilazione",
@@ -269,6 +272,29 @@ public class AlertEvaluator {
     }
 
     /**
+     * Returns the first index whose parsed time is at or after the provided epoch timestamp.
+     */
+    private int firstIndexAtOrAfter(List<String> times, long startTimeMs) {
+        if (times == null || times.isEmpty()) {
+            return 0;
+        }
+        for (int i = 0; i < times.size(); i++) {
+            long ts = parseIsoTime(times, i);
+            if (ts >= startTimeMs) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Computes the next whole-hour boundary strictly after {@code nowMs}.
+     */
+    private long nextHourEpochMs(long nowMs) {
+        return nowMs - (nowMs % HOUR_MS) + HOUR_MS;
+    }
+
+    /**
      * Adds a new alert to the result list if the first matching forecast value is found.
      *
      * @param result               destination list for new alerts
@@ -277,6 +303,7 @@ public class AlertEvaluator {
      * @param groupName            optional group name override
      * @param values               hourly series to scan
      * @param times                ISO timestamps aligned with the series
+     * @param startIndex           index from which to start scanning the hourly series
      * @param predicate            condition used to match a forecast value
      * @param title                alert title to use
      * @param descriptionFormatter formatter for the alert description
@@ -288,11 +315,12 @@ public class AlertEvaluator {
                                       String groupName,
                                       List<Double> values,
                                       List<String> times,
+                                      int startIndex,
                                       ThresholdPredicate predicate,
                                       String title,
                                       ValueFormatter descriptionFormatter,
                                       int iconRes) {
-        int idx = firstIndexMatching(values, predicate);
+        int idx = firstIndexMatching(values, predicate, startIndex);
         if (idx < 0) return;
         long forecastAt = parseIsoTime(times, idx);
         double value = safeGet(values, idx);
@@ -310,6 +338,7 @@ public class AlertEvaluator {
      * @param seriesA              first hourly series to scan
      * @param seriesB              second hourly series to scan
      * @param times                ISO timestamps aligned with the series
+     * @param startIndex           index from which to start scanning the hourly series
      * @param predicateA           condition for the first series
      * @param predicateB           condition for the second series
      * @param title                alert title to use
@@ -323,12 +352,13 @@ public class AlertEvaluator {
                                             List<Double> seriesA,
                                             List<Double> seriesB,
                                             List<String> times,
+                                            int startIndex,
                                             ThresholdPredicate predicateA,
                                             ThresholdPredicate predicateB,
                                             String title,
                                             BiValueFormatter descriptionFormatter,
                                             int iconRes) {
-        int idx = firstIndexMatching(seriesA, predicateA, seriesB, predicateB);
+        int idx = firstIndexMatching(seriesA, predicateA, seriesB, predicateB, startIndex);
         if (idx < 0) return;
         long forecastAt = parseIsoTime(times, idx);
         double valA = safeGet(seriesA, idx);
@@ -342,11 +372,13 @@ public class AlertEvaluator {
      *
      * @param values    series to scan
      * @param predicate condition to apply
+     * @param startIndex index from which to start scanning the series
      * @return the first matching index, or -1 when no match is found
      */
-    private int firstIndexMatching(List<Double> values, ThresholdPredicate predicate) {
+    private int firstIndexMatching(List<Double> values, ThresholdPredicate predicate, int startIndex) {
         if (values == null || predicate == null) return -1;
-        for (int i = 0; i < values.size(); i++) {
+        int safeStart = Math.max(0, startIndex);
+        for (int i = safeStart; i < values.size(); i++) {
             double v = safeGet(values, i);
             if (!Double.isNaN(v) && predicate.test(v)) {
                 return i;
@@ -362,15 +394,18 @@ public class AlertEvaluator {
      * @param predicateA predicate for the first series
      * @param seriesB    second series to scan
      * @param predicateB predicate for the second series
+     * @param startIndex index from which to start scanning the series
      * @return the first matching index, or -1 when no match is found
      */
     private int firstIndexMatching(List<Double> seriesA,
                                    ThresholdPredicate predicateA,
                                    List<Double> seriesB,
-                                   ThresholdPredicate predicateB) {
+                                   ThresholdPredicate predicateB,
+                                   int startIndex) {
         if (seriesA == null || seriesB == null || predicateA == null || predicateB == null) return -1;
         int size = Math.min(seriesA.size(), seriesB.size());
-        for (int i = 0; i < size; i++) {
+        int safeStart = Math.max(0, startIndex);
+        for (int i = safeStart; i < size; i++) {
             double a = safeGet(seriesA, i);
             double b = safeGet(seriesB, i);
             if (!Double.isNaN(a) && !Double.isNaN(b) && predicateA.test(a) && predicateB.test(b)) {
@@ -386,17 +421,19 @@ public class AlertEvaluator {
      * @param values    series to scan
      * @param predicate condition to apply
      * @param minLength minimum contiguous length required
+     * @param startIndex index from which to start scanning the series
      * @return the starting index of the streak, or -1 when no match is found
      */
-    private int firstIndexStreak(List<Double> values, ThresholdPredicate predicate, int minLength) {
+    private int firstIndexStreak(List<Double> values, ThresholdPredicate predicate, int minLength, int startIndex) {
         if (values == null || predicate == null || minLength <= 0) {
             return -1;
         }
         if (minLength <= 1) {
-            return firstIndexMatching(values, predicate);
+            return firstIndexMatching(values, predicate, startIndex);
         }
         int streak = 0;
-        for (int i = 0; i < values.size(); i++) {
+        int safeStart = Math.max(0, startIndex);
+        for (int i = safeStart; i < values.size(); i++) {
             double v = safeGet(values, i);
             if (!Double.isNaN(v) && predicate.test(v)) {
                 streak++;
@@ -416,9 +453,10 @@ public class AlertEvaluator {
      * @param values     series to scan
      * @param windowSize size of the rolling window
      * @param threshold  minimum sum required
+     * @param startIndex index from which to start scanning the series
      * @return a {@link RollingWindowMatch} when a match is found; {@code null} otherwise
      */
-    private RollingWindowMatch firstIndexRollingSum(List<Double> values, int windowSize, double threshold) {
+    private RollingWindowMatch firstIndexRollingSum(List<Double> values, int windowSize, double threshold, int startIndex) {
         if (values == null || windowSize <= 0) {
             return null;
         }
@@ -426,7 +464,8 @@ public class AlertEvaluator {
         if (size < windowSize) {
             return null;
         }
-        for (int start = 0; start <= size - windowSize; start++) {
+        int safeStart = Math.max(0, startIndex);
+        for (int start = safeStart; start <= size - windowSize; start++) {
             double sum = 0d;
             boolean valid = true;
             for (int i = start; i < start + windowSize; i++) {
@@ -450,9 +489,10 @@ public class AlertEvaluator {
      * @param values     series to scan
      * @param windowSize size of the window in hours
      * @param threshold  minimum range required
+     * @param startIndex index from which to start scanning the series
      * @return a {@link RangeMatch} when a match is found; {@code null} otherwise
      */
-    private RangeMatch firstDailyRangeMatch(List<Double> values, int windowSize, double threshold) {
+    private RangeMatch firstDailyRangeMatch(List<Double> values, int windowSize, double threshold, int startIndex) {
         if (values == null || windowSize <= 0) {
             return null;
         }
@@ -460,7 +500,8 @@ public class AlertEvaluator {
         if (size < windowSize) {
             return null;
         }
-        for (int start = 0; start <= size - windowSize; start++) {
+        int safeStart = Math.max(0, startIndex);
+        for (int start = safeStart; start <= size - windowSize; start++) {
             double min = Double.POSITIVE_INFINITY;
             double max = Double.NEGATIVE_INFINITY;
             boolean valid = true;
@@ -494,6 +535,7 @@ public class AlertEvaluator {
      * @param weatherCode         current weather code used as a boost
      * @param stormThreshold      minimum storm probability required
      * @param hailThreshold       minimum hail probability required
+     * @param startIndex          index from which to start scanning the series
      * @return a {@link StormHailMatch} when a match is found; {@code null} otherwise
      */
     private StormHailMatch firstStormHailMatch(List<Double> precipitationSeries,
@@ -502,13 +544,15 @@ public class AlertEvaluator {
                                                List<Double> tempSeries,
                                                int weatherCode,
                                                double stormThreshold,
-                                               double hailThreshold) {
+                                               double hailThreshold,
+                                               int startIndex) {
         int size = Math.max(Math.max(sizeOf(precipitationSeries), sizeOf(windSeries)),
                 Math.max(sizeOf(humiditySeries), sizeOf(tempSeries)));
         if (size == 0) {
             return null;
         }
-        for (int i = 0; i < size; i++) {
+        int safeStart = Math.max(0, startIndex);
+        for (int i = safeStart; i < size; i++) {
             double precipitation = safeGet(precipitationSeries, i);
             double wind = safeGet(windSeries, i);
             double humidity = safeGet(humiditySeries, i);
