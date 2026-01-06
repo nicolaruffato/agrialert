@@ -26,6 +26,8 @@ public class Alert {
     private long forecastAt;
     private long createdAt;
     private boolean resolved;
+    /** Timestamp (ms) in cui l'alert è stato marcato come risolto (0 se non risolto). */
+    private long resolvedAt;
     private int iconRes;
 
     public Alert() {
@@ -50,6 +52,7 @@ public class Alert {
         this.forecastAt = forecastAt;
         this.createdAt = createdAt;
         this.resolved = resolved;
+        this.resolvedAt = resolved ? createdAt : 0L;
         this.iconRes = iconRes;
     }
 
@@ -131,6 +134,14 @@ public class Alert {
 
     public void setResolved(boolean resolved) {
         this.resolved = resolved;
+    }
+
+    public long getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(long resolvedAt) {
+        this.resolvedAt = resolvedAt;
     }
 
     public int getIconRes() {

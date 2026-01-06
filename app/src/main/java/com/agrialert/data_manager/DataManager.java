@@ -8,6 +8,7 @@ import android.os.IBinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
@@ -252,7 +253,17 @@ public class DataManager extends Service {
     }
 
     public Completable setResolved(long id, boolean resolved) {
-        return alertDao.updateResolved(id, resolved)
+        long resolvedAt = resolved ? System.currentTimeMillis() : 0L;
+        return alertDao.updateResolved(id, resolved, resolvedAt)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Completable cleanupAlerts() {
+        long now = System.currentTimeMillis();
+        long resolvedBefore = now - TimeUnit.DAYS.toMillis(10);
+        return alertDao.deleteExpiredActive(now)
+                .andThen(alertDao.deleteResolvedBefore(resolvedBefore))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }
