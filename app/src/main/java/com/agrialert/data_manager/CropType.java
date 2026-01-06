@@ -7,6 +7,10 @@ import androidx.annotation.NonNull;
 
 import com.agrialert.R;
 
+/**
+ * Represents the various categories of crops supported by the application.
+ * Each enum constant is associated with a specific string resource ID for localization.
+ */
 public enum CropType {
     VEGETABLES(R.string.crop_vegetables, R.drawable.ic_ortaggi),
     CEREALS(R.string.crop_cereals, R.drawable.ic_cereali),

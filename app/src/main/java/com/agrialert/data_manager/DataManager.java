@@ -25,8 +25,7 @@ public class DataManager extends Service {
     private FieldsDao fieldsDao;
     private AlertDao alertDao;
 
-    public DataManager() {
-    }
+    public DataManager() {}
 
     @Override
     public void onCreate() {
@@ -36,41 +35,128 @@ public class DataManager extends Service {
         alertDao = db.alertDao();
     }
 
+    /**
+     * Retrieves all groups along with their associated fields from the database.
+     *
+     * @return A {@link Flowable} emitting a list of {@link GroupWithFields} objects.
+     */
     public Flowable<List<GroupWithFields>> getAllGroups() {
         return fieldsDao.getGroups().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Retrieves a specific group and its associated fields by the group's name.
+     *
+     * @param name The name of the group to retrieve.
+     * @return A {@link Flowable} emitting the {@link GroupWithFields} object matching the specified name.
+     */
     public Flowable<GroupWithFields> getGroupByName(String name) {
         return fieldsDao.getGroupByName(name).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Inserts a new group of fields into the database.
+     *
+     * @param group The {@link FieldsGroup} object to be inserted.
+     * @return A {@link Completable} that represents the asynchronous operation.
+     */
     public Completable insertGroup(FieldsGroup group) {
         return fieldsDao.insertGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Inserts a new field into the database.
+     *
+     * @param field The {@link Field} object to be inserted.
+     * @return A {@link Completable} that completes when the insertion is successful.
+     */
     public Completable insertField(Field field) {
         return fieldsDao.insertField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Retrieves a specific field by its unique identifier.
+     *
+     * @param fieldId The ID of the field to retrieve.
+     * @return A {@link Single} emitting the {@link Field} object.
+     */
     public Single<Field> getFieldById(int fieldId) {
         return fieldsDao.getFieldById(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Associates a specific alert type with a field by inserting a relation with defined custom thresholds.
+     * If treshold is null the default alertType treshold will be used.
+     *
+     * @param fieldId     The unique identifier of the field.
+     * @param alertTypeId The unique identifier of the alert type to be added.
+     * @param treshold    The {@link Threshold} object containing the limit values for the alert.
+     * @return A {@link Completable} that represents the asynchronous operation.
+     */
     public Completable addAlertToField(int fieldId, int alertTypeId, Threshold treshold) {
-        return fieldsDao.insertFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold.getThreshold1(), treshold.getThreshold2()))
-                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        if(treshold != null) {
+            return fieldsDao.insertFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold.getThreshold1(), treshold.getThreshold2()))
+                    .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        }
+        else {
+            return fieldsDao.insertFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, null, null))
+                    .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        }
     }
 
-    // creare modifica alert associati al campo
+
+    /**
+     * Updates the threshold values for a specific alert type associated with a field.
+     * If treshold is null the default alertType treshold will be used.
+     *
+     * @param fieldId     The unique identifier of the field.
+     * @param alertTypeId The unique identifier of the alert type.
+     * @param treshold    The {@link Threshold} object containing the new threshold values.
+     * @return A {@link Completable} that represents the asynchronous update operation.
+     */
     public Completable updateAlertToField(int fieldId, int alertTypeId, Threshold treshold) {
-        return fieldsDao.updateFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold.getThreshold1(), treshold.getThreshold2()))
-                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        if(treshold != null) {
+            return fieldsDao.updateFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, treshold.getThreshold1(), treshold.getThreshold2()))
+                    .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        }
+        else {
+            return fieldsDao.updateFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, null, null))
+                    .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        }
     }
 
+
+    public Completable deleteAlertToField(int alertTypeId, int fieldId) {
+        return fieldsDao.deleteFieldAlertRelation(new AlertTypeCrossRef(alertTypeId, fieldId, null, null));
+    }
+
+    public Completable deleteAlertsToField(List<Pair<Integer, Integer>> fieldAlertId) {
+        List<AlertTypeCrossRef> crossRefs = new ArrayList<>();
+        for(var pair : fieldAlertId) {
+            crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), pair.getSecond(), null, null));
+        }
+        return fieldsDao.deleteFieldAlertRelations(crossRefs);
+    }
+
+    /**
+     * Updates multiple alert relations and their associated thresholds for a specific field.
+     * If a threshold is null the default alertType treshold will be used.
+     *
+     * @param fieldId The unique identifier of the field to update.
+     * @param alertsTypeWithThresholds A list of pairs, where each pair contains an alert type ID
+     *                                 and its corresponding {@link Threshold} values.
+     * @return A {@link Completable} that completes when the database update is successful.
+     *
+     */
     public Completable updateAlertsToField(int fieldId, List<Pair<Integer, Threshold>> alertsTypeWithThresholds) {
         List<AlertTypeCrossRef> crossRefs = new ArrayList<>();
         for(var pair : alertsTypeWithThresholds) {
-            crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, pair.getSecond().getThreshold1(), pair.getSecond().getThreshold2()));
+            if(pair.getSecond() != null) {
+                crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, pair.getSecond().getThreshold1(), pair.getSecond().getThreshold2()));
+            }
+            else {
+                crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, null, null));
+            }
         }
 
         return fieldsDao.deleteAlertsForField(fieldId)
@@ -79,26 +165,64 @@ public class DataManager extends Service {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Inserts a new alert type into the database.
+     *
+     * @param alertType The {@link AlertType} object to be added.
+     * @return A {@link Completable} that represents the asynchronous operation.
+     */
     public Completable addAlertType(AlertType alertType) {
         return fieldsDao.insertAlertType(alertType).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Retrieves the user activated alerts associated with a specific field.
+     *
+     * @param fieldId The unique identifier of the field.
+     * @return A {@link Flowable} emitting the {@link ActivatedAlerts} for the specified field.
+     */
     public Flowable<ActivatedAlerts> getActivatedAlertsFromField(int fieldId) {
         return fieldsDao.getAlertsFromField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Deletes a specific field.
+     *
+     * @param field The {@link Field} object to be deleted.
+     * @return A {@link Completable} that completes when the deletion is successful.
+     */
     public Completable deleteField(Field field) {
         return fieldsDao.deleteField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Deletes a group of fields.
+     * All the fields that were assigned to the deleted group will be assigned to the default group which cannot be
+     * deleted.
+     *
+     * @param group The {@link FieldsGroup} object to be deleted.
+     * @return A {@link Completable} that represents the asynchronous deletion operation.
+     */
     public Completable deleteGroup(FieldsGroup group) {
         return fieldsDao.deleteGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Updates an existing field's information.
+     *
+     * @param field The {@link Field} object containing the updated data.
+     * @return A {@link Completable} that represents the asynchronous update operation.
+     */
     public Completable updateField(Field field) {
         return fieldsDao.updateField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    /**
+     * Updates an existing group of fields.
+     *
+     * @param group The {@link FieldsGroup} object containing the updated data.
+     * @return A {@link Completable} that represents the asynchronous update operation.
+     */
     public Completable updateGroup(FieldsGroup group) {
         return fieldsDao.updateGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }

@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
         return isBoundSubject.filter(bound -> bound).firstOrError();
     }
 
-
     private ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {

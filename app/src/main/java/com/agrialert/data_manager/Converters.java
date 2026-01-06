@@ -2,6 +2,10 @@ package com.agrialert.data_manager;
 
 import androidx.room.TypeConverter;
 
+/**
+ * This class provides methods to convert {@link CropType} enums to their
+ * {@link String} representation for database storage and vice versa.
+ */
 class Converters {
 
     @TypeConverter
