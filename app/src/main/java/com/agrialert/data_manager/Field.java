@@ -54,7 +54,7 @@ public class Field {
      * referenced group is deleted.
      * Note that the default group will always exists at time of creation of the db an cannot be deleted.
      */
-    @ColumnInfo(name = "groupName", index = true, defaultValue = "default")
+    @ColumnInfo(name = "groupName", index = true, defaultValue = "Default")
     private String groupName;
 
     /**
