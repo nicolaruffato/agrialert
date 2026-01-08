@@ -106,7 +106,8 @@ public class AlertRepository {
      */
     public Flowable<List<Alert>> observeAlerts(boolean resolved) {
         return DataManagerConnector.withFlowable(appContext, dm ->
-                dm.observeAlerts(resolved)
+                dm.cleanupAlerts()
+                        .andThen(dm.observeAlerts(resolved))
                         .subscribeOn(ioScheduler)
                         .observeOn(observeScheduler())
         );
@@ -148,8 +149,8 @@ public class AlertRepository {
      */
     public Single<WeatherSyncResult> syncAllGroups() {
         return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm ->
-                dm.getAllGroups()
-                        .first(Collections.emptyList())
+                dm.cleanupAlerts()
+                        .andThen(dm.getAllGroups().first(Collections.emptyList()))
                         .subscribeOn(ioScheduler)
                         .observeOn(ioScheduler)
                         .flatMap(groups -> syncWithDataManager(dm, groups))
@@ -166,7 +167,9 @@ public class AlertRepository {
         if (groups == null || groups.isEmpty()) {
             return Single.just(new WeatherSyncResult(null, Collections.emptyList()));
         }
-        return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm -> syncWithDataManager(dm, groups));
+        return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm ->
+                dm.cleanupAlerts().andThen(syncWithDataManager(dm, groups))
+        );
     }
 
     /**
@@ -179,7 +182,9 @@ public class AlertRepository {
         if (fields == null || fields.isEmpty()) {
             return Single.just(new WeatherSyncResult(null, Collections.emptyList()));
         }
-        return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm -> syncFields(dm, fields));
+        return DataManagerConnector.withSingle(appContext, BIND_TIMEOUT_MS, dm ->
+                dm.cleanupAlerts().andThen(syncFields(dm, fields))
+        );
     }
 
     /**

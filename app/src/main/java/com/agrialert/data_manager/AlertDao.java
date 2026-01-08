@@ -24,8 +24,14 @@ public interface AlertDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     Single<List<Long>> insertAll(List<Alert> entities);
 
-    @Query("UPDATE alerts SET resolved = :resolved WHERE id = :id")
-    Completable updateResolved(long id, boolean resolved);
+    @Query("UPDATE alerts SET resolved = :resolved, resolvedAt = :resolvedAt WHERE id = :id")
+    Completable updateResolved(long id, boolean resolved, long resolvedAt);
+
+    @Query("DELETE FROM alerts WHERE resolved = 0 AND forecastAt < :now")
+    Completable deleteExpiredActive(long now);
+
+    @Query("DELETE FROM alerts WHERE resolved = 1 AND resolvedAt < :resolvedBefore")
+    Completable deleteResolvedBefore(long resolvedBefore);
 
     @Query("SELECT * FROM alerts WHERE typeId = :typeId AND groupName = :groupName ORDER BY createdAt DESC LIMIT 1")
     Maybe<Alert> findLatestByTypeAndGroup(int typeId, String groupName);
