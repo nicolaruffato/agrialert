@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+import androidx.room.rxjava3.EmptyResultSetException;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.ServiceTestRule;
@@ -18,6 +19,7 @@ import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
@@ -42,7 +44,6 @@ public class DataManagerTest {
         return sb.toString();
     }
 
-    // TODO: finire questo
     @Test
     public void TC_RF_01_01() throws TimeoutException {
         Intent serviceIntent = new Intent(ApplicationProvider.getApplicationContext(), DataManager.class);
@@ -228,7 +229,7 @@ public class DataManagerTest {
         dataManager.insertField(new Field(addressToKeep, 45.2, 12.2, groupName, CropType.CEREALS)).blockingAwait();
 
         // Recuperiamo gli oggetti salvati per avere gli ID corretti
-        GroupWithFields group = dataManager.getGroupByName(groupName).blockingFirst();
+        GroupWithFields group = dataManager.getGroupByName(groupName).blockingGet();
         Field fieldToDelete = null;
         Field fieldToKeep = null;
 
@@ -244,7 +245,7 @@ public class DataManagerTest {
         dataManager.deleteField(fieldToDelete).blockingAwait();
 
         // --- VERIFICA ASSERZIONI DI OUTPUT ---
-        GroupWithFields groupsAfterDelete = dataManager.getGroupByName(groupName).blockingFirst();
+        GroupWithFields groupsAfterDelete = dataManager.getGroupByName(groupName).blockingGet();
         List<Field> remainingFields = groupsAfterDelete.getFields();
 
         // 1. Il campo viene eliminato permanentemente e non appare più nella lista
@@ -280,10 +281,10 @@ public class DataManagerTest {
         } catch (RuntimeException e) {
             check = true;
         }
-        var emptyStringGroup = dataManager.getGroupByName("").blockingFirst();
-        var randomStringGroup = dataManager.getGroupByName(randomString).blockingFirst();
+        var emptyStringGroup = dataManager.getGroupByName("").blockingGet();
+        var randomStringGroup = dataManager.getGroupByName(randomString).blockingGet();
         //var maxLenStringGroup = dataManager.getGroupByName(maxLenString).blockingFirst();
-        var aaGroup = dataManager.getGroupByName("aa").blockingFirst();
+        var aaGroup = dataManager.getGroupByName("aa").blockingGet();
         assertTrue(emptyStringGroup.getGroup().getName().equals(""));
         assertTrue(randomStringGroup.getGroup().getName().equals(randomString));
         //assertTrue(maxLenStringGroup.getGroup().getName().equals(maxLenString));
@@ -307,23 +308,35 @@ public class DataManagerTest {
         dataManager.insertField(new Field("test_addr", 0d, 0d, nonEmptyGroupName, CropType.CEREALS)).blockingAwait();
 
         // verifica inserimento
-        var emptyGroup = dataManager.getGroupByName(emptyGroupName).blockingFirst();
-        var nonEmptyGroup = dataManager.getGroupByName(nonEmptyGroupName).blockingFirst();
+        var emptyGroup = dataManager.getGroupByName(emptyGroupName).blockingGet();
+        var nonEmptyGroup = dataManager.getGroupByName(nonEmptyGroupName).blockingGet();
 
         assertTrue(emptyGroup.getGroup().getName().equals(emptyGroupName) && emptyGroup.getFields().isEmpty());
         assertTrue(nonEmptyGroup.getGroup().getName().equals(nonEmptyGroupName)
         && nonEmptyGroup.getFields().size() == 1);
 
+        var testFieldId = nonEmptyGroup.getFields().get(0).getId();
 
         // eliminazione gruppo
         dataManager.deleteGroup(emptyGroup.getGroup()).blockingAwait();
         dataManager.deleteGroup(nonEmptyGroup.getGroup()).blockingAwait();
 
-        // sistemare bug qui + controllare gruppo di default
-        emptyGroup = dataManager.getGroupByName(emptyGroupName).blockingFirst();
-        nonEmptyGroup = dataManager.getGroupByName(nonEmptyGroupName).blockingFirst();
-        assertNull(emptyGroup);
-        assertNull(nonEmptyGroup);
+        // controllo che i gruppi siano stati eliminati + il gruppo spostato a quello di default
+        boolean checkEmpty = false;
+        boolean checkNonEmpty = false;
+        try {
+            emptyGroup = dataManager.getGroupByName(emptyGroupName).blockingGet();
+        } catch (EmptyResultSetException e) {
+            checkEmpty = true;
+        }
+        try {
+            nonEmptyGroup = dataManager.getGroupByName(nonEmptyGroupName).blockingGet();
+        } catch (EmptyResultSetException e) {
+            checkNonEmpty = true;
+        }
+        assertTrue(checkEmpty && checkNonEmpty);
+        var testField = dataManager.getFieldById(testFieldId).blockingGet();
+        assertTrue(testField.getGroupName().equals("Default"));
     }
 
     @Test
@@ -342,28 +355,28 @@ public class DataManagerTest {
         dataManager.insertField(testField).blockingAwait();
 
         // caso 1 -> da gruppo utente a gruppo utente
-        testField = dataManager.getGroupByName(group1).blockingFirst().getFields().get(0);
+        testField = dataManager.getGroupByName(group1).blockingGet().getFields().get(0);
         testField.setGroupName(group2);
         dataManager.updateField(testField).blockingAwait();
-        testField = dataManager.getGroupByName(group2).blockingFirst().getFields().get(0);
+        testField = dataManager.getGroupByName(group2).blockingGet().getFields().get(0);
         assertTrue(testField.getGroupName().equals(group2));
 
         // caso 2 -> assegnamento allo stesso gruppo
         testField.setGroupName(testField.getGroupName());
         dataManager.updateField(testField).blockingAwait();
-        testField = dataManager.getGroupByName(group2).blockingFirst().getFields().get(0);
+        testField = dataManager.getGroupByName(group2).blockingGet().getFields().get(0);
         assertTrue(testField.getGroupName().equals(group2));
 
         // caso 3 -> da gruppo utente a gruppo di default
         testField.setGroupName("Default");
         dataManager.updateField(testField).blockingAwait();
-        testField = dataManager.getGroupByName("Default").blockingFirst().getFields().get(0);
+        testField = dataManager.getGroupByName("Default").blockingGet().getFields().get(0);
         assertTrue(testField.getGroupName().equals("Default"));
 
         // caso 4 -> da gruppo di default a gruppo utente
         testField.setGroupName(group1);
         dataManager.updateField(testField).blockingAwait();
-        testField = dataManager.getGroupByName(group1).blockingFirst().getFields().get(0);
+        testField = dataManager.getGroupByName(group1).blockingGet().getFields().get(0);
         assertTrue(testField.getGroupName().equals(group1));
     }
 

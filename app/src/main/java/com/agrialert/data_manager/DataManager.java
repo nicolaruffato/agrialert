@@ -50,7 +50,7 @@ public class DataManager extends Service {
      * @param name The name of the group to retrieve.
      * @return A {@link Flowable} emitting the {@link GroupWithFields} object matching the specified name.
      */
-    public Flowable<GroupWithFields> getGroupByName(String name) {
+    public Single<GroupWithFields> getGroupByName(String name) {
         return fieldsDao.getGroupByName(name).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
