@@ -381,6 +381,93 @@ public class DataManagerTest {
     }
 
 
+    @Test
+    public void TC_RNF_01_01() throws TimeoutException {
+        Intent serviceIntent = new Intent(ApplicationProvider.getApplicationContext(), DataManager.class);
+        IBinder binder = serviceRule.bindService(serviceIntent);
+        DataManager dataManager = ((DataManager.LocalBinder) binder).getService();
+        assertNotNull(dataManager);
+
+        int iterations = 20; // Numero di campioni
+        long totalDuration = 0;
+        long maxDuration = 0;
+
+        for (int i = 0; i < iterations; i++) {
+            String tempGroupName = "PerfGroup_" + i;
+            long startTime = System.currentTimeMillis();
+
+            // operazione
+            dataManager.insertGroup(new FieldsGroup(tempGroupName, "desc")).blockingAwait();
+
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            totalDuration += duration;
+            if (duration > maxDuration) {
+                maxDuration = duration;
+            }
+        }
+        long averageDuration = totalDuration / iterations;
+        assertTrue(averageDuration <= 500);
+        assertTrue(maxDuration <= 1000);
+
+        for (int i = 0; i < iterations; i++) {
+            String tempGroupName = "PerfGroup_" + i;
+            long startTime = System.currentTimeMillis();
+
+            // operazione
+            dataManager.getGroupByName(tempGroupName).blockingGet();
+
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            totalDuration += duration;
+            if (duration > maxDuration) {
+                maxDuration = duration;
+            }
+        }
+        averageDuration = totalDuration / iterations;
+        assertTrue(averageDuration <= 500);
+        assertTrue(maxDuration <= 1000);
+
+        for (int i = 0; i < iterations; i++) {
+            String tempGroupName = "PerfGroup_" + i;
+            long startTime = System.currentTimeMillis();
+
+            // operazione
+            dataManager.insertField(new Field("test", 0d, 0d, tempGroupName, CropType.CEREALS)).blockingAwait();
+
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            totalDuration += duration;
+            if (duration > maxDuration) {
+                maxDuration = duration;
+            }
+        }
+        averageDuration = totalDuration / iterations;
+        assertTrue(averageDuration <= 500);
+        assertTrue(maxDuration <= 1000);
+
+        for (int i = 0; i < iterations; i++) {
+            String tempGroupName = "PerfGroup_" + i;
+            long startTime = System.currentTimeMillis();
+
+            // operazione
+            dataManager.deleteGroup(dataManager.getGroupByName(tempGroupName).blockingGet().getGroup()).blockingAwait();
+
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            totalDuration += duration;
+            if (duration > maxDuration) {
+                maxDuration = duration;
+            }
+        }
+        averageDuration = totalDuration / iterations;
+        assertTrue(averageDuration <= 500);
+        assertTrue(maxDuration <= 1000);
+
+    }
+
+    // TODO: finire di testare le prestazioni delle restanti operazioni
+
 
 
 
