@@ -30,7 +30,7 @@ interface FieldsDao {
 
     @Transaction
     @Query("SELECT * FROM FieldsGroup WHERE name = :name")
-    Flowable<GroupWithFields> getGroupByName(String name);
+    Single<GroupWithFields> getGroupByName(String name);
 
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
