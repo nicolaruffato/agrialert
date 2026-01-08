@@ -16,12 +16,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Alert;
 import com.agrialert.data_manager.Field;
 import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
 import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
@@ -34,7 +36,7 @@ import java.util.List;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
-public class DashboardFragment extends Fragment {
+public class DashboardFragment extends Fragment implements FieldsAdapter.OnFieldClickListener, GroupsAdapter.OnGroupClickListener {
 
     public DashboardFragment() {
         super(R.layout.fragment_dashboard);
@@ -51,6 +53,7 @@ public class DashboardFragment extends Fragment {
     private GroupsAdapter groupsAdapter;
     private CompositeDisposable cd = new CompositeDisposable();
     FieldsViewModel vm;
+    AlertsViewModel avm;
 
 
     @Override
@@ -78,20 +81,13 @@ public class DashboardFragment extends Fragment {
         rvDashboardPreview.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         // IMPORTANTISSIMO: qui usi gli adapter che hai già (quelli della lista)
-        fieldsAdapter = new FieldsAdapter(field -> {
-            // preview click -> visualizza campo (per ora senza id veri)
-            NavHostFragment.findNavController(this).navigate(R.id.viewFieldFragment);
-        });
-
-        groupsAdapter = new GroupsAdapter(group -> {
-            // preview click -> visualizza gruppo
-            NavHostFragment.findNavController(this).navigate(R.id.viewGroupFragment);
-        });
-
+        fieldsAdapter = new FieldsAdapter(this);
+        groupsAdapter = new GroupsAdapter(this);
 
         MainActivity a = (MainActivity) requireActivity();
-        a.isBound().subscribe(isReady -> {
+        cd.add(a.isBound().subscribe(isReady -> {
             vm = a.fieldsVM();
+            avm = a.alertsVM();
 
             btnDashFields.setChecked(true);
             showDashFields();
@@ -106,88 +102,103 @@ public class DashboardFragment extends Fragment {
                 }
             });
 
-
-            List<String> activeAlerts = getSampleActiveAlerts(); // per ora finto
-            renderActiveAlerts(activeAlerts);
-        });
+            renderActiveAlerts();
+        }));
     }
 
-    private void renderActiveAlerts(List<String> activeAlerts) {
-        int total = (activeAlerts == null) ? 0 : activeAlerts.size();
-
-        txtAlertCount.setText(total + " Alert Attivi");
-        layoutAlertPreview.removeAllViews();
-
-        // Nessun alert
-        if (total == 0) {
-            txtNoActiveAlerts.setVisibility(View.VISIBLE);
-            layoutAlertPreview.setVisibility(View.GONE);
-            return;
-        }
-
-        // Ci sono alert
-        txtNoActiveAlerts.setVisibility(View.GONE);
-        layoutAlertPreview.setVisibility(View.VISIBLE);
-
-        int maxPreview = Math.min(3, total);
-        LayoutInflater inflater = LayoutInflater.from(requireContext());
-
-        for (int i = 0; i < maxPreview; i++) {
-            View row = inflater.inflate(R.layout.item_alert_preview, layoutAlertPreview, false);
-
-            ImageView img = row.findViewById(R.id.imgAlertIcon);
-            TextView txt = row.findViewById(R.id.txtAlertText);
-
-            String alertName = activeAlerts.get(i);
-
-            txt.setText(alertName + " • Oggi");
-            img.setImageResource(getAlertIcon(alertName));
-
-            layoutAlertPreview.addView(row);
-        }
+    @Override
+    public void onFieldClick(FieldUiModel field) {
+        Bundle b = new Bundle();
+        b.putParcelable("field", field);
+        NavHostFragment.findNavController(this).navigate(R.id.viewFieldFragment, b);
     }
 
-    private int getAlertIcon(String alertName) {
-        if (alertName == null) return R.drawable.ic_alert;
+    @Override
+    public void onGroupClick(GroupUiModel group) {
+        Bundle b = new Bundle();
+        b.putParcelable("group", group);
+        NavHostFragment.findNavController(this).navigate(R.id.viewGroupFragment, b);
+    }
 
-        String a = alertName.toLowerCase();
+    private void renderActiveAlerts() {
+        cd.add(avm.getActiveAlerts().firstOrError().subscribe(alerts -> {
+            int total = 0;
+            int maxPreview = 3;
+            LayoutInflater inflater = LayoutInflater.from(requireContext());
+            layoutAlertPreview.removeAllViews();
 
-        if (a.contains("caldo"))
-            return R.drawable.ic_alert_calore;
+            for(Alert alert : alerts) {
+                total++;
+                if(total <= maxPreview) {
+                    View row = inflater.inflate(R.layout.item_alert_preview, layoutAlertPreview, false);
 
-        if (a.contains("gelo") || a.contains("brina"))
-            return R.drawable.ic_alert_gelo;
+                    ImageView img = row.findViewById(R.id.imgAlertIcon);
+                    TextView txt = row.findViewById(R.id.txtAlertText);
 
-        if (a.contains("vento"))
-            return R.drawable.ic_alert_vento;
+                    String alertName = alert.getTitle();
+                    String[] descAndTime = alert.getDescription().split(" - ");
+                    String[] time = descAndTime[1].split(" ");
 
-        if (a.contains("scarsa ventilazione"))
-            return R.drawable.ic_alert_ventilazione;
+                    txt.setText(alertName + " per il " + time[2]);
+                    img.setImageResource(getIconForType(alert.getTypeId()));
 
-        if (a.contains("pioggia"))
-            return R.drawable.ic_alert_pioggia;
+                    layoutAlertPreview.addView(row);
+                }
+            }
 
-        if (a.contains("temporale"))
-            return R.drawable.ic_alert_temporale;
+            txtAlertCount.setText(total + " Alert Attivi");
 
-        if (a.contains("siccità"))
-            return R.drawable.ic_alert_siccita;
+            if (total == 0) {
+                // Nessun alert
+                txtNoActiveAlerts.setVisibility(View.VISIBLE);
+                layoutAlertPreview.setVisibility(View.GONE);
+            } else {
+                // Ci sono alert
+                txtNoActiveAlerts.setVisibility(View.GONE);
+                layoutAlertPreview.setVisibility(View.VISIBLE);
+            }
+        }));
+    }
 
-        if (a.contains("umidità"))
-            return R.drawable.ic_alert_umidita;
+    private int getIconForType(int typeId) {
+        switch (typeId) {
+            case 1:
+                return R.drawable.ic_alert_vento;
 
-        if (a.contains("rischio incendio"))
-            return R.drawable.ic_alert_incendio;
+            case 2:
+                return R.drawable.ic_alert_calore;
 
-        if (a.contains("escursione termica"))
-            return R.drawable.ic_alert_escursione;
+            case 3:
+                return R.drawable.ic_alert_ventilazione;
 
-        // FALLBACK
-        return R.drawable.ic_alert;
+            case 4:
+                return R.drawable.ic_alert_gelo;
+
+            case 5:
+                return R.drawable.ic_alert_pioggia;
+
+            case 6:
+                return R.drawable.ic_alert_temporale;
+
+            case 7:
+                return R.drawable.ic_alert_siccita;
+
+            case 8:
+                return R.drawable.ic_alert_umidita;
+
+            case 9:
+                return R.drawable.ic_alert_escursione;
+
+            case 10:
+                return R.drawable.ic_alert_incendio;
+
+            default:
+                return R.drawable.ic_alert; // fallback
+        }
     }
 
     private void showDashFields() {
-        cd.add(vm.getAllGroups().subscribe(groups -> {
+        cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
             List<FieldUiModel> uiFields = new ArrayList<>();
             int count = 0;
             for(GroupWithFields group : groups) {
@@ -212,7 +223,7 @@ public class DashboardFragment extends Fragment {
     }
 
     private void showDashGroups() {
-        cd.add(vm.getAllGroups().subscribe(groups -> {
+        cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
             List<GroupUiModel> uiGroups = new ArrayList<>();
             int count = 0;
             for(GroupWithFields group : groups) {

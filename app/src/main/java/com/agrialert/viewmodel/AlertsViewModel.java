@@ -35,6 +35,15 @@ public class AlertsViewModel {
     }
 
 
+    public Completable setAlertResolved(long id) {
+        return dm.setAlertResolved(id);
+    }
+
+    public Completable setAlertActive(long id) {
+        return dm.setAlertActive(id);
+    }
+
+
 
 
 

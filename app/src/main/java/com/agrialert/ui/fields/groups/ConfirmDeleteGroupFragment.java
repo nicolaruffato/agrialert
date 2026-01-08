@@ -55,13 +55,15 @@ public class ConfirmDeleteGroupFragment extends Fragment {
             FieldsViewModel vm = a.fieldsVM();
 
             cd.add(vm.getGroupByName(groupName).subscribe(g -> {
-                // TODO: eliminare i field dentro ai campi o spostarli in gruppo di default?
+                // Before deleting the group, move all the fields in it to the default group
                 List<Completable> comp = new ArrayList<>();
                 for(Field f : g.getFields()) {
-                    comp.add(vm.deleteField(f));
+                    f.setGroupName("Default");
+                    comp.add(vm.updateField(f));
                 }
-                Completable deleteAllField = Completable.mergeArray(comp.toArray(new Completable[0]));
-                cd.add(deleteAllField.subscribe(() -> {
+
+                Completable moveFields = Completable.mergeArray(comp.toArray(new Completable[0]));
+                cd.add(moveFields.subscribe(() -> {
                     cd.add(vm.deleteGroup(g.getGroup()).subscribe(() -> {
                         Toast.makeText(requireContext(),
                                 "Gruppo eliminato",
@@ -75,7 +77,7 @@ public class ConfirmDeleteGroupFragment extends Fragment {
                     }));
                 }));
             }, err -> {
-                Log.e("DELETE", "Gruppo non trovato!");
+                Log.e("DELETE", "Il Gruppo che vuoi eliminare non è stato trovato!");
             }));
         });
 

@@ -118,7 +118,7 @@ public class AddGroupFragment extends Fragment {
             return;
         }
 
-        cd.add(vm.getAllGroups().subscribe(groups -> {
+        cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
             for (GroupWithFields g : groups) {
                 if (g.getGroup().getName().equals(name)) {
                     layoutGroupName.setError("Nome già esistente");
@@ -146,6 +146,7 @@ public class AddGroupFragment extends Fragment {
                             .navigateUp();
                 }));
             }));
+
         }));
     }
 
