@@ -10,9 +10,9 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="123dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <!-- ICONA ALERT -->
         <ImageView
@@ -20,16 +20,17 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="22dp"
             android:layout_marginTop="4dp"
+            android:layout_marginEnd="22dp"
             android:layout_marginBottom="4dp"
             android:src="@drawable/ic_alert" />
 
 
         <!-- COLONNA TESTI -->
+
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="97dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -37,31 +38,30 @@
                 android:id="@+id/txtAlertTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Vento Forte"
-                android:textStyle="bold"
-                android:textSize="16sp"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="Vento Forte"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/txtAlertThreshold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Vento > 60 km/h"
-                android:textSize="13sp"
+                android:layout_width="150dp"
+                android:layout_height="50dp"
                 android:layout_marginTop="3dp"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                android:text="Vento > 60 km/h"
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/txtAlertFieldAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Via Verdirdi, Mestre"
-                android:textSize="13sp"
                 android:layout_marginTop="3dp"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="Via Verdirdi, Mestre"
+                android:textSize="13sp" />
 
         </LinearLayout>
 
@@ -73,32 +73,31 @@
             android:orientation="vertical">
 
             <!-- DATA -->
+
+            <!-- SWITCH  -->
             <TextView
                 android:id="@+id/txtAlertTimeLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
                 android:text="Oggi"
-                android:textSize="14sp"
-                android:layout_marginBottom="6dp" />
+                android:textSize="14sp" />
 
-            <!-- SWITCH  -->
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/switchResolved"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="false"
-                android:layout_marginBottom="0dp" />
+                android:layout_marginBottom="0dp"
+                android:checked="false" />
 
             <!-- LABEL SOTTO LO SWITCH -->
-            <TextView
-                android:id="@+id/txtResolvedLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Risolto"
-                android:textSize="13sp"
-                android:layout_marginTop="0dp"
-                android:layout_marginBottom="7dp"/>
+
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="20dp"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"></LinearLayout>
 
 
     </LinearLayout>

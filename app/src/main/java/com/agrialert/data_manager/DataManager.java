@@ -72,7 +72,7 @@ public class DataManager extends Service {
      * @return A {@link Completable} that completes when the insertion is successful.
      */
     public Completable insertField(Field field) {
-        return fieldsDao.insetField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        return fieldsDao.insertField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -159,8 +159,11 @@ public class DataManager extends Service {
                 crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, null, null));
             }
         }
-        return fieldsDao.updateFieldAlertRelations(crossRefs)
-                .subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+
+        return fieldsDao.deleteAlertsForField(fieldId)
+                .andThen(fieldsDao.insertFieldAlertRelations(crossRefs))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -224,6 +227,18 @@ public class DataManager extends Service {
     public Completable updateGroup(FieldsGroup group) {
         return fieldsDao.updateGroup(group).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
+    public Completable insertAlertType(AlertType alertType) {
+        return fieldsDao.insertAlertType(alertType)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Flowable<List<AlertType>> getAllAlertTypes() {
+        return fieldsDao.getAllAlertTypes()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
 
     // --- Alert ---
     public Flowable<List<Alert>> observeAlerts(boolean resolved) {

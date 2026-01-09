@@ -22,6 +22,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.agrialert.data_manager.AlertType;
+import com.agrialert.data_manager.FieldsGroup;
+import com.agrialert.viewmodel.FieldsViewModel;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.alert_manager.AlertManagerInitializer;
 import com.agrialert.data_manager.CropType;
 import com.agrialert.data_manager.DataManager;
@@ -29,6 +33,10 @@ import com.agrialert.data_manager.Field;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.mapbox.common.MapboxOptions;
+
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
 public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNav;
@@ -37,6 +45,19 @@ public class MainActivity extends AppCompatActivity {
     private DataManager dataManager;
     private boolean mBound = false;
     private static final int REQ_NOTIFICATIONS = 1001;
+    private FieldsViewModel fieldsVM;
+    private AlertsViewModel alertsVM;
+    public FieldsViewModel fieldsVM() { return fieldsVM; }
+    public AlertsViewModel alertsVM() { return alertsVM; }
+    private final BehaviorSubject<Boolean> isBoundSubject = BehaviorSubject.create();
+
+    public boolean vmsReady() {
+        return mBound && dataManager != null && fieldsVM != null && alertsVM != null;
+    }
+
+    public Single<Boolean> isBound() {
+        return isBoundSubject.filter(bound -> bound).firstOrError();
+    }
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -46,6 +67,9 @@ public class MainActivity extends AppCompatActivity {
             dataManager = binder.getService();
             mBound = true;
             Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+            fieldsVM = new FieldsViewModel(dataManager);
+            alertsVM = new AlertsViewModel(dataManager);
+            isBoundSubject.onNext(true);
 
             /*dataManager.insertField(new Field("test", 2d, 2d, "Default", CropType.CEREALS)).subscribe(
                     () -> {},
@@ -130,6 +154,8 @@ public class MainActivity extends AppCompatActivity {
         // BOTTOM NAV
         BottomNavigationView bottomNav = binding.bottomNav;
         NavigationUI.setupWithNavController(bottomNav, navController);
+
+        MapboxOptions.setAccessToken(BuildConfig.MAPBOX_API_KEY);
     }
 
     @Override
@@ -143,8 +169,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        unbindService(connection);
-        mBound = false;
+        // NON fare unbind qui: l'Activity è ancora in uso (navigation)
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mBound) {
+            unbindService(connection);
+            mBound = false;
+        }
     }
 
     private void requestNotificationPermissionIfNeeded() {

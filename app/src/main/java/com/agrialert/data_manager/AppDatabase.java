@@ -55,17 +55,17 @@ public abstract class AppDatabase extends RoomDatabase {
                                 @Override
                                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
                                     super.onCreate(db);
-                                    db.execSQL("INSERT INTO FieldsGroup VALUES ('Default', 'Default Group')");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Ondata di calore', '', 35, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Gelo / Brina', '', 0, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Pioggia intensa', '', 30, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Vento forte', '', 60, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Temporale / Grandine', '', 12, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Siccità prolungata', '', 7, 30)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Umidità elevata', '', 85, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Escursione termica elevata', '', 20, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Rischio incendio', '', 40, NULL)");
-                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Scarsa ventilazione', '', 5, 80)");
+                                    db.execSQL("INSERT INTO FieldsGroup VALUES ('Default', 'Gruppo di Default')");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Ondata di calore', 'Temperature elevate che possono causare stress termico', 35, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Gelo / Brina', 'Rischio di danni da gelo su colture sensibili', 0, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Pioggia intensa', 'Precipitazioni elevate che possono provocare ristagno o erosione', 30, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Vento forte', 'Raffiche che possono piegare o danneggiare le piante', 60, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Temporale / Grandine', 'Eventi violenti con rischio di danni ai raccolti', 12, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Siccità prolungata', 'Carenza idrica dovuta a mancanza di piogge', 7, 30)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Umidità elevata', 'Rischio di malattie fungine dovute a eccesso di umidità', 85, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Escursione termica elevata', 'Rischio di stress termico tra giorno e notte', 20, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Rischio incendio', 'Condizioni di vento secco e terreno arido', 40, NULL)");
+                                    db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Scarsa ventilazione', 'Stagnazione dell''aria con rischio muffe', 5, 80)");
                                 }
                             })
                             .build();

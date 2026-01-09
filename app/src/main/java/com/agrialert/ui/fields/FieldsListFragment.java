@@ -14,6 +14,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.agrialert.R;
 import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
+import com.agrialert.MainActivity;
+import com.agrialert.viewmodel.FieldsViewModel;
+import com.agrialert.data_manager.GroupWithFields;
+import com.agrialert.data_manager.Field;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 import com.google.android.material.button.MaterialButton;
 
 import androidx.navigation.fragment.NavHostFragment;
@@ -38,6 +45,9 @@ public class FieldsListFragment extends Fragment
 
     private FieldsAdapter fieldsAdapter;
     private GroupsAdapter groupsAdapter;
+    private FieldsViewModel vm;
+    private final CompositeDisposable cd = new CompositeDisposable();
+
 
     public FieldsListFragment() {
         // costruttore vuoto richiesto
@@ -85,21 +95,39 @@ public class FieldsListFragment extends Fragment
             }
         });
 
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        vm = a.fieldsVM();
+
+        // Handle user from addField -> fieldList without setting alerts
+        vm.isFieldPending = false;
+
         // schermata iniziale: Campi
-        showFields();
+
+        view.post(() -> {
+            btnFieldGroups.setChecked(false);
+            btnFields.setChecked(true);
+            showFields();
+        });
     }
 
     @Override
     public void onFieldClick(FieldUiModel field) {
+        Bundle b = new Bundle();
+        b.putParcelable("field", field);
+
         NavHostFragment.findNavController(this)
-                .navigate(R.id.viewFieldFragment);
+                .navigate(R.id.viewFieldFragment, b);
     }
 
 
     @Override
     public void onGroupClick(GroupUiModel group){
+        // TODO: Passare solo nome
+        Bundle b = new Bundle();
+        b.putParcelable("group", group);
         NavHostFragment.findNavController(this)
-                .navigate(R.id.viewGroupFragment);
+                .navigate(R.id.viewGroupFragment, b);
     }
 
     @Override
@@ -122,7 +150,39 @@ public class FieldsListFragment extends Fragment
         btnAddField.setText("Aggiungi un nuovo campo");
 
         rvFields.setAdapter(fieldsAdapter);
-        fieldsAdapter.submitList(createSampleFields());
+
+        cd.clear();
+        cd.add(
+                vm.getAllGroups().subscribe(
+                        groups -> {
+                            List<FieldUiModel> uiList = new java.util.ArrayList<>();
+
+                            for (GroupWithFields g : groups) {
+                                if (g.getFields() == null) continue;
+
+                                for (Field f : g.getFields()) {
+                                    uiList.add(
+                                            new FieldUiModel(
+                                                    f.getId(),
+                                                    f.getAddress(),
+                                                    f.getLatitude(),
+                                                    f.getLongitude(),
+                                                    requireContext().getString(f.getCropType().getResourceId()),
+                                                    f.getGroupName(),
+                                                    f.getCropType().getImageResId(),
+                                                    Collections.emptyList() // icone alert → da fare
+                                            )
+                                    );
+                                }
+                            }
+
+                            fieldsAdapter.submitList(uiList);
+                        },
+                        err -> {
+                            android.util.Log.e("FieldsListFragment", "Errore DB", err);
+                        }
+                )
+        );
     }
 
     private void showGroups() {
@@ -133,49 +193,34 @@ public class FieldsListFragment extends Fragment
         btnAddField.setText("Aggiungi un nuovo gruppo");
 
         rvFields.setAdapter(groupsAdapter);
-        groupsAdapter.submitList(createSampleGroups());
+
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+
+        vm = a.fieldsVM();
+        cd.add(vm.getAllGroups().subscribe(
+                groups -> {
+                    List<GroupUiModel> uiList = new java.util.ArrayList<>();
+
+                    for (GroupWithFields g : groups) {
+                        uiList.add(new GroupUiModel(
+                                0, // TODO: remove
+                                g.getGroup().getName(),
+                                g.getGroup().getDescription(),
+                                R.drawable.ic_group_default,
+                                Collections.emptyList() // TODO: list alert for group
+                        ));
+                    }
+
+                    groupsAdapter.submitList(uiList);
+                }));
     }
 
-    // ------------------- DATI DI ESEMPIO CAMPi -------------------
-
-    private List<FieldUiModel> createSampleFields() {
-        return Arrays.asList(
-                new FieldUiModel(
-                        1L,
-                        "Via Verdirdi, 15 - Mestre (VE)",
-                        "Ortaggi",
-                        "Gruppo A",
-                        R.drawable.ic_ortaggi,
-                        Arrays.asList(
-                                R.drawable.ic_alert_vento,
-                                R.drawable.ic_alert_calore,
-                                R.drawable.ic_alert_gelo
-                        )
-                ),
-                new FieldUiModel(
-                        2L,
-                        "Via Giallo, 15 - Mestre (VE)",
-                        "Cereali",
-                        "Gruppo A",
-                        R.drawable.ic_cereali,
-                        Arrays.asList(
-                                R.drawable.ic_alert_calore,
-                                R.drawable.ic_alert_temporale
-                        )
-                ),
-                new FieldUiModel(
-                        3L,
-                        "Via Torino, 154 - Martellago (VE)",
-                        "Frutteti",
-                        "Gruppo B",
-                        R.drawable.ic_frutteti,
-                        Arrays.asList(
-                                R.drawable.ic_alert_vento
-                        )
-                )
-        );
+    @Override
+    public void onStop() {
+        super.onStop();
+        cd.clear();
     }
-
 
     // ------------------- DATI DI ESEMPIO GRUPPI -------------------
 

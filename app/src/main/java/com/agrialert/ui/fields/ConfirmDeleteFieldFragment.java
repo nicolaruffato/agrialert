@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import kotlin.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,10 +12,18 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Threshold;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
+import java.util.ArrayList;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+
 public class ConfirmDeleteFieldFragment extends Fragment {
+    private final CompositeDisposable cd = new CompositeDisposable();
 
     public ConfirmDeleteFieldFragment() { }
 
@@ -34,18 +43,38 @@ public class ConfirmDeleteFieldFragment extends Fragment {
         MaterialButton btnConfirm = view.findViewById(R.id.btnConfirmDeleteField);
         MaterialButton btnCancel = view.findViewById(R.id.btnCancelDeleteField);
 
-        btnConfirm.setOnClickListener(v -> {
-            Toast.makeText(requireContext(),
-                    "Campo eliminato (finto, niente database ancora)",
-                    Toast.LENGTH_SHORT).show();
+        Bundle args = getArguments();
+        assert(args != null);
+        int fieldId = args.getInt("fieldId");
 
-            // Torna alla lista CAMPI
-            NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
-                    .popBackStack(R.id.fieldsListFragment, false);
+        btnConfirm.setOnClickListener(v -> {
+            MainActivity a = (MainActivity) requireActivity();
+            if (!a.vmsReady()) return;
+            FieldsViewModel vm = a.fieldsVM();
+
+            cd.add(vm.updateAlertsToField(fieldId, new ArrayList<Pair<Integer, Threshold>>()).subscribe(() -> {
+                cd.add(vm.getFieldById(fieldId).subscribe(f -> {
+                    cd.add(vm.deleteField(f).subscribe(() -> {
+                        Toast.makeText(requireContext(),
+                                "Campo eliminato",
+                                Toast.LENGTH_SHORT).show();
+
+                        // Torna alla lista CAMPI
+                        NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
+                                .popBackStack(R.id.fieldsListFragment, false);
+                    }));
+                }));
+            }));
         });
 
         btnCancel.setOnClickListener(v ->
                 NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
                         .popBackStack());
+    }
+
+    @Override
+    public void onDestroyView() {
+        cd.clear();
+        super.onDestroyView();
     }
 }

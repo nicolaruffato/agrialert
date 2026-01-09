@@ -1,6 +1,7 @@
 package com.agrialert.ui.alerts;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,11 +12,18 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Alert;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
+import io.reactivex.rxjava3.core.ObservableSource;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class AlertsListFragment extends Fragment {
 
@@ -24,7 +32,8 @@ public class AlertsListFragment extends Fragment {
     private MaterialButton btnAlertsResolved;
 
     private AlertsAdapter adapter;
-    private final List<AlertUiModel> allAlerts = new ArrayList<>();
+    AlertsViewModel avm;
+    private final CompositeDisposable cd = new CompositeDisposable();
 
     public AlertsListFragment() {
         // costruttore vuoto richiesto
@@ -49,24 +58,24 @@ public class AlertsListFragment extends Fragment {
         // RecyclerView
         rvAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        adapter = new AlertsAdapter((alert, isResolved) -> {
-            // aggiorno il model
-            alert.isResolved = isResolved;
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        avm = a.alertsVM();
 
-            // ricalcolo la lista da mostrare in base al toggle
+        adapter = new AlertsAdapter((alert, isResolved) -> {
+            Log.e("AlertsListFragment", "onResolvedChanged:");
+
+            // Aggiorno il model
+            // Ricalcolo la lista da mostrare in base al toggle
+
             if (btnAlertsActive.isChecked()) {
-                showActiveAlerts();
+                cd.add(avm.setAlertResolved(alert.id).subscribe(this::showActiveAlerts));
             } else {
-                showResolvedAlerts();
+                cd.add(avm.setAlertActive(alert.id).subscribe(this::showResolvedAlerts));
             }
         });
 
         rvAlerts.setAdapter(adapter);
-
-
-        // dati di esempio
-        allAlerts.clear();
-        allAlerts.addAll(createSampleAlerts());
 
         // default: tab "Attivi"
         showActiveAlerts();
@@ -79,83 +88,69 @@ public class AlertsListFragment extends Fragment {
     // ------------------- FILTRI -------------------
 
     private void showActiveAlerts() {
-        List<AlertUiModel> active = new ArrayList<>();
-        for (AlertUiModel alert : allAlerts) {
-            if (!alert.isResolved) {
-                active.add(alert);
-            }
-        }
-        adapter.submitList(active);
-
         btnAlertsActive.setChecked(true);
         btnAlertsResolved.setChecked(false);
+
+        cd.add(avm.getActiveAlerts().firstOrError().subscribe(alerts -> {
+            List<AlertUiModel> active = new ArrayList<>();
+            for(Alert alert : alerts) {
+                String groupOrField = "";
+                if(alert.getFieldId() == 0) {
+                    groupOrField = "Gruppo: " + alert.getGroupName();
+                } else {
+                    groupOrField = "Campo: " + alert.getFieldAddress();
+                }
+                String[] descAndForecast = alert.getDescription().split(" - ");
+                active.add(new AlertUiModel(
+                        alert.getId(),
+                        String.valueOf(alert.getTypeId()),
+                        alert.getTitle(),
+                        descAndForecast[0],
+                        groupOrField,
+                        descAndForecast[1],
+                        alert.isResolved(),
+                        getIconForType(alert.getTypeId())
+                ));
+            }
+            adapter.submitList(active);
+        }));
     }
 
     private void showResolvedAlerts() {
-        List<AlertUiModel> resolved = new ArrayList<>();
-        for (AlertUiModel alert : allAlerts) {
-            if (alert.isResolved) {
-                resolved.add(alert);
-            }
-        }
-        adapter.submitList(resolved);
-
         btnAlertsActive.setChecked(false);
         btnAlertsResolved.setChecked(true);
+
+        cd.add(avm.getResolvedAlerts().firstOrError().subscribe(alerts -> {
+            List<AlertUiModel> resolved = new ArrayList<>();
+            for(Alert alert : alerts) {
+                String groupOrField = "";
+                if(alert.getFieldId() == 0) {
+                    groupOrField = "Gruppo: " + alert.getGroupName();
+                } else {
+                    groupOrField = "Campo: " + alert.getFieldAddress();
+                }
+                String[] descAndForecast = alert.getDescription().split(" - ");
+                resolved.add(new AlertUiModel(
+                        alert.getId(),
+                        String.valueOf(alert.getTypeId()),
+                        alert.getTitle(),
+                        descAndForecast[0],
+                        groupOrField,
+                        descAndForecast[1],
+                        alert.isResolved(),
+                        getIconForType(alert.getTypeId())
+                ));
+            }
+            adapter.submitList(resolved);
+        }));
     }
 
-    // ------------------- DATI DI ESEMPIO -------------------
-
-    private List<AlertUiModel> createSampleAlerts() {
-        List<AlertUiModel> list = new ArrayList<>();
-
-        // ATTIVI
-        list.add(new AlertUiModel(
-                1L,
-                "VENTO_FORTE",
-                "Vento forte",
-                "Vento > 50 km/h",
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Oggi",
-                false, // non risolto
-                getIconForType("VENTO_FORTE")
-        ));
-
-        list.add(new AlertUiModel(
-                2L,
-                "ONDATA_CALORE",
-                "Ondata di calore",
-                "Temperatura aria > 35 °C",
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Oggi",
-                false,
-                getIconForType("ONDATA_CALORE")
-        ));
-
-        list.add(new AlertUiModel(
-                3L,
-                "SCARSA_VENTILAZIONE",
-                "Scarsa ventilazione",
-                "Vento < 5 km/h, Umidità > 80%",
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Domani",
-                false,
-                getIconForType("SCARSA_VENTILAZIONE")
-        ));
-
-        // RISOLTO
-        list.add(new AlertUiModel(
-                4L,
-                "GELO_BRINA",
-                "Gelo / brina",
-                "Temperatura minima < 0 °C",
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Tra 5 giorni",
-                true, // già risolto
-                getIconForType("GELO_BRINA")
-        ));
-
-        return list;
+    private String fromMsToTime(long ms) {
+        Log.e("AlertsListFragment", "fromMsToTime:" + ms);
+        long seconds = (ms / 1000) % 60;
+        long minutes = (ms / (1000 * 60)) % 60;
+        long hours = (ms / (1000 * 60 * 60)) % 24;
+        return String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     // ------------------- MAPPING TIPO → ICONA -------------------
@@ -166,38 +161,36 @@ public class AlertsListFragment extends Fragment {
      * Esempio:
      *  - ic_alert_vento.xml
      */
-    private int getIconForType(String typeId) {
-        if (typeId == null) return R.drawable.ic_alert; // icona generica
-
+    private int getIconForType(int typeId) {
         switch (typeId) {
-            case "VENTO_FORTE":
+            case 1:
                 return R.drawable.ic_alert_vento;
 
-            case "ONDATA_CALORE":
+            case 2:
                 return R.drawable.ic_alert_calore;
 
-            case "SCARSA_VENTILAZIONE":
+            case 3:
                 return R.drawable.ic_alert_ventilazione;
 
-            case "GELO_BRINA":
+            case 4:
                 return R.drawable.ic_alert_gelo;
 
-            case "PIOGGIA_INTENSA":
+            case 5:
                 return R.drawable.ic_alert_pioggia;
 
-            case "TEMPORALE_GRANDINE":
+            case 6:
                 return R.drawable.ic_alert_temporale;
 
-            case "SICCITA":
+            case 7:
                 return R.drawable.ic_alert_siccita;
 
-            case "UMIDITA_ELEVATA":
+            case 8:
                 return R.drawable.ic_alert_umidita;
 
-            case "ESCURSIONE_TERMICA":
+            case 9:
                 return R.drawable.ic_alert_escursione;
 
-            case "RISCHIO_INCENDIO":
+            case 10:
                 return R.drawable.ic_alert_incendio;
 
             default:

@@ -36,8 +36,10 @@ interface FieldsDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     Completable insertGroup(FieldsGroup group);
 
+    @Query("DELETE FROM AlertTypeCrossRef WHERE fieldId = :fieldId")
+    Completable deleteAlertsForField(int fieldId);
     @Insert
-    Completable insetField(Field field);
+    Completable insertField(Field field);
 
     @Query("SELECT * FROM Field WHERE id = :fieldId")
     Single<Field> getFieldById(int fieldId);
@@ -79,6 +81,11 @@ interface FieldsDao {
     @Transaction
     @Query("SELECT * FROM Field WHERE id = :fieldId")
     Flowable<ActivatedAlerts> getAlertsFromField(int fieldId);
+
+    @Query("SELECT * FROM AlertType")
+    Flowable<List<AlertType>> getAllAlertTypes();
+
+
 
 
 

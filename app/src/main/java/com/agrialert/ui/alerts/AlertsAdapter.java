@@ -1,5 +1,6 @@
 package com.agrialert.ui.alerts;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -74,7 +75,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtFieldAddress = itemView.findViewById(R.id.txtAlertFieldAddress);
             txtTime = itemView.findViewById(R.id.txtAlertTimeLabel);
             switchResolved = itemView.findViewById(R.id.switchResolved);
-            txtResolvedLabel = itemView.findViewById(R.id.txtResolvedLabel);
+            //txtResolvedLabel = itemView.findViewById(R.id.txtResolvedLabel);
         }
 
         void bind(AlertUiModel item, OnResolvedChangeListener listener) {
@@ -86,8 +87,11 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtTitle.setText(item.title);
             txtThreshold.setText(item.thresholdText);
             txtFieldAddress.setText(item.fieldAddress);
-            txtTime.setText(item.timeLabel);
-            txtResolvedLabel.setText("Risolto");
+            // Previsto per 08/01 18:00
+            String[] time = item.timeLabel.split(" ");
+            txtTime.setText("08/01"); // usare time quando sistemato visualizzazione alert singolo campo
+                                      // ViewFieldFragment
+            //txtResolvedLabel.setText(time[1]);
 
             // evito che il listener scatti quando faccio setChecked
             switchResolved.setOnCheckedChangeListener(null);

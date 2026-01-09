@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ViewFieldFragment extends Fragment {
-
+    private static final String TAG = "ViewField";
     private ImageView imgCrop;
     private TextView txtAddress;
     private TextView txtCrop;
@@ -58,20 +59,30 @@ public class ViewFieldFragment extends Fragment {
         btnEditField = view.findViewById(R.id.btnEditField);
         btnDeleteField = view.findViewById(R.id.btnDeleteField);
 
+        Bundle args = getArguments();
+        if (args == null) {
+            Log.e(TAG, "field mancante: passalo come arg a ViewFieldFragment!");
+            return;
+        }
+        FieldUiModel field = args.getParcelable("field");
+
+        // TODO: choose one
+        Bundle b = new Bundle();
+        b.putInt("fieldId", (int)field.id);
+
         //LISTENER
         btnEditField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
-                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment));
+                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment, b));
 
         btnDeleteField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
-                        .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment));
+                        .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment, b));
         ;
-        // DATI FINTI DEL CAMPO
-        txtAddress.setText("Via Verdirdi, 15 - Mestre (VE)");
-        txtCrop.setText("Ortaggi");
-        txtGroup.setText("Gruppo A");
-        imgCrop.setImageResource(R.drawable.ic_ortaggi);
+        txtAddress.setText(field.address);
+        txtCrop.setText(field.crop);
+        txtGroup.setText(field.groupName);
+        imgCrop.setImageResource(field.iconRes);
 
         // LISTA ALERT COLLEGATI AL CAMPO
         rvFieldAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
