@@ -49,7 +49,7 @@ public class FieldsViewModel {
         return dm.getAllGroups();
     }
 
-    public Flowable<GroupWithFields> getGroupByName(String name) {
+    public Single<GroupWithFields> getGroupByName(String name) {
         return dm.getGroupByName(name);
     }
 

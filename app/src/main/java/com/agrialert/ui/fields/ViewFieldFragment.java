@@ -15,9 +15,11 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -33,6 +35,8 @@ public class ViewFieldFragment extends Fragment {
 
     private MaterialButton btnEditField;
     private MaterialButton btnDeleteField;
+    private AlertsAdapter adapter;
+    private AlertsViewModel avm;
 
     public ViewFieldFragment() {
         // costruttore vuoto richiesto dal Fragment
@@ -66,14 +70,13 @@ public class ViewFieldFragment extends Fragment {
         }
         FieldUiModel field = args.getParcelable("field");
 
-        // TODO: choose one
         Bundle b = new Bundle();
         b.putInt("fieldId", (int)field.id);
 
         //LISTENER
         btnEditField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
-                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment, b));
+                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment, b)); // Try to use args
 
         btnDeleteField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
@@ -84,18 +87,27 @@ public class ViewFieldFragment extends Fragment {
         txtGroup.setText(field.groupName);
         imgCrop.setImageResource(field.iconRes);
 
+        MainActivity a = (MainActivity) requireActivity();
+        if (!a.vmsReady()) return;
+        avm = a.alertsVM();
+
         // LISTA ALERT COLLEGATI AL CAMPO
         rvFieldAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
-        AlertsAdapter adapter = new AlertsAdapter((alert, isResolved) -> {
+        adapter = new AlertsAdapter((alert, isResolved) -> {
             // aggiorno il model
             alert.isResolved = isResolved;
-
-
+            avm.setAlertResolved(alert.id);
         });
         rvFieldAlerts.setAdapter(adapter);
 
-        adapter.submitList(getSampleAlerts());
+        getAlerts(field);
     }
+
+    private void getAlerts(FieldUiModel field) {
+
+        adapter.submitList(getSampleAlerts());
+    };
+
 
     // ------- DATI DI ESEMPIO ALERT -------
 

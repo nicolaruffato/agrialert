@@ -227,7 +227,7 @@ public class AddFieldFragment extends Fragment {
                         Field field = new Field(address, selectedLat, selectedLng, finalGroupName, selectedCrop);
 
                         cd.add(vm.insertField(field)
-                                .andThen(vm.getGroupByName(finalGroupName).firstOrError())
+                                .andThen(vm.getGroupByName(finalGroupName))
                                 .subscribe(groupWithFields -> {
                                     int id = -1;
                                     for (Field f : groupWithFields.getFields()) {
@@ -256,7 +256,7 @@ public class AddFieldFragment extends Fragment {
                 Field field = new Field(address, selectedLat, selectedLng, groupName, selectedCrop);
 
                 cd.add(vm.insertField(field)
-                        .andThen(vm.getGroupByName(groupName).firstOrError())
+                        .andThen(vm.getGroupByName(groupName))
                         .subscribe(groupWithFields -> {
                             int id = -1;
                             for (Field f : groupWithFields.getFields()) {
