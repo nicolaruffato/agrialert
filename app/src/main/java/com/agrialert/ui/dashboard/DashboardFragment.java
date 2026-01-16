@@ -31,8 +31,12 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
@@ -133,14 +137,19 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
                     View row = inflater.inflate(R.layout.item_alert_preview, layoutAlertPreview, false);
 
                     ImageView img = row.findViewById(R.id.imgAlertIcon);
-                    TextView txt = row.findViewById(R.id.txtAlertText);
+                    TextView txtTitle = row.findViewById(R.id.txtAlertTitle);
+                    TextView txtTime = row.findViewById(R.id.txtAlertTime);
 
                     String alertName = alert.getTitle();
-                    String[] descAndTime = alert.getDescription().split(" - ");
-                    String[] time = descAndTime[1].split(" ");
-
-                    txt.setText(alertName + " per il " + time[2]);
-                    img.setImageResource(getIconForType(alert.getTypeId()));
+                    String whenLabel = formatForecastLabel(alert.getForecastAt(), alert.getDurationMs());
+                    txtTitle.setText(alertName);
+                    if (whenLabel.isEmpty()) {
+                        txtTime.setVisibility(View.GONE);
+                    } else {
+                        txtTime.setVisibility(View.VISIBLE);
+                        txtTime.setText(whenLabel);
+                    }
+                    img.setImageResource(alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert);
 
                     layoutAlertPreview.addView(row);
                 }
@@ -158,6 +167,50 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
                 layoutAlertPreview.setVisibility(View.VISIBLE);
             }
         }));
+    }
+
+    private String formatForecastLabel(long startMs, long durationMs) {
+        if (startMs <= 0L) {
+            return "";
+        }
+
+        Calendar start = Calendar.getInstance();
+        start.setTimeInMillis(startMs);
+        Calendar today = Calendar.getInstance();
+        Calendar tomorrow = (Calendar) today.clone();
+        tomorrow.add(Calendar.DAY_OF_YEAR, 1);
+
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+        Date startDate = start.getTime();
+
+        String startDayLabel = isSameDay(start, today)
+                ? "Oggi"
+                : (isSameDay(start, tomorrow) ? "Domani" : dateFormat.format(startDate));
+        String startLabel = startDayLabel + " " + timeFormat.format(startDate);
+
+        if (durationMs <= 0L) {
+            return startLabel;
+        }
+
+        long endMs = startMs + durationMs;
+        Calendar end = Calendar.getInstance();
+        end.setTimeInMillis(endMs);
+        Date endDate = end.getTime();
+
+        if (isSameDay(start, end)) {
+            return startLabel + "\u2013" + timeFormat.format(endDate);
+        }
+
+        String endDayLabel = isSameDay(end, today)
+                ? "Oggi"
+                : (isSameDay(end, tomorrow) ? "Domani" : dateFormat.format(endDate));
+        return startLabel + "\u2013" + endDayLabel + " " + timeFormat.format(endDate);
+    }
+
+    private boolean isSameDay(Calendar a, Calendar b) {
+        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
+                && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
     private int getIconForType(int typeId) {

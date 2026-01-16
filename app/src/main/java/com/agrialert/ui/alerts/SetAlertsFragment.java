@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.alert_manager.AlertManagerInitializer;
 import com.agrialert.data_manager.AlertType;
 import com.agrialert.data_manager.AlertWithThreshold;
 import com.agrialert.data_manager.Threshold;
@@ -141,7 +142,10 @@ public class SetAlertsFragment extends Fragment {
 
             for (AlertSettingUiModel m : items) {
                 if (m != null && m.enabled) {
-                    selected.add(new Pair<>(m.getId(), new Threshold((double)m.primaryValue, (double)m.secondaryValue)));
+                    selected.add(new Pair<>(
+                            m.getId(),
+                            new Threshold((double) m.primaryValue, m.hasSecondaryThreshold ? (double) m.secondaryValue : null)
+                    ));
                 }
             }
 
@@ -171,6 +175,7 @@ public class SetAlertsFragment extends Fragment {
                                                 "Alert salvati",
                                                 Toast.LENGTH_SHORT).show();
 
+                                        AlertManagerInitializer.triggerImmediateSync(requireContext());
                                         NavHostFragment.findNavController(this)
                                                 .popBackStack(R.id.fieldsListFragment, false);
 
