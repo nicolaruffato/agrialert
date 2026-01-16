@@ -89,21 +89,24 @@ public class AlertEvaluator {
                         addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries, startIndex,
                                 value -> value > threshold1,
                                 "Ondata di calore",
-                                value -> "Prevista temperatura " + formatValue(value, "C") +
-                                        " (soglia " + formatValue(threshold1, "C") + ")",
+                                value -> "Temperatura prevista " + formatValueCompact(value, "\u00B0C") +
+                                        " (>" + formatValueCompact(threshold1, "\u00B0C") + ")",
                                 R.drawable.ic_alert_calore);
                     } else {
                         int hours = toPositiveIntHours(threshold2);
-                        int idx = firstIndexStreak(tempSeries, value -> value > threshold1, hours, startIndex);
+                        ThresholdPredicate predicate = value -> value > threshold1;
+                        int idx = firstIndexStreak(tempSeries, predicate, hours, startIndex);
                         if (idx >= 0) {
                             double value = safeGet(tempSeries, idx);
                             long forecastAt = parseIsoTime(timeSeries, idx);
-                            String description = "Prevista temperatura " + formatValue(value, "C") +
-                                    " per almeno " + formatCount(hours, "h") +
-                                    " (soglia " + formatValue(threshold1, "C") + ")" +
-                                    formatWhen(forecastAt);
-                            result.add(build(type, "Ondata di calore", description,
-                                    R.drawable.ic_alert_calore, field, groupName, forecastAt));
+                            long durationMs = streakDurationMs(tempSeries, predicate, idx);
+                            String description = "Temperatura prevista " + formatValueCompact(value, "\u00B0C") +
+                                    " (>" + formatValueCompact(threshold1, "\u00B0C") + ")" +
+                                    formatDurationSuffix(durationMs);
+                            Alert alert = build(type, "Ondata di calore", description,
+                                    R.drawable.ic_alert_calore, field, groupName, forecastAt);
+                            alert.setDurationMs(durationMs);
+                            result.add(alert);
                         }
                     }
                     break;
@@ -115,21 +118,24 @@ public class AlertEvaluator {
                         addIfForecastMatches(result, type, field, groupName, tempSeries, timeSeries, startIndex,
                                 value -> value < threshold1,
                                 "Gelo / brina",
-                                value -> "Prevista temperatura " + formatValue(value, "C") +
-                                        " (soglia " + formatValue(threshold1, "C") + ")",
+                                value -> "Temperatura prevista " + formatValueCompact(value, "\u00B0C") +
+                                        " (<" + formatValueCompact(threshold1, "\u00B0C") + ")",
                                 R.drawable.ic_alert_gelo);
                     } else {
                         int hours = toPositiveIntHours(threshold2);
-                        int idx = firstIndexStreak(tempSeries, value -> value < threshold1, hours, startIndex);
+                        ThresholdPredicate predicate = value -> value < threshold1;
+                        int idx = firstIndexStreak(tempSeries, predicate, hours, startIndex);
                         if (idx >= 0) {
                             double value = safeGet(tempSeries, idx);
                             long forecastAt = parseIsoTime(timeSeries, idx);
-                            String description = "Prevista temperatura " + formatValue(value, "C") +
-                                    " per almeno " + formatCount(hours, "h") +
-                                    " (soglia " + formatValue(threshold1, "C") + ")" +
-                                    formatWhen(forecastAt);
-                            result.add(build(type, "Gelo / brina", description,
-                                    R.drawable.ic_alert_gelo, field, groupName, forecastAt));
+                            long durationMs = streakDurationMs(tempSeries, predicate, idx);
+                            String description = "Temperatura prevista " + formatValueCompact(value, "\u00B0C") +
+                                    " (<" + formatValueCompact(threshold1, "\u00B0C") + ")" +
+                                    formatDurationSuffix(durationMs);
+                            Alert alert = build(type, "Gelo / brina", description,
+                                    R.drawable.ic_alert_gelo, field, groupName, forecastAt);
+                            alert.setDurationMs(durationMs);
+                            result.add(alert);
                         }
                     }
                     break;
@@ -141,20 +147,22 @@ public class AlertEvaluator {
                         addIfForecastMatches(result, type, field, groupName, precipitationSeries, timeSeries, startIndex,
                                 value -> value > threshold1,
                                 "Pioggia intensa",
-                                value -> "Previste precipitazioni " + formatValue(value, "mm/h") +
-                                        " (soglia " + formatValue(threshold1, "mm/h") + ")",
+                                value -> "Pioggia prevista " + formatValueCompact(value, "mm/h") +
+                                        " (>" + formatValueCompact(threshold1, "mm/h") + ")",
                                 R.drawable.ic_alert_pioggia);
                     } else {
                         int windowHours = toPositiveIntHours(threshold2);
                         RollingWindowMatch match = firstIndexRollingSum(precipitationSeries, windowHours, threshold1, startIndex);
                         if (match != null) {
                             long forecastAt = parseIsoTime(timeSeries, match.index);
-                            String description = "Previste precipitazioni " +
-                                    formatValue(match.sum, "mm") + " in " + formatCount(windowHours, "h") +
-                                    " (soglia " + formatValue(threshold1, "mm") + ")" +
-                                    formatWhen(forecastAt);
-                            result.add(build(type, "Pioggia intensa", description,
-                                    R.drawable.ic_alert_pioggia, field, groupName, forecastAt));
+                            long durationMs = rollingSumDurationMs(precipitationSeries, windowHours, threshold1, match.index);
+                            String description = "Pioggia prevista " + formatValueCompact(match.sum, "mm") +
+                                    " in " + windowHours + "h (>" + formatValueCompact(threshold1, "mm") + ")" +
+                                    formatDurationSuffix(durationMs);
+                            Alert alert = build(type, "Pioggia intensa", description,
+                                    R.drawable.ic_alert_pioggia, field, groupName, forecastAt);
+                            alert.setDurationMs(durationMs);
+                            result.add(alert);
                         }
                     }
                     break;
@@ -165,8 +173,8 @@ public class AlertEvaluator {
                     addIfForecastMatches(result, type, field, groupName, windSeries, timeSeries, startIndex,
                             value -> value > threshold1,
                             "Vento forte",
-                            value -> "Previsto vento " + formatValue(value, "km/h") +
-                                    " (soglia " + formatValue(threshold1, "km/h") + ")",
+                            value -> "Vento previsto " + formatValueCompact(value, "km/h") +
+                                    " (>" + formatValueCompact(threshold1, "km/h") + ")",
                             R.drawable.ic_alert_vento);
                     break;
                 case "TEMPORALE_GRANDINE":
@@ -178,14 +186,23 @@ public class AlertEvaluator {
                             weatherCode, threshold1, threshold2, startIndex);
                     if (stormMatch != null) {
                         long forecastAt = parseIsoTime(timeSeries, stormMatch.index);
-                        String description = "Previsto temporale/grandine con probabilita " +
-                                formatValue(stormMatch.stormProbability, "%") + " e " +
-                                formatValue(stormMatch.hailProbability, "%") +
-                                " (soglie " + formatValue(threshold1, "%") +
-                                ", " + formatValue(threshold2, "%") + ")" +
-                                formatWhen(forecastAt);
-                        result.add(build(type, "Temporale / grandine", description,
-                                R.drawable.ic_alert_temporale, field, groupName, forecastAt));
+                        long durationMs = stormHailDurationMs(precipitationSeries,
+                                windSeries,
+                                humiditySeries,
+                                tempSeries,
+                                weatherCode,
+                                threshold1,
+                                threshold2,
+                                stormMatch.index);
+                        String description = "Prob. temporale " + formatValueCompact(stormMatch.stormProbability, "%") +
+                                " (>" + formatValueCompact(threshold1, "%") + ")" +
+                                " e grandine " + formatValueCompact(stormMatch.hailProbability, "%") +
+                                " (>" + formatValueCompact(threshold2, "%") + ")" +
+                                formatDurationSuffix(durationMs);
+                        Alert alert = build(type, "Temporale / grandine", description,
+                                R.drawable.ic_alert_temporale, field, groupName, forecastAt);
+                        alert.setDurationMs(durationMs);
+                        result.add(alert);
                     }
                     break;
                 case "SICCITA_PROLUNGATA":
@@ -193,16 +210,17 @@ public class AlertEvaluator {
                         break;
                     }
                     int requiredHours = toPositiveIntHours(threshold1 * 24d);
-                    int droughtIdx = firstIndexStreak(precipitationSeries,
-                            value -> value <= PRECIPITATION_EPSILON, requiredHours, startIndex);
+                    ThresholdPredicate droughtPredicate = value -> value <= PRECIPITATION_EPSILON;
+                    int droughtIdx = firstIndexStreak(precipitationSeries, droughtPredicate, requiredHours, startIndex);
                     if (droughtIdx >= 0) {
                         long forecastAt = parseIsoTime(timeSeries, droughtIdx);
-                        String description = "Previste condizioni senza pioggia per almeno " +
-                                formatCount(requiredHours, "h") +
-                                " (soglia " + formatValue(threshold1, "giorni") + ")" +
-                                formatWhen(forecastAt);
-                        result.add(build(type, "Siccita prolungata", description,
-                                R.drawable.ic_alert_siccita, field, groupName, forecastAt));
+                        long durationMs = streakDurationMs(precipitationSeries, droughtPredicate, droughtIdx);
+                        String description = "Assenza di pioggia prevista (>= " + formatDays(threshold1) + ")" +
+                                formatDurationSuffix(durationMs);
+                        Alert alert = build(type, "Siccita prolungata", description,
+                                R.drawable.ic_alert_siccita, field, groupName, forecastAt);
+                        alert.setDurationMs(durationMs);
+                        result.add(alert);
                     }
                     break;
                 case "UMIDITA_ELEVATA":
@@ -212,8 +230,8 @@ public class AlertEvaluator {
                     addIfForecastMatches(result, type, field, groupName, humiditySeries, timeSeries, startIndex,
                             value -> value > threshold1,
                             "Umidita elevata",
-                            value -> "Prevista umidita " + formatValue(value, "%") +
-                                    " (soglia " + formatValue(threshold1, "%") + ")",
+                            value -> "Umidita prevista " + formatValueCompact(value, "%") +
+                                    " (>" + formatValueCompact(threshold1, "%") + ")",
                             R.drawable.ic_alert_umidita);
                     break;
                 case "ESCURSIONE_TERMICA_ELEVATA":
@@ -224,12 +242,14 @@ public class AlertEvaluator {
                     if (rangeMatch != null) {
                         double delta = rangeMatch.max - rangeMatch.min;
                         long forecastAt = parseIsoTime(timeSeries, rangeMatch.index);
-                        String description = "Prevista escursione termica " +
-                                formatValue(delta, "C") +
-                                " (soglia " + formatValue(threshold1, "C") + ")" +
-                                formatWhen(forecastAt);
-                        result.add(build(type, "Escursione termica elevata", description,
-                                R.drawable.ic_alert_escursione, field, groupName, forecastAt));
+                        long durationMs = dailyRangeDurationMs(tempSeries, DAILY_WINDOW_HOURS, threshold1, rangeMatch.index);
+                        String description = "Escursione termica prevista " + formatValueCompact(delta, "\u00B0C") +
+                                " (>" + formatValueCompact(threshold1, "\u00B0C") + ")" +
+                                formatDurationSuffix(durationMs);
+                        Alert alert = build(type, "Escursione termica elevata", description,
+                                R.drawable.ic_alert_escursione, field, groupName, forecastAt);
+                        alert.setDurationMs(durationMs);
+                        result.add(alert);
                     }
                     break;
                 case "RISCHIO_INCENDIO":
@@ -241,26 +261,28 @@ public class AlertEvaluator {
                             value -> value > threshold1,
                             hum -> hum < threshold2,
                             "Rischio incendio",
-                            (tempVal, humVal) -> "Prevista temperatura " + formatValue(tempVal, "C") +
-                                    " e umidita " + formatValue(humVal, "%") +
-                                    " (soglie " + formatValue(threshold1, "C") +
-                                    ", " + formatValue(threshold2, "%") + ")",
+                            (tempVal, humVal) -> "Temperatura " + formatValueCompact(tempVal, "\u00B0C") +
+                                    " (>" + formatValueCompact(threshold1, "\u00B0C") + ")" +
+                                    " e umidita " + formatValueCompact(humVal, "%") +
+                                    " (<" + formatValueCompact(threshold2, "%") + ")",
                             R.drawable.ic_alert_incendio);
                     break;
                 case "SCARSA_VENTILAZIONE":
                     if (threshold1 == null) {
                         break;
                     }
-                    double humidityMin = threshold2 != null ? threshold2 : HUMIDITY_MIN_SCARSA_VENTILAZIONE;
+                    double humidityMin = threshold2 != null && threshold2 > 0d
+                            ? threshold2
+                            : HUMIDITY_MIN_SCARSA_VENTILAZIONE;
                     addIfForecastMatchesPaired(result, type, field, groupName,
                             windSeries, humiditySeries, timeSeries, startIndex,
                             value -> value < threshold1,
                             hum -> hum > humidityMin,
                             "Scarsa ventilazione",
-                            (windVal, humVal) -> "Previsti vento " + formatValue(windVal, "km/h") +
-                                    " e umidita " + formatValue(humVal, "%") +
-                                    " (soglie " + formatValue(threshold1, "km/h") +
-                                    ", " + formatValue(humidityMin, "%") + ")",
+                            (windVal, humVal) -> "Vento " + formatValueCompact(windVal, "km/h") +
+                                    " (<" + formatValueCompact(threshold1, "km/h") + ")" +
+                                    " e umidita " + formatValueCompact(humVal, "%") +
+                                    " (>" + formatValueCompact(humidityMin, "%") + ")",
                             R.drawable.ic_alert_ventilazione);
                     break;
                 default:
@@ -324,8 +346,11 @@ public class AlertEvaluator {
         if (idx < 0) return;
         long forecastAt = parseIsoTime(times, idx);
         double value = safeGet(values, idx);
-        String description = descriptionFormatter.format(value) + formatWhen(forecastAt);
-        result.add(build(type, title, description, iconRes, field, groupName, forecastAt));
+        long durationMs = streakDurationMs(values, predicate, idx);
+        String description = descriptionFormatter.format(value) + formatDurationSuffix(durationMs);
+        Alert alert = build(type, title, description, iconRes, field, groupName, forecastAt);
+        alert.setDurationMs(durationMs);
+        result.add(alert);
     }
 
     /**
@@ -363,8 +388,11 @@ public class AlertEvaluator {
         long forecastAt = parseIsoTime(times, idx);
         double valA = safeGet(seriesA, idx);
         double valB = safeGet(seriesB, idx);
-        String description = descriptionFormatter.format(valA, valB) + formatWhen(forecastAt);
-        result.add(build(type, title, description, iconRes, field, groupName, forecastAt));
+        long durationMs = pairedStreakDurationMs(seriesA, predicateA, seriesB, predicateB, idx);
+        String description = descriptionFormatter.format(valA, valB) + formatDurationSuffix(durationMs);
+        Alert alert = build(type, title, description, iconRes, field, groupName, forecastAt);
+        alert.setDurationMs(durationMs);
+        result.add(alert);
     }
 
     /**
@@ -445,6 +473,168 @@ public class AlertEvaluator {
             }
         }
         return -1;
+    }
+
+    /**
+     * Computes the duration (ms) of a contiguous streak starting at {@code startIndex}.
+     */
+    private long streakDurationMs(List<Double> values, ThresholdPredicate predicate, int startIndex) {
+        if (values == null || predicate == null || startIndex < 0 || startIndex >= values.size()) {
+            return 0L;
+        }
+        long hours = 0L;
+        for (int i = startIndex; i < values.size(); i++) {
+            double v = safeGet(values, i);
+            if (Double.isNaN(v) || !predicate.test(v)) {
+                break;
+            }
+            hours++;
+        }
+        return hours > 0L ? hours * HOUR_MS : 0L;
+    }
+
+    /**
+     * Computes the duration (ms) of a contiguous streak where both series satisfy their predicates.
+     */
+    private long pairedStreakDurationMs(List<Double> seriesA,
+                                        ThresholdPredicate predicateA,
+                                        List<Double> seriesB,
+                                        ThresholdPredicate predicateB,
+                                        int startIndex) {
+        if (seriesA == null || seriesB == null || predicateA == null || predicateB == null) {
+            return 0L;
+        }
+        int size = Math.min(seriesA.size(), seriesB.size());
+        if (startIndex < 0 || startIndex >= size) {
+            return 0L;
+        }
+        long hours = 0L;
+        for (int i = startIndex; i < size; i++) {
+            double a = safeGet(seriesA, i);
+            double b = safeGet(seriesB, i);
+            if (Double.isNaN(a) || Double.isNaN(b) || !predicateA.test(a) || !predicateB.test(b)) {
+                break;
+            }
+            hours++;
+        }
+        return hours > 0L ? hours * HOUR_MS : 0L;
+    }
+
+    /**
+     * Computes the duration (ms) of consecutive rolling-sum windows above the threshold.
+     */
+    private long rollingSumDurationMs(List<Double> values, int windowSize, double threshold, int startIndex) {
+        if (values == null || windowSize <= 0) {
+            return 0L;
+        }
+        int size = values.size();
+        if (startIndex < 0 || startIndex > size - windowSize) {
+            return 0L;
+        }
+
+        int lastStart = -1;
+        for (int start = startIndex; start <= size - windowSize; start++) {
+            double sum = 0d;
+            boolean valid = true;
+            for (int i = start; i < start + windowSize; i++) {
+                double v = safeGet(values, i);
+                if (Double.isNaN(v)) {
+                    valid = false;
+                    break;
+                }
+                sum += v;
+            }
+            if (valid && sum > threshold) {
+                lastStart = start;
+            } else {
+                break;
+            }
+        }
+
+        if (lastStart < 0) {
+            return 0L;
+        }
+        long hours = (long) (lastStart + windowSize - startIndex);
+        return hours > 0L ? hours * HOUR_MS : 0L;
+    }
+
+    /**
+     * Computes the duration (ms) of consecutive day windows whose range exceeds the threshold.
+     */
+    private long dailyRangeDurationMs(List<Double> values, int windowSize, double threshold, int startIndex) {
+        if (values == null || windowSize <= 0) {
+            return 0L;
+        }
+        int size = values.size();
+        if (startIndex < 0 || startIndex > size - windowSize) {
+            return 0L;
+        }
+
+        long windows = 0L;
+        for (int start = startIndex; start <= size - windowSize; start += windowSize) {
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            boolean valid = true;
+            for (int i = start; i < start + windowSize; i++) {
+                double v = safeGet(values, i);
+                if (Double.isNaN(v)) {
+                    valid = false;
+                    break;
+                }
+                if (v < min) {
+                    min = v;
+                }
+                if (v > max) {
+                    max = v;
+                }
+            }
+            if (!valid || max - min <= threshold) {
+                break;
+            }
+            windows++;
+        }
+
+        long hours = windows * windowSize;
+        return hours > 0L ? hours * HOUR_MS : 0L;
+    }
+
+    /**
+     * Computes the duration (ms) of consecutive hours where storm and hail probabilities exceed thresholds.
+     */
+    private long stormHailDurationMs(List<Double> precipitationSeries,
+                                     List<Double> windSeries,
+                                     List<Double> humiditySeries,
+                                     List<Double> tempSeries,
+                                     int weatherCode,
+                                     double stormThreshold,
+                                     double hailThreshold,
+                                     int startIndex) {
+        int size = Math.max(Math.max(sizeOf(precipitationSeries), sizeOf(windSeries)),
+                Math.max(sizeOf(humiditySeries), sizeOf(tempSeries)));
+        if (size == 0) {
+            return 0L;
+        }
+        int safeStart = Math.max(0, startIndex);
+        if (safeStart >= size) {
+            return 0L;
+        }
+
+        long hours = 0L;
+        for (int i = safeStart; i < size; i++) {
+            double precipitation = safeGet(precipitationSeries, i);
+            double wind = safeGet(windSeries, i);
+            double humidity = safeGet(humiditySeries, i);
+            double temperature = safeGet(tempSeries, i);
+            double stormProbability = computeStormProbability(precipitation, wind, humidity, weatherCode);
+            double hailProbability = computeHailProbability(precipitation, wind, humidity, temperature, weatherCode);
+            if (stormProbability > stormThreshold && hailProbability > hailThreshold) {
+                hours++;
+            } else {
+                break;
+            }
+        }
+
+        return hours > 0L ? hours * HOUR_MS : 0L;
     }
 
     /**
@@ -704,17 +894,6 @@ public class AlertEvaluator {
     }
 
     /**
-     * Formats a numeric count with a suffix using the default locale.
-     *
-     * @param value  numeric value to format
-     * @param suffix suffix to append
-     * @return a formatted string
-     */
-    private String formatCount(int value, String suffix) {
-        return String.format(Locale.getDefault(), "%d %s", value, suffix);
-    }
-
-    /**
      * Builds an {@link Alert} instance from the provided metadata.
      *
      * @param type        alert type metadata
@@ -841,28 +1020,58 @@ public class AlertEvaluator {
         }
     }
 
-    /**
-     * Formats a timestamp for display in the current locale.
-     *
-     * @param timestampMs epoch milliseconds
-     * @return a formatted suffix, or an empty string when timestamp is not valid
-     */
-    private String formatWhen(long timestampMs) {
-        if (timestampMs <= 0L) return "";
-        SimpleDateFormat df = new SimpleDateFormat("dd/MM HH:mm", Locale.getDefault());
-        return " - previsto per " + df.format(new Date(timestampMs));
+    private String formatDurationSuffix(long durationMs) {
+        String duration = formatDuration(durationMs);
+        if (duration.isEmpty()) {
+            return "";
+        }
+        return " \u2022 Durata stimata: " + duration;
     }
 
-    /**
-     * Formats a numeric value with one decimal and a suffix.
-     *
-     * @param value  numeric value
-     * @param suffix suffix to append
-     * @return formatted string, or "-" when the value is not a number
-     */
-    private String formatValue(double value, String suffix) {
-        if (Double.isNaN(value)) return "-";
-        return String.format(Locale.getDefault(), "%.1f %s", value, suffix);
+    private String formatDuration(long durationMs) {
+        if (durationMs <= 0L) {
+            return "";
+        }
+        long hours = Math.max(1L, durationMs / HOUR_MS);
+        if (hours < 24L) {
+            return hours + "h";
+        }
+        long days = hours / 24L;
+        long remHours = hours % 24L;
+        if (remHours == 0L) {
+            return days + "g";
+        }
+        return days + "g " + remHours + "h";
+    }
+
+    private String formatValueCompact(double value, String unit) {
+        if (Double.isNaN(value)) {
+            return "-";
+        }
+        double rounded = Math.rint(value);
+        boolean integerLike = Math.abs(value - rounded) < 0.05d;
+        String number = integerLike
+                ? String.format(Locale.getDefault(), "%.0f", rounded)
+                : String.format(Locale.getDefault(), "%.1f", value);
+        if (unit == null || unit.isEmpty()) {
+            return number;
+        }
+        if ("%".equals(unit) || unit.startsWith("\u00B0")) {
+            return number + unit;
+        }
+        return number + " " + unit;
+    }
+
+    private String formatDays(Double days) {
+        if (days == null || days.isNaN() || days.isInfinite()) {
+            return "-";
+        }
+        double rounded = Math.rint(days);
+        boolean integerLike = Math.abs(days - rounded) < 0.05d;
+        String number = integerLike
+                ? String.format(Locale.getDefault(), "%.0f", rounded)
+                : String.format(Locale.getDefault(), "%.1f", days);
+        return number + " giorni";
     }
 
     /**
