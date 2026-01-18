@@ -294,8 +294,14 @@ public class DataManager extends Service {
         return setResolved(id, false);
     }
 
-    public Maybe<Alert> findLatestByTypeAndGroup(int typeId, String groupName) {
-        return alertDao.findLatestByTypeAndGroup(typeId, groupName)
+    public Maybe<Alert> findLatestActiveByTypeAndField(int typeId, long fieldId) {
+        return alertDao.findLatestActiveByTypeAndField(typeId, fieldId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Maybe<Alert> findLatestResolvedByTypeAndField(int typeId, long fieldId) {
+        return alertDao.findLatestResolvedByTypeAndField(typeId, fieldId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
     }

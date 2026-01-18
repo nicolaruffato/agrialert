@@ -1,6 +1,5 @@
 package com.agrialert.ui.alerts;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,9 +60,10 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         ImageView imgIcon;
         TextView txtTitle;
         TextView txtThreshold;
+        TextView txtDuration;
         TextView txtFieldAddress;
         TextView txtTime;
-        TextView txtAlertTimeLabel;
+        TextView txtResolvedLabel;
         SwitchMaterial switchResolved;
 
         public AlertViewHolder(@NonNull View itemView) {
@@ -72,24 +72,45 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             imgIcon = itemView.findViewById(R.id.imgAlertIcon);
             txtTitle = itemView.findViewById(R.id.txtAlertTitle);
             txtThreshold = itemView.findViewById(R.id.txtAlertThreshold);
+            txtDuration = itemView.findViewById(R.id.txtAlertDuration);
             txtFieldAddress = itemView.findViewById(R.id.txtAlertFieldAddress);
             txtTime = itemView.findViewById(R.id.txtAlertTimeLabel);
             switchResolved = itemView.findViewById(R.id.switchResolved);
-            txtAlertTimeLabel = itemView.findViewById(R.id.txtAlertTimeLabel);
+            //txtResolvedLabel = itemView.findViewById(R.id.txtResolvedLabel);
         }
 
         void bind(AlertUiModel item, OnResolvedChangeListener listener) {
 
-            if (item.iconRes != 0) {
-                imgIcon.setImageResource(item.iconRes);
-            }
+            imgIcon.setImageResource(item.iconRes != 0 ? item.iconRes : R.drawable.ic_alert);
 
             txtTitle.setText(item.title);
-            txtThreshold.setText(item.thresholdText);
+
+            String description = item.thresholdText != null ? item.thresholdText : "";
+            String firstLine = description;
+            String secondLine = "";
+            int newline = description.indexOf('\n');
+            if (newline >= 0) {
+                firstLine = description.substring(0, newline).trim();
+                secondLine = description.substring(newline + 1).trim();
+            }
+            firstLine = firstLine.replace('\n', ' ').replace('\r', ' ').trim();
+            secondLine = secondLine.replace('\n', ' ').replace('\r', ' ').trim();
+
+            txtThreshold.setText(firstLine);
+            if (secondLine.isEmpty()) {
+                txtDuration.setVisibility(View.GONE);
+            } else {
+                txtDuration.setVisibility(View.VISIBLE);
+                txtDuration.setText(secondLine);
+            }
             txtFieldAddress.setText(item.fieldAddress);
-            // Previsto per 08/01 18:00
-            String[] time = item.timeLabel.split(" ");
-            txtAlertTimeLabel.setText(time[2]);
+            if (item.timeLabel == null || item.timeLabel.isEmpty()) {
+                txtTime.setVisibility(View.GONE);
+            } else {
+                txtTime.setVisibility(View.VISIBLE);
+                txtTime.setText(item.timeLabel);
+            }
+            //txtResolvedLabel.setText(time[1]);
 
             // evito che il listener scatti quando faccio setChecked
             switchResolved.setOnCheckedChangeListener(null);

@@ -20,7 +20,11 @@ import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.data_manager.Alert;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Handles alert notification channel creation and dispatching of alert notifications.
@@ -91,10 +95,15 @@ public final class AlertNotificationManager {
 
             int smallIcon = alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert;
 
+            String contentTitle = alert.getTitle() != null ? alert.getTitle() : "Nuovo alert meteo";
+            String shortText = buildShortText(alert);
+            String bigText = buildBigText(alert);
+
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(smallIcon)
-                    .setContentTitle(alert.getTitle() != null ? alert.getTitle() : "Nuovo alert meteo")
-                    .setContentText(alert.getDescription() != null ? alert.getDescription() : "Condizione meteo rilevata")
+                    .setContentTitle(contentTitle)
+                    .setContentText(shortText)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText))
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT);
@@ -102,6 +111,81 @@ public final class AlertNotificationManager {
             manager.notify(notificationId, builder.build());
             notificationId++;
         }
+    }
+
+    private static String buildShortText(Alert alert) {
+        String description = alert != null && alert.getDescription() != null && !alert.getDescription().trim().isEmpty()
+                ? alert.getDescription().trim()
+                : "Condizione meteo rilevata";
+
+        String forecastRange = formatForecastRange(alert != null ? alert.getForecastAt() : 0L,
+                alert != null ? alert.getDurationMs() : 0L);
+        if (forecastRange.isEmpty()) {
+            return description;
+        }
+        return description + " \u2022 " + forecastRange;
+    }
+
+    private static String buildBigText(Alert alert) {
+        if (alert == null) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (alert.getFieldAddress() != null && !alert.getFieldAddress().trim().isEmpty()) {
+            sb.append("Campo: ").append(alert.getFieldAddress().trim()).append('\n');
+        }
+        if (alert.getDescription() != null && !alert.getDescription().trim().isEmpty()) {
+            sb.append(alert.getDescription().trim().replace(" \u2022 ", "\n")).append('\n');
+        }
+
+        String forecastRange = formatForecastRange(alert.getForecastAt(), alert.getDurationMs());
+        if (!forecastRange.isEmpty()) {
+            sb.append("Previsto: ").append(forecastRange);
+        }
+
+        return sb.toString().trim();
+    }
+
+    private static String formatForecastRange(long startMs, long durationMs) {
+        if (startMs <= 0L) {
+            return "";
+        }
+        if (durationMs <= 0L) {
+            return formatDateTime(startMs);
+        }
+
+        long endMs = startMs + durationMs;
+        Calendar start = Calendar.getInstance();
+        start.setTimeInMillis(startMs);
+        Calendar end = Calendar.getInstance();
+        end.setTimeInMillis(endMs);
+
+        if (isSameDay(start, end)) {
+            return formatDateTime(startMs) + "\u2013" + formatTime(endMs);
+        }
+        return formatDateTime(startMs) + "\u2013" + formatDateTime(endMs);
+    }
+
+    private static boolean isSameDay(Calendar a, Calendar b) {
+        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
+                && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
+    }
+
+    private static String formatDateTime(long timestampMs) {
+        if (timestampMs <= 0L) {
+            return "";
+        }
+        SimpleDateFormat df = new SimpleDateFormat("dd/MM HH:mm", Locale.getDefault());
+        return df.format(new Date(timestampMs));
+    }
+
+    private static String formatTime(long timestampMs) {
+        if (timestampMs <= 0L) {
+            return "";
+        }
+        SimpleDateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        return df.format(new Date(timestampMs));
     }
 
     /**

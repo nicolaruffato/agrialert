@@ -19,8 +19,11 @@ import com.agrialert.viewmodel.AlertsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.text.SimpleDateFormat;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
@@ -97,16 +100,15 @@ public class AlertsListFragment extends Fragment {
                 } else {
                     groupOrField = "Campo: " + alert.getFieldAddress();
                 }
-                String[] descAndForecast = alert.getDescription().split(" - ");
                 active.add(new AlertUiModel(
                         alert.getId(),
                         String.valueOf(alert.getTypeId()),
                         alert.getTitle(),
-                        descAndForecast[0],
+                        formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
                         groupOrField,
-                        descAndForecast[1],
+                        formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
                         alert.isResolved(),
-                        getIconForType(alert.getTypeId())
+                        alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
                 ));
             }
             adapter.submitList(active);
@@ -126,16 +128,15 @@ public class AlertsListFragment extends Fragment {
                 } else {
                     groupOrField = "Campo: " + alert.getFieldAddress();
                 }
-                String[] descAndForecast = alert.getDescription().split(" - ");
                 resolved.add(new AlertUiModel(
                         alert.getId(),
                         String.valueOf(alert.getTypeId()),
                         alert.getTitle(),
-                        descAndForecast[0],
+                        formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
                         groupOrField,
-                        descAndForecast[1],
+                        formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
                         alert.isResolved(),
-                        getIconForType(alert.getTypeId())
+                        alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
                 ));
             }
             adapter.submitList(resolved);
@@ -193,5 +194,105 @@ public class AlertsListFragment extends Fragment {
             default:
                 return R.drawable.ic_alert; // fallback
         }
+    }
+
+    private String formatDescriptionForList(String description, long durationMs) {
+        String fallbackCondition = "Condizione meteo rilevata";
+        String fallbackDuration = "Durata stimata: " + formatDuration(durationMs);
+
+        if (description == null || description.trim().isEmpty()) {
+            return fallbackCondition + "\n" + fallbackDuration;
+        }
+
+        String normalized = description.trim()
+                .replace(" \u2022 ", "\n")
+                .replace(" | ", "\n")
+                .replace('\u2022', '\n');
+
+        String condition = "";
+        String durationLine = "";
+        for (String raw : normalized.split("\n")) {
+            if (raw == null) {
+                continue;
+            }
+            String line = raw.trim();
+            if (line.isEmpty()) {
+                continue;
+            }
+            if (condition.isEmpty()) {
+                condition = line;
+            }
+            if (durationLine.isEmpty() && line.toLowerCase(Locale.ROOT).contains("durata")) {
+                durationLine = line;
+            }
+        }
+
+        if (condition.isEmpty()) {
+            condition = fallbackCondition;
+        }
+        if (durationLine.isEmpty()) {
+            durationLine = fallbackDuration;
+        }
+
+        return condition + "\n" + durationLine;
+    }
+
+    private String formatDuration(long durationMs) {
+        if (durationMs <= 0L) {
+            return "n/d";
+        }
+        long hourMs = 3_600_000L;
+        long hours = Math.max(1L, durationMs / hourMs);
+        if (hours < 24L) {
+            return hours + "h";
+        }
+        long days = hours / 24L;
+        long remHours = hours % 24L;
+        if (remHours == 0L) {
+            return days + "g";
+        }
+        return days + "g " + remHours + "h";
+    }
+
+    private String formatForecastLabel(long startMs, long durationMs) {
+        if (startMs <= 0L) {
+            return "";
+        }
+
+        Calendar start = Calendar.getInstance();
+        start.setTimeInMillis(startMs);
+        Calendar today = Calendar.getInstance();
+        Calendar tomorrow = (Calendar) today.clone();
+        tomorrow.add(Calendar.DAY_OF_YEAR, 1);
+
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+        Date startDate = start.getTime();
+
+        String startDayLabel = isSameDay(start, today)
+                ? "Oggi"
+                : (isSameDay(start, tomorrow) ? "Domani" : dateFormat.format(startDate));
+        String startLabel = startDayLabel + " " + timeFormat.format(startDate);
+
+        if (durationMs <= 0L) {
+            return startLabel;
+        }
+
+        long endMs = startMs + durationMs;
+        Calendar end = Calendar.getInstance();
+        end.setTimeInMillis(endMs);
+        Date endDate = end.getTime();
+
+        String endDayLabel = isSameDay(end, today)
+                ? "Oggi"
+                : (isSameDay(end, tomorrow) ? "Domani" : dateFormat.format(endDate));
+        String endLabel = endDayLabel + " " + timeFormat.format(endDate);
+
+        return startLabel + "\n" + endLabel;
+    }
+
+    private boolean isSameDay(Calendar a, Calendar b) {
+        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
+                && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 }

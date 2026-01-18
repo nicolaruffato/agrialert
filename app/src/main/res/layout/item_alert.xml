@@ -6,11 +6,11 @@
     android:layout_marginBottom="14dp"
     app:cardCornerRadius="20dp"
     app:cardElevation="3dp"
-    android:padding="16dp">
+    android:padding="18dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="123dp"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -30,7 +30,7 @@
 
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="97dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -46,12 +46,25 @@
 
             <TextView
                 android:id="@+id/txtAlertThreshold"
-                android:layout_width="150dp"
-                android:layout_height="50dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:ellipsize="end"
+                android:lineSpacingExtra="1dp"
+                android:maxLines="2"
                 android:text="Vento > 60 km/h"
                 android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/txtAlertDuration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:lineSpacingExtra="1dp"
+                android:maxLines="1"
+                android:text="Durata stimata: 6h"
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/txtAlertFieldAddress"
@@ -59,7 +72,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="3dp"
                 android:ellipsize="end"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:text="Via Verdirdi, Mestre"
                 android:textSize="13sp" />
 
@@ -80,6 +93,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="6dp"
+                android:gravity="center_horizontal"
+                android:lineSpacingExtra="1dp"
+                android:maxLines="2"
                 android:text="Oggi"
                 android:textSize="14sp" />
 

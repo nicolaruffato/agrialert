@@ -10,6 +10,9 @@ plugins {
 
     // Add the Performance Monitoring Gradle plugin
     id("com.google.firebase.firebase-perf")
+
+    // Add the Crashlytics Gradle plugin
+    id("com.google.firebase.crashlytics")
 }
 
 fun getProps(name: String): String {
@@ -90,5 +93,8 @@ dependencies {
     implementation("com.mapbox.maps:android-ndk27:11.17.1")
     implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-analytics")
+
 }
 

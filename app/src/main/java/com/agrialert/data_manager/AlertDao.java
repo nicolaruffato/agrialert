@@ -33,8 +33,14 @@ public interface AlertDao {
     @Query("DELETE FROM alerts WHERE resolved = 1 AND resolvedAt < :resolvedBefore")
     Completable deleteResolvedBefore(long resolvedBefore);
 
-    @Query("SELECT * FROM alerts WHERE typeId = :typeId AND groupName = :groupName ORDER BY createdAt DESC LIMIT 1")
-    Maybe<Alert> findLatestByTypeAndGroup(int typeId, String groupName);
+    @Query("SELECT * FROM alerts WHERE typeId = :typeId AND fieldId = :fieldId ORDER BY createdAt DESC LIMIT 1")
+    Maybe<Alert> findLatestByTypeAndField(int typeId, long fieldId);
+
+    @Query("SELECT * FROM alerts WHERE typeId = :typeId AND fieldId = :fieldId AND resolved = 0 ORDER BY createdAt DESC LIMIT 1")
+    Maybe<Alert> findLatestActiveByTypeAndField(int typeId, long fieldId);
+
+    @Query("SELECT * FROM alerts WHERE typeId = :typeId AND fieldId = :fieldId AND resolved = 1 ORDER BY resolvedAt DESC LIMIT 1")
+    Maybe<Alert> findLatestResolvedByTypeAndField(int typeId, long fieldId);
 
     @Query("SELECT * FROM alerts WHERE fieldId = :fieldId AND resolved = 0 ORDER BY createdAt DESC")
     Flowable<List<Alert>> getActiveAlertsFromField(int fieldId);

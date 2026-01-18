@@ -24,6 +24,7 @@ public class Alert {
     private String fieldAddress;
     /** Timestamp (ms) previsto per l'evento meteo che genera l'alert */
     private long forecastAt;
+    private long durationMs;
     private long createdAt;
     private boolean resolved;
     /** Timestamp (ms) in cui l'alert è stato marcato come risolto (0 se non risolto). */
@@ -118,6 +119,14 @@ public class Alert {
 
     public void setForecastAt(long forecastAt) {
         this.forecastAt = forecastAt;
+    }
+
+    public long getDurationMs() {
+        return durationMs;
+    }
+
+    public void setDurationMs(long durationMs) {
+        this.durationMs = durationMs;
     }
 
     public long getCreatedAt() {
