@@ -8,13 +8,18 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Toast;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -43,7 +48,6 @@ import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManagerKt;
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions;
 import com.mapbox.maps.plugin.gestures.GesturesPlugin;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,14 +55,17 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class EditFieldFragment extends Fragment {
 
-    private TextInputLayout tilAddress, tilCropType, tilGroup;
+    private TextInputLayout tilAddress;
     TextInputEditText edtAddress;
     AutoCompleteTextView ddlCrop;
     AutoCompleteTextView ddlGroup;
     PointAnnotationManager pointAnnotationManager;
 
     MapView mapView;
-    private boolean coordsFromMap;
+    private boolean isFromMap = false;
+
+    private Runnable searchRunnable = null;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private final CompositeDisposable cd = new CompositeDisposable();
 
@@ -77,17 +84,13 @@ public class EditFieldFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-
         edtAddress = view.findViewById(R.id.inputAddress);
         ddlCrop = view.findViewById(R.id.dropCropType);
         ddlGroup = view.findViewById(R.id.dropGroup);
         tilAddress = view.findViewById(R.id.tilAddress);
-        tilCropType = view.findViewById(R.id.tilCropType);
-        tilGroup = view.findViewById(R.id.tilGroup);
         MaterialButton btnEditAlerts = view.findViewById(R.id.btnEditAlerts);
         MaterialButton btnDeleteField = view.findViewById(R.id.btnDeleteField);
         mapView = view.findViewById(R.id.mapView);
-        coordsFromMap = false;
 
         Bundle args = getArguments();
         if (args == null) {
@@ -101,30 +104,44 @@ public class EditFieldFragment extends Fragment {
         if (!a.vmsReady()) return;
         FieldsViewModel vm = a.fieldsVM();
 
-
-
         cd.add(vm.getFieldById(fieldId).subscribe(f -> {
             edtAddress.setText(f.getAddress());
             ddlCrop.setText(requireContext().getString(f.getCropType().getResourceId()), false);
             ddlGroup.setText(f.getGroupName(), false);
 
-            mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS, style -> {
+            mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS, style -> {
                 mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
-                        .center(Point.fromLngLat(12.5, 42.5))
-                        .zoom(5.0)
+                        .center(Point.fromLngLat(f.getLongitude(), f.getLatitude()))
+                        .zoom(12.0)
                         .build());
 
                 AnnotationPlugin annotationPlugin = getAnnotations(mapView);
                 pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationPlugin, null);
 
+                addOrUpdateMarker(Point.fromLngLat(f.getLongitude(), f.getLatitude()), f);
+
                 GesturesPlugin gesturesPlugin = getGestures(mapView);
                 gesturesPlugin.addOnMapClickListener(point -> {
-                    addOrUpdateMarker(point, f);
+                    cd.add(ApiManager.getAddressFromCoordinates(point.latitude(), point.longitude()).subscribe(address -> {
+                        isFromMap = true;
+                        edtAddress.setText(address);
+                        if(address.isEmpty()) {
+                            // inputAddress not found by API call
+                            tilAddress.setError("Il punto selezionato non ha un indirizzo valido!");
+                            pointAnnotationManager.deleteAll();
+                        } else {
+                            addOrUpdateMarker(point, f);
+                        }
+                    }, throwable -> {
+                        Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Non riesco ad ottenere il punto selezionato");
+                        pointAnnotationManager.deleteAll();
+                    }));
                     return true;
                 });
             });
 
-            setupDropdowns();
+            setupDropdowns(f);
 
             btnEditAlerts.setOnClickListener(v -> {
                 // Save field changes and go to set alerts
@@ -138,50 +155,21 @@ public class EditFieldFragment extends Fragment {
                 String groupName = ddlGroup.getText().toString().trim();
                 if (groupName.isEmpty()) groupName = "Default";
 
-                if (!coordsFromMap) {
-                    try {
-                        String finalGroupName = groupName;
-                        ApiManager.getCoordinatesFromAddress(address).subscribe(coords -> {
-                            f.setLatitude(coords.first);
-                            f.setLongitude(coords.second);
-                            f.setAddress(address);
-                            // TODO: change lat and lon with API
-                            f.setGroupName(finalGroupName);
-                            f.setCropType(selectedCrop);
-                            cd.add(vm.updateField(f).subscribe(
-                                    () -> {
-                                        Bundle b = new Bundle();
-                                        b.putInt("fieldId", (int)f.getId());
+                f.setAddress(address);
+                f.setGroupName(groupName);
+                f.setCropType(selectedCrop);
+                cd.add(vm.updateField(f).subscribe(() -> {
+                    Bundle b = new Bundle();
+                    b.putInt("fieldId", f.getId());
 
-                                        NavHostFragment.findNavController(EditFieldFragment.this)
-                                                .navigate(R.id.action_editField_to_setAlerts, b);
-                                    }
-                            ));
-                        });
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    String finalGroupName = groupName;
-                    f.setAddress(address);
-                    // TODO: change lat and lon with API
-                    f.setGroupName(finalGroupName);
-                    f.setCropType(selectedCrop);
-                    cd.add(vm.updateField(f).subscribe(
-                            () -> {
-                                Bundle b = new Bundle();
-                                b.putInt("fieldId", (int)f.getId());
-
-                                NavHostFragment.findNavController(EditFieldFragment.this)
-                                        .navigate(R.id.action_editField_to_setAlerts, b);
-                            }
-                    ));
-                }
+                    NavHostFragment.findNavController(EditFieldFragment.this)
+                            .navigate(R.id.action_editField_to_setAlerts, b);
+                }));
             });
 
             btnDeleteField.setOnClickListener(v -> {
                 Bundle b = new Bundle();
-                b.putInt("fieldId", (int)f.getId());
+                b.putInt("fieldId", f.getId());
 
                 NavHostFragment.findNavController(EditFieldFragment.this)
                         .navigate(R.id.action_editField_to_confirmDeleteField, b);
@@ -211,15 +199,6 @@ public class EditFieldFragment extends Fragment {
         // Salva le coordinate del punto cliccato
         f.setLatitude(point.latitude());
         f.setLongitude(point.longitude());
-        try {
-            cd.add(ApiManager.getAddressFromCoordinates(point.latitude(), point.longitude()).subscribe(address -> {
-                edtAddress.setText(address);
-            }));
-            coordsFromMap = true;
-        } catch (IOException e) {
-            Log.e("EditFieldFragment", "Error getting address", e);
-            throw new RuntimeException(e);
-        }
     }
 
     // Metodo helper per convertire un drawable in un Bitmap
@@ -236,7 +215,43 @@ public class EditFieldFragment extends Fragment {
         return bitmap;
     }
 
-    private void setupDropdowns() {
+    private void setupDropdowns(Field f) {
+        edtAddress.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if(!isFromMap) {
+                    searchRunnable = () -> cd.add(ApiManager.getCoordinatesFromAddress(edtAddress.getText().toString().trim()).subscribe(coords -> {
+                        if (coords.first == null) {
+                            tilAddress.setError("L'indirizzo non è stato trovato!");
+                            pointAnnotationManager.deleteAll();
+                        } else {
+                            tilAddress.setError(null);
+                            tilAddress.setErrorEnabled(false);
+                            mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                                    .center(Point.fromLngLat((double) coords.first, (double) coords.second))
+                                    .zoom(12.0)
+                                    .build());
+                            addOrUpdateMarker(Point.fromLngLat((double) coords.first, (double) coords.second), f);
+                        }
+                    }, throwable -> {
+                        Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
+                        pointAnnotationManager.deleteAll();
+                    }));
+                    handler.postDelayed(searchRunnable, 2000);
+                }
+                isFromMap = false;
+            }
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                handler.removeCallbacks(searchRunnable);
+                tilAddress.setError(null);
+                tilAddress.setErrorEnabled(false);
+            }
+        });
+
         CropType[] cropTypes = CropType.values();
 
         List<String> cropTypeNames = new ArrayList<>();
@@ -244,11 +259,7 @@ public class EditFieldFragment extends Fragment {
             cropTypeNames.add(requireContext().getString(crop.getResourceId()));
         }
 
-        ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(
-                requireContext(),
-                android.R.layout.simple_list_item_1,
-                cropTypeNames
-        );
+        ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, cropTypeNames);
         ddlCrop.setAdapter(cropAdapter);
 
         MainActivity a = (MainActivity) requireActivity();
@@ -274,21 +285,10 @@ public class EditFieldFragment extends Fragment {
         boolean ok = true;
 
         String address = textOrEmpty(edtAddress);
-        String crop = textOrEmpty(ddlCrop);
-        String group = textOrEmpty(ddlGroup);
 
-        if (TextUtils.isEmpty(address)) {
-            tilAddress.setError("*Campo obbligatorio");
+        if (TextUtils.isEmpty(address) || tilAddress.getError() != null) {
+            tilAddress.setError("Devi inserire un indirizzo valido!");
             ok = false;
-        } else {
-            tilAddress.setError(null);
-        }
-
-        if (TextUtils.isEmpty(crop)) {
-            tilCropType.setError("*Campo obbligatorio");
-            ok = false;
-        } else {
-            tilCropType.setError(null);
         }
 
         return ok;
@@ -297,13 +297,11 @@ public class EditFieldFragment extends Fragment {
     private String textOrEmpty(TextInputEditText edit) {
         return edit.getText() != null ? edit.getText().toString().trim() : "";
     }
-    private String textOrEmpty(AutoCompleteTextView edit) {
-        return edit.getText() != null ? edit.getText().toString().trim() : "";
-    }
 
     @Override
     public void onDestroyView() {
         cd.clear();
+        handler.removeCallbacks(searchRunnable);
         super.onDestroyView();
     }
 }

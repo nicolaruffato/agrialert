@@ -23,39 +23,42 @@
 
         <!-- TESTI + ICONCINE ALERT -->
         <LinearLayout
-            android:orientation="vertical"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/txtGroupName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Nome gruppo"
-                android:textStyle="bold"
-                android:textSize="16sp"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="Nome gruppo"
+                android:textSize="16sp"
+                android:layout_gravity="center_vertical"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/txtGroupDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Descrizione breve del gruppo"
-                android:textSize="14sp"
                 android:layout_marginTop="4dp"
+                android:ellipsize="end"
                 android:maxLines="2"
-                android:ellipsize="end" />
+                android:text="Descrizione breve del gruppo"
+                android:layout_gravity="center_vertical"
+                android:textSize="14sp" />
 
             <!-- ICONCINE ALERT SEMPRE PRESENTI -->
             <LinearLayout
                 android:id="@+id/layoutGroupIcons"
-                android:orientation="horizontal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:gravity="center_vertical" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal" />
         </LinearLayout>
 
     </LinearLayout>

@@ -254,6 +254,9 @@ public class DataManager extends Service {
     public Flowable<List<Alert>> getActiveAlerts() {
         return observeAlerts(false);
     }
+    public Flowable<List<Alert>> getActiveAlertsFromField(int fieldId) {
+        return alertDao.getActiveAlertsFromField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
 
     public Single<Long> insertAlert(Alert alert) {
         return alertDao.insert(alert)

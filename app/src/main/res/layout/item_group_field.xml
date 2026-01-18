@@ -14,12 +14,13 @@
         android:gravity="center_vertical"
         android:padding="12dp">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgIcon"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="12dp"
             android:src="@drawable/ic_fields"
+            app:shapeAppearanceOverlay="@style/ImageView.Corner"
             android:contentDescription="@string/app_name" />
 
         <LinearLayout

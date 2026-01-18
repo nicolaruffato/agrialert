@@ -35,4 +35,7 @@ public interface AlertDao {
 
     @Query("SELECT * FROM alerts WHERE typeId = :typeId AND groupName = :groupName ORDER BY createdAt DESC LIMIT 1")
     Maybe<Alert> findLatestByTypeAndGroup(int typeId, String groupName);
+
+    @Query("SELECT * FROM alerts WHERE fieldId = :fieldId AND resolved = 0 ORDER BY createdAt DESC")
+    Flowable<List<Alert>> getActiveAlertsFromField(int fieldId);
 }

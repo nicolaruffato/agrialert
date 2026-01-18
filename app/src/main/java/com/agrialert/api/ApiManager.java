@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import retrofit2.Call;
@@ -35,23 +37,25 @@ public class ApiManager {
         return call.execute().body();
     }
 
-    public static Single<Pair<Double, Double>> getCoordinatesFromAddress(String address) throws IOException {
+    public static Single<Pair<?, ?>> getCoordinatesFromAddress(String address) {
         return Single.fromCallable(() -> {
-
             Call<MapboxGeocodingResponse> call = geoService.getCoordinates(address, BuildConfig.MAPBOX_API_KEY);
             MapboxGeocodingResponse response = call.execute().body();
 
             if (response != null && response.features != null && !response.features.isEmpty()) {
                 List<Double> coords = response.features.get(0).geometry.coordinates;
                 // Mapbox returns [longitude, latitude]
-                return new Pair<>(coords.get(1), coords.get(0)); // Return as (lat, lon)
+                Log.e("ApiManger", "Coordinates: " + coords.get(0) + ", " + coords.get(1));
+                return new Pair<>(coords.get(0), coords.get(1)); // Return as (lat, lon)
             } else {
-                throw new IOException("Error getting coordinates or no results found");
+                // Could not find
+                Log.e("ApiManager", "Error getting coordinates");
+                return new Pair<>(null, null);
             }
         }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
-    public static Single<String> getAddressFromCoordinates(double lat, double lon) throws IOException {
+    public static Single<String> getAddressFromCoordinates(double lat, double lon) {
         return Single.fromCallable(() -> {
 
             Call<MapboxGeocodingResponse> call = geoService.getAddress(lon, lat, BuildConfig.MAPBOX_API_KEY); // Note: lon, lat order
@@ -60,7 +64,7 @@ public class ApiManager {
             if (response != null && response.features != null && !response.features.isEmpty()) {
                 return response.features.get(0).placeName;
             } else {
-                throw new IOException("Error getting address or no results found");
+                return "";
             }
         }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }

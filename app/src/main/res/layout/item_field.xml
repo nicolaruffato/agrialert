@@ -14,16 +14,23 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
+
         <!-- Icona principale dinamica -->
-        <ImageView
+
+        <!-- Testi: indirizzo, coltura, gruppo -->
+
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgFieldIcon"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginEnd="12dp"
+            android:contentDescription="@string/app_name"
             android:src="@drawable/ic_fields"
-            android:contentDescription="@string/app_name" />
+            android:layout_gravity="center_vertical"
+            app:shapeAppearanceOverlay="@style/ImageView.Corner" />
 
-        <!-- Testi: indirizzo, coltura, gruppo -->
+        <!-- ICONCINE ALERT ASSOCIATE AL CAMPO -->
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -34,11 +41,11 @@
                 android:id="@+id/txtFieldAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Via Finta 123"
-                android:textStyle="bold"
-                android:textSize="14sp"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="Via Finta 123"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/txtFieldCrop"
@@ -55,7 +62,6 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- ICONCINE ALERT ASSOCIATE AL CAMPO -->
         <LinearLayout
             android:id="@+id/layoutFieldIcons"
             android:orientation="horizontal"

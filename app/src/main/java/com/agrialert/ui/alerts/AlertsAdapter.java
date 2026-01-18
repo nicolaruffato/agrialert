@@ -63,7 +63,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         TextView txtThreshold;
         TextView txtFieldAddress;
         TextView txtTime;
-        TextView txtResolvedLabel;
+        TextView txtAlertTimeLabel;
         SwitchMaterial switchResolved;
 
         public AlertViewHolder(@NonNull View itemView) {
@@ -75,7 +75,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtFieldAddress = itemView.findViewById(R.id.txtAlertFieldAddress);
             txtTime = itemView.findViewById(R.id.txtAlertTimeLabel);
             switchResolved = itemView.findViewById(R.id.switchResolved);
-            //txtResolvedLabel = itemView.findViewById(R.id.txtResolvedLabel);
+            txtAlertTimeLabel = itemView.findViewById(R.id.txtAlertTimeLabel);
         }
 
         void bind(AlertUiModel item, OnResolvedChangeListener listener) {
@@ -89,9 +89,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtFieldAddress.setText(item.fieldAddress);
             // Previsto per 08/01 18:00
             String[] time = item.timeLabel.split(" ");
-            txtTime.setText("08/01"); // usare time quando sistemato visualizzazione alert singolo campo
-                                      // ViewFieldFragment
-            //txtResolvedLabel.setText(time[1]);
+            txtAlertTimeLabel.setText(time[2]);
 
             // evito che il listener scatti quando faccio setChecked
             switchResolved.setOnCheckedChangeListener(null);

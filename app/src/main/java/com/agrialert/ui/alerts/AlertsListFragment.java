@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import io.reactivex.rxjava3.core.ObservableSource;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class AlertsListFragment extends Fragment {
@@ -52,8 +51,8 @@ public class AlertsListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         rvAlerts = view.findViewById(R.id.rvAlerts);
-        btnAlertsActive = view.findViewById(R.id.btnAlertsActive);
-        btnAlertsResolved = view.findViewById(R.id.btnAlertsResolved);
+        btnAlertsActive = view.findViewById(R.id.btnFields);
+        btnAlertsResolved = view.findViewById(R.id.btnFieldGroups);
 
         // RecyclerView
         rvAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -63,8 +62,6 @@ public class AlertsListFragment extends Fragment {
         avm = a.alertsVM();
 
         adapter = new AlertsAdapter((alert, isResolved) -> {
-            Log.e("AlertsListFragment", "onResolvedChanged:");
-
             // Aggiorno il model
             // Ricalcolo la lista da mostrare in base al toggle
 

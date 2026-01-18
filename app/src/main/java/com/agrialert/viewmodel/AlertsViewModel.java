@@ -7,8 +7,10 @@ import com.agrialert.data_manager.DataManager;
 
 import java.util.List;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class AlertsViewModel {
 
@@ -43,7 +45,9 @@ public class AlertsViewModel {
         return dm.setAlertActive(id);
     }
 
-
+    public Flowable<List<Alert>> getActiveAlertsFromField(int fieldId) {
+        return dm.getActiveAlertsFromField(fieldId);
+    }
 
 
 

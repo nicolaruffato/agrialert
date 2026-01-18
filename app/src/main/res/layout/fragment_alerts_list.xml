@@ -14,7 +14,7 @@
         app:singleSelection="true">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAlertsActive"
+            android:id="@+id/btnFields"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="48dp"
@@ -27,7 +27,7 @@
             app:checkedIcon="@null" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAlertsResolved"
+            android:id="@+id/btnFieldGroups"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="48dp"

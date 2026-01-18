@@ -5,15 +5,15 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
@@ -24,10 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import com.agrialert.BuildConfig;
 import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.api.ApiManager;
@@ -38,12 +35,10 @@ import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-import com.mapbox.common.MapboxOptions;
 import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
 import com.mapbox.maps.Style;
-import com.mapbox.maps.plugin.Plugin;
 import com.mapbox.maps.plugin.annotation.AnnotationPlugin;
 import static com.mapbox.maps.plugin.annotation.AnnotationsUtils.getAnnotations;
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager;
@@ -52,12 +47,10 @@ import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions;
 import com.mapbox.maps.plugin.gestures.GesturesPlugin;
 import static com.mapbox.maps.plugin.gestures.GesturesUtils.getGestures;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
 
 public class AddFieldFragment extends Fragment {
 
@@ -65,10 +58,10 @@ public class AddFieldFragment extends Fragment {
 
     // UI
     private TextInputLayout tilAddress;
+    private TextInputLayout tilCrop;
     private TextInputEditText inputAddress;
     private AutoCompleteTextView dropCropType, dropGroup;
     private MaterialButton btnSaveField, btnSetAlerts;
-    private RecyclerView rvSearchResults;
     private int savedFieldId = -1;
 
     // Mapbox
@@ -78,11 +71,11 @@ public class AddFieldFragment extends Fragment {
     private FieldsViewModel vm;
     private double selectedLat = 0;
     private double selectedLng = 0;
-    private boolean coordsFromMap;
+    private boolean isFromMap = false;
+    private Runnable searchRunnable = null;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
-    public AddFieldFragment() {
-        // Required empty public constructor
-    }
+    public AddFieldFragment() {}
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -101,8 +94,7 @@ public class AddFieldFragment extends Fragment {
         btnSaveField = view.findViewById(R.id.btnSaveField);
         btnSetAlerts = view.findViewById(R.id.btnSetAlerts);
         mapView = view.findViewById(R.id.mapView);
-
-        coordsFromMap = false;
+        tilCrop = view.findViewById(R.id.tilCropType);
 
         btnSetAlerts.setEnabled(false);
 
@@ -118,7 +110,7 @@ public class AddFieldFragment extends Fragment {
         view.post(this::setupDropdowns);
         setupListeners();
 
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS, style -> {
+        mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS, style -> {
             mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
                     .center(Point.fromLngLat(12.5, 42.5))
                     .zoom(5.0)
@@ -129,10 +121,25 @@ public class AddFieldFragment extends Fragment {
 
             GesturesPlugin gesturesPlugin = getGestures(mapView);
             gesturesPlugin.addOnMapClickListener(point -> {
-                addOrUpdateMarker(point);
+                cd.add(ApiManager.getAddressFromCoordinates(point.latitude(), point.longitude()).subscribe(address -> {
+                    isFromMap = true;
+                    inputAddress.setText(address);
+                    if(address.isEmpty()) {
+                        // inputAddress not found by API call
+                        tilAddress.setError("Il punto selezionato non ha un indirizzo valido!");
+                        pointAnnotationManager.deleteAll();
+                    } else {
+                        addOrUpdateMarker(point);
+                    }
+                }, throwable -> {
+                    Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
+                    tilAddress.setError("Non riesco ad ottenere il punto selezionato");
+                    pointAnnotationManager.deleteAll();
+                }));
                 return true;
             });
         });
+
     }
 
     private void addOrUpdateMarker(Point point) {
@@ -157,15 +164,6 @@ public class AddFieldFragment extends Fragment {
         // Salva le coordinate del punto cliccato
         selectedLat = point.latitude();
         selectedLng = point.longitude();
-        try {
-            cd.add(ApiManager.getAddressFromCoordinates(selectedLat, selectedLng).subscribe(address -> {
-                inputAddress.setText(address);
-            }));
-            coordsFromMap = true;
-        } catch (IOException e) {
-            Log.e("AddFieldFragment", "Error getting address", e);
-            throw new RuntimeException(e);
-        }
     }
 
     // Metodo helper per convertire un drawable in un Bitmap
@@ -185,14 +183,54 @@ public class AddFieldFragment extends Fragment {
 
     // --- Dropdowns ---
     private void setupDropdowns() {
+        inputAddress.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if(!isFromMap) {
+                    searchRunnable = () -> cd.add(ApiManager.getCoordinatesFromAddress(inputAddress.getText().toString().trim()).subscribe(coords -> {
+                        if (coords.first == null) {
+                            tilAddress.setError("L'indirizzo non è stato trovato!");
+                            pointAnnotationManager.deleteAll();
+                        } else {
+                            tilAddress.setError(null);
+                            tilAddress.setErrorEnabled(false);
+                            mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                                    .center(Point.fromLngLat((double) coords.first, (double) coords.second))
+                                    .zoom(12.0)
+                                    .build());
+                            addOrUpdateMarker(Point.fromLngLat((double) coords.first, (double) coords.second));
+                        }
+                    }, throwable -> {
+                        Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
+                        pointAnnotationManager.deleteAll();
+                    }));
+                    handler.postDelayed(searchRunnable, 2000);
+                }
+                isFromMap = false;
+            }
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                handler.removeCallbacks(searchRunnable);
+                tilAddress.setError(null);
+                tilAddress.setErrorEnabled(false);
+            }
+        });
+
         // CropType Dropdown
         CropType[] cropTypes = CropType.values();
         List<String> cropTypeNames = new ArrayList<>();
         for (CropType crop : cropTypes) {
-            cropTypeNames.add(getContext().getString(crop.getResourceId()));
+            cropTypeNames.add(requireContext().getString(crop.getResourceId()));
         }
         ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, cropTypeNames);
         dropCropType.setAdapter(cropAdapter);
+        dropCropType.setOnItemClickListener((parent, view, position, id) -> {
+            tilCrop.setError(null);
+            tilCrop.setErrorEnabled(false);
+        });
 
         // Group Dropdown
         cd.add(vm.getAllGroups().subscribe(groups -> {
@@ -216,75 +254,33 @@ public class AddFieldFragment extends Fragment {
             String groupName = dropGroup.getText().toString().trim();
             if (groupName.isEmpty()) groupName = "Default";
 
-            if (!coordsFromMap) {
-                try {
-                    String finalGroupName = groupName;
-                    cd.add(ApiManager.getCoordinatesFromAddress(address).subscribe(coords -> {
-                        selectedLat = coords.first;
-                        selectedLng = coords.second;
-                        Log.e("AddField", "Coords: " + selectedLat + ", " + selectedLng);
+            Field field = new Field(address, selectedLat, selectedLng, groupName, selectedCrop);
 
-                        Field field = new Field(address, selectedLat, selectedLng, finalGroupName, selectedCrop);
-
-                        cd.add(vm.insertField(field)
-                                .andThen(vm.getGroupByName(finalGroupName))
-                                .subscribe(groupWithFields -> {
-                                    int id = -1;
-                                    for (Field f : groupWithFields.getFields()) {
-                                        if (address.equals(f.getAddress()) && f.getLatitude() == selectedLat && f.getLongitude() == selectedLng) {
-                                            id = f.getId();
-                                            break;
-                                        }
-                                    }
-                                    if (id <= 0) {
-                                        Toast.makeText(requireContext(), "Il salvataggio non e' andato a buon fine", Toast.LENGTH_LONG).show();
-                                        return;
-                                    }
-                                    savedFieldId = id;
-                                    Toast.makeText(requireContext(), "Campo Salvato", Toast.LENGTH_SHORT).show();
-                                    btnSetAlerts.setEnabled(true);
-                                    btnSaveField.setEnabled(false);
-                                }, err -> {
-                                    Log.e("AddField", "Error Saving Field", err);
-                                    Toast.makeText(requireContext(), "Error: " + err.getMessage(), Toast.LENGTH_LONG).show();
-                                }));
+            cd.add(vm.insertField(field)
+                    .andThen(vm.getGroupByName(groupName))
+                    .subscribe(groupWithFields -> {
+                        int id = -1;
+                        for (Field f : groupWithFields.getFields()) {
+                            if (address.equals(f.getAddress()) && f.getLatitude() == selectedLat && f.getLongitude() == selectedLng) {
+                                id = f.getId();
+                                break;
+                            }
+                        }
+                        if (id <= 0) {
+                            Toast.makeText(requireContext(), "Il salvataggio non e' andato a buon fine", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        savedFieldId = id;
+                        Toast.makeText(requireContext(), "Campo Salvato", Toast.LENGTH_SHORT).show();
+                        btnSetAlerts.setEnabled(true);
+                        btnSaveField.setEnabled(false);
+                    }, err -> {
+                        Log.e("AddField", "Error Saving Field", err);
+                        Toast.makeText(requireContext(), "Error: " + err.getMessage(), Toast.LENGTH_LONG).show();
                     }));
-                }catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                Field field = new Field(address, selectedLat, selectedLng, groupName, selectedCrop);
-
-                cd.add(vm.insertField(field)
-                        .andThen(vm.getGroupByName(groupName))
-                        .subscribe(groupWithFields -> {
-                            int id = -1;
-                            for (Field f : groupWithFields.getFields()) {
-                                if (address.equals(f.getAddress()) && f.getLatitude() == selectedLat && f.getLongitude() == selectedLng) {
-                                    id = f.getId();
-                                    break;
-                                }
-                            }
-                            if (id <= 0) {
-                                Toast.makeText(requireContext(), "Il salvataggio non e' andato a buon fine", Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            savedFieldId = id;
-                            Toast.makeText(requireContext(), "Campo Salvato", Toast.LENGTH_SHORT).show();
-                            btnSetAlerts.setEnabled(true);
-                            btnSaveField.setEnabled(false);
-                        }, err -> {
-                            Log.e("AddField", "Error Saving Field", err);
-                            Toast.makeText(requireContext(), "Error: " + err.getMessage(), Toast.LENGTH_LONG).show();
-                        }));
-            }
         });
 
         btnSetAlerts.setOnClickListener(v -> {
-            if (savedFieldId <= 0) {
-                Toast.makeText(requireContext(), "Save the field first", Toast.LENGTH_SHORT).show();
-                return;
-            }
             vm.isFieldPending = true;
             Bundle b = new Bundle();
             b.putInt("fieldId", savedFieldId);
@@ -295,13 +291,12 @@ public class AddFieldFragment extends Fragment {
     // --- Validation & Helpers ---
     private boolean validateForm() {
         boolean ok = true;
-        if (TextUtils.isEmpty(inputAddress.getText())) {
-            tilAddress.setError("*Required field");
+        if (TextUtils.isEmpty(inputAddress.getText()) || tilAddress.getError() != null) {
+            tilAddress.setError("Devi inserire un indirizzo valido!");
             ok = false;
-        } else {
-            tilAddress.setError(null);
         }
         if (TextUtils.isEmpty(dropCropType.getText())) {
+            tilCrop.setError("Devi selezionare una coltivazione!");
             ok = false;
         }
         return ok;
@@ -310,6 +305,7 @@ public class AddFieldFragment extends Fragment {
     @Override
     public void onDestroyView() {
         cd.clear();
+        handler.removeCallbacks(searchRunnable);
         super.onDestroyView();
     }
 }

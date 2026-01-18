@@ -7,43 +7,42 @@
     android:padding="16dp">
 
     <!-- TOGGLE CAMPI / GRUPPI -->
-    <LinearLayout
-        android:id="@+id/toggleGroups"
-        android:orientation="horizontal"
+
+
+    <!-- LISTA (RecyclerView) -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/toggleAlerts"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:singleSelection="true">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFields"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="48dp"
-            android:text="Campi"
+            android:layout_weight="1"
+            android:backgroundTint="@color/toggle_selected"
             android:checkable="true"
             android:checked="true"
-            android:backgroundTint="@color/toggle_selected"
+            android:text="Campi"
             android:textColor="@color/toggle_text"
-            app:cornerRadius="24dp"
-            app:checkedIcon="@null" />
+            app:checkedIcon="@null"
+            app:cornerRadius="24dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFieldGroups"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="48dp"
-            android:text="Gruppi di campi"
+            android:layout_weight="1"
+            android:backgroundTint="@color/toggle_selected"
             android:checkable="true"
             android:checked="false"
-            android:backgroundTint="@color/toggle_selected"
+            android:text="Gruppi"
             android:textColor="@color/toggle_text"
-            app:cornerRadius="24dp"
-            app:checkedIcon="@null" />
+            app:checkedIcon="@null"
+            app:cornerRadius="24dp" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
-    </LinearLayout>
-
-
-
-    <!-- LISTA (RecyclerView) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFields"
         android:layout_width="match_parent"
@@ -62,5 +61,6 @@
         android:textAllCaps="false"
         android:layout_marginTop="12dp"
         android:layout_marginBottom="30dp" />
+
 </LinearLayout>
 

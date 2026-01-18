@@ -49,6 +49,7 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- TIPOLOGIA CAMPO (DROPDOWN) -->
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilCropType"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"

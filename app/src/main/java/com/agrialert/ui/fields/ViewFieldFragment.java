@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.alert_manager.repo.AlertRepository;
+import com.agrialert.data_manager.Alert;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
 import com.agrialert.viewmodel.AlertsViewModel;
@@ -24,6 +26,8 @@ import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class ViewFieldFragment extends Fragment {
     private static final String TAG = "ViewField";
@@ -37,6 +41,7 @@ public class ViewFieldFragment extends Fragment {
     private MaterialButton btnDeleteField;
     private AlertsAdapter adapter;
     private AlertsViewModel avm;
+    private CompositeDisposable cd = new CompositeDisposable();
 
     public ViewFieldFragment() {
         // costruttore vuoto richiesto dal Fragment
@@ -104,52 +109,66 @@ public class ViewFieldFragment extends Fragment {
     }
 
     private void getAlerts(FieldUiModel field) {
+        cd.add(avm.getActiveAlertsFromField((int)field.id).subscribe(alerts -> {
+            List<AlertUiModel>  uiAlerts = new ArrayList<>();
+            for(Alert alert : alerts) {
+                String groupOrField = "";
+                if(alert.getFieldId() == 0) {
+                    groupOrField = "Gruppo: " + alert.getGroupName();
+                } else {
+                    groupOrField = "Campo: " + alert.getFieldAddress();
+                }
+                String[] descAndForecast = alert.getDescription().split(" - ");
+                uiAlerts.add(new AlertUiModel(
+                        alert.getId(),
+                        String.valueOf(alert.getTypeId()),
+                        alert.getTitle(),
+                        descAndForecast[0],
+                        groupOrField,
+                        descAndForecast[1],
+                        alert.isResolved(),
+                        getIconForType(alert.getTypeId())
+                ));
+            }
 
-        adapter.submitList(getSampleAlerts());
+            adapter.submitList(uiAlerts);
+        }));
     };
 
+    private int getIconForType(int typeId) {
+        switch (typeId) {
+            case 1:
+                return R.drawable.ic_alert_vento;
 
-    // ------- DATI DI ESEMPIO ALERT -------
+            case 2:
+                return R.drawable.ic_alert_calore;
 
-    private List<AlertUiModel> getSampleAlerts() {
-        List<AlertUiModel> list = new ArrayList<>();
+            case 3:
+                return R.drawable.ic_alert_ventilazione;
 
-        // ALERT 1 – Vento forte
-        list.add(new AlertUiModel(
-                1L,                                   // id
-                "VENTO_FORTE",                        // typeId
-                "Vento forte",                        // title
-                "Vento > 50 km/h",                    // thresholdText
-                "Via Verdirdi, 15 - Mestre (VE)",     // fieldAddress
-                "Oggi",                               // timeLabel
-                false,                                // isResolved
-                R.drawable.ic_alert_vento             // iconRes
-        ));
+            case 4:
+                return R.drawable.ic_alert_gelo;
 
-        // ALERT 2 – Ondata di calore
-        list.add(new AlertUiModel(
-                2L,
-                "ONDATA_CALORE",
-                "Ondata di calore",
-                "Temperatura aria > 35 °C",
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Oggi",
-                true,
-                R.drawable.ic_alert_calore   // se non ce l’hai usa ic_alert_vento
-        ));
+            case 5:
+                return R.drawable.ic_alert_pioggia;
 
-        // ALERT 3 – Scarsa ventilazione
-        list.add(new AlertUiModel(
-                3L,
-                "SCARSA_VENTILAZIONE",
-                "Scarsa ventilazione",
-                "Vento < 5 km/h, Umidità > 80%",
-                "Via Verdirdi, 15 - Mestre (VE)",
-                "Domani",
-                false,
-                R.drawable.ic_alert_ventilazione   // oppure ic_alert_vento
-        ));
+            case 6:
+                return R.drawable.ic_alert_temporale;
 
-        return list;
+            case 7:
+                return R.drawable.ic_alert_siccita;
+
+            case 8:
+                return R.drawable.ic_alert_umidita;
+
+            case 9:
+                return R.drawable.ic_alert_escursione;
+
+            case 10:
+                return R.drawable.ic_alert_incendio;
+
+            default:
+                return R.drawable.ic_alert; // fallback
+        }
     }
 }
