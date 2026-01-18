@@ -122,7 +122,7 @@ public class AlertsListFragment extends Fragment {
         cd.add(avm.getResolvedAlerts().firstOrError().subscribe(alerts -> {
             List<AlertUiModel> resolved = new ArrayList<>();
             for(Alert alert : alerts) {
-                String groupOrField = "";
+                String groupOrField;
                 if(alert.getFieldId() == 0) {
                     groupOrField = "Gruppo: " + alert.getGroupName();
                 } else {
@@ -141,59 +141,6 @@ public class AlertsListFragment extends Fragment {
             }
             adapter.submitList(resolved);
         }));
-    }
-
-    private String fromMsToTime(long ms) {
-        Log.e("AlertsListFragment", "fromMsToTime:" + ms);
-        long seconds = (ms / 1000) % 60;
-        long minutes = (ms / (1000 * 60)) % 60;
-        long hours = (ms / (1000 * 60 * 60)) % 24;
-        return String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds);
-    }
-
-    // ------------------- MAPPING TIPO → ICONA -------------------
-
-    /**
-     * Restituisce l'icona corretta per la tipologia di alert.
-     * ATTENZIONE: i nomi dei drawable devono esistere in res/drawable.
-     * Esempio:
-     *  - ic_alert_vento.xml
-     */
-    private int getIconForType(int typeId) {
-        switch (typeId) {
-            case 1:
-                return R.drawable.ic_alert_vento;
-
-            case 2:
-                return R.drawable.ic_alert_calore;
-
-            case 3:
-                return R.drawable.ic_alert_ventilazione;
-
-            case 4:
-                return R.drawable.ic_alert_gelo;
-
-            case 5:
-                return R.drawable.ic_alert_pioggia;
-
-            case 6:
-                return R.drawable.ic_alert_temporale;
-
-            case 7:
-                return R.drawable.ic_alert_siccita;
-
-            case 8:
-                return R.drawable.ic_alert_umidita;
-
-            case 9:
-                return R.drawable.ic_alert_escursione;
-
-            case 10:
-                return R.drawable.ic_alert_incendio;
-
-            default:
-                return R.drawable.ic_alert; // fallback
-        }
     }
 
     private String formatDescriptionForList(String description, long durationMs) {
