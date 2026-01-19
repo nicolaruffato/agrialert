@@ -16,19 +16,49 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Adapter for displaying alerts in a RecyclerView.
+ * Manages a list of {@link AlertUiModel} and handles user interactions.
+ */
 public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewHolder> {
 
+    /**
+     * Interface for handling changes in an alert's resolution state.
+     */
     public interface OnResolvedChangeListener {
+        /**
+         * Called when the resolution status of an alert is changed.
+         *
+         * @param alert      The alert model that was modified.
+         * @param isResolved The new resolution state.
+         */
         void onResolvedChanged(AlertUiModel alert, boolean isResolved);
     }
 
+    /**
+     * The list of alerts to be displayed in the RecyclerView.
+     */
     private final List<AlertUiModel> alertList = new ArrayList<>();
+
+    /**
+     * The listener notified when an alert's resolution status changes.
+     */
     private final OnResolvedChangeListener listener;
 
+    /**
+     * Constructor for the adapter.
+     *
+     * @param listener The listener to handle alert state changes.
+     */
     public AlertsAdapter(OnResolvedChangeListener listener) {
         this.listener = listener;
     }
 
+    /**
+     * Updates the list of alerts displayed by the adapter.
+     *
+     * @param newList The new list of alerts.
+     */
     public void submitList(List<AlertUiModel> newList) {
         alertList.clear();
         if (newList != null) {
@@ -37,6 +67,13 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         notifyDataSetChanged();
     }
 
+    /**
+     * Called when RecyclerView needs a new {@link AlertViewHolder} of the given type to represent an item.
+     *
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to an adapter position.
+     * @param viewType The view type of the new View.
+     * @return A new AlertViewHolder that holds a View of the given view type.
+     */
     @NonNull
     @Override
     public AlertViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -45,27 +82,75 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         return new AlertViewHolder(view);
     }
 
+    /**
+     * Called by RecyclerView to display the data at the specified position.
+     * This method updates the contents of the {@link AlertViewHolder#itemView} to reflect the item at the given position.
+     *
+     * @param holder   The ViewHolder which should be updated to represent the contents of the item at the given position in the data set.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull AlertViewHolder holder, int position) {
         AlertUiModel item = alertList.get(position);
         holder.bind(item, listener);
     }
 
+    /**
+     * Returns the total number of items in the data set held by the adapter.
+     *
+     * @return The total number of items in this adapter.
+     */
     @Override
     public int getItemCount() {
         return alertList.size();
     }
 
+    /**
+     * ViewHolder for individual alert items.
+     * Holds references to the views for each item in the list.
+     */
     static class AlertViewHolder extends RecyclerView.ViewHolder {
 
+        /**
+         * Icon representing the type of alert.
+         */
         ImageView imgIcon;
+
+        /**
+         * Title of the alert.
+         */
         TextView txtTitle;
+
+        /**
+         * Text describing the threshold that triggered the alert.
+         */
         TextView txtThreshold;
+
+        /**
+         * Address or location of the field related to the alert.
+         */
         TextView txtFieldAddress;
+
+        /**
+         * View displaying the time of the alert.
+         */
         TextView txtTime;
+
+        /**
+         * Label showing the alert time information.
+         */
         TextView txtAlertTimeLabel;
+
+        /**
+         * Switch to mark the alert as resolved or unresolved.
+         */
         SwitchMaterial switchResolved;
 
+        /**
+         * Constructor for the ViewHolder.
+         *
+         * @param itemView The view representing an individual alert item.
+         */
         public AlertViewHolder(@NonNull View itemView) {
             super(itemView);
 
@@ -78,6 +163,12 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtAlertTimeLabel = itemView.findViewById(R.id.txtAlertTimeLabel);
         }
 
+        /**
+         * Binds an {@link AlertUiModel} to the ViewHolder views and sets up user interactions.
+         *
+         * @param item     The alert data to display.
+         * @param listener The listener to handle switch state changes.
+         */
         void bind(AlertUiModel item, OnResolvedChangeListener listener) {
 
             if (item.iconRes != 0) {
@@ -87,11 +178,16 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtTitle.setText(item.title);
             txtThreshold.setText(item.thresholdText);
             txtFieldAddress.setText(item.fieldAddress);
-            // Previsto per 08/01 18:00
-            String[] time = item.timeLabel.split(" ");
-            txtAlertTimeLabel.setText(time[2]);
+            
+            // Expected format: "Previsto per 08/01 18:00" -> extract time part
+            if (item.timeLabel != null) {
+                String[] time = item.timeLabel.split(" ");
+                if (time.length >= 3) {
+                    txtAlertTimeLabel.setText(time[2]);
+                }
+            }
 
-            // evito che il listener scatti quando faccio setChecked
+            // Temporarily remove listener to avoid triggering it while setting initial state
             switchResolved.setOnCheckedChangeListener(null);
             switchResolved.setChecked(item.isResolved);
 
@@ -103,4 +199,3 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         }
     }
 }
-

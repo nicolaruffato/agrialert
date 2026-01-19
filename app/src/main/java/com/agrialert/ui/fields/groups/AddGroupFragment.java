@@ -32,19 +32,38 @@ import java.util.List;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment responsible for creating a new field group.
+ * It allows the user to specify a group name, description, and select which existing fields
+ * should belong to this new group.
+ */
 public class AddGroupFragment extends Fragment {
 
+    /** Icon representing the group. */
     private ImageView imgGroupIcon;
+    /** Layout container for the group name input. */
     private TextInputLayout layoutGroupName;
-    private TextInputEditText edtGroupName, edtDescription;
+    /** Edit text for entering the group name. */
+    private TextInputEditText edtGroupName;
+    /** Edit text for entering the group description. */
+    private TextInputEditText edtDescription;
+    /** RecyclerView displaying the list of available fields to add to the group. */
     private RecyclerView rvFields;
+    /** Button to save the new group and update the associated fields. */
     private MaterialButton btnSaveGroup;
 
+    /** Adapter for managing field selection in the group creation process. */
     private GroupFieldsAdapter adapter;
+    /** List of field UI models used by the adapter. */
     private List<GroupFieldUiModel> fields = new ArrayList<>();
-    CompositeDisposable cd = new CompositeDisposable();
-    FieldsViewModel vm;
+    /** Container for managing RxJava disposables. */
+    private final CompositeDisposable cd = new CompositeDisposable();
+    /** ViewModel for field and group management. */
+    private FieldsViewModel vm;
 
+    /**
+     * Default empty constructor.
+     */
     public AddGroupFragment() { }
 
     @Override
@@ -54,6 +73,12 @@ public class AddGroupFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_add_group, container, false);
     }
 
+    /**
+     * Initializes UI components and loads existing fields into the selection list.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Saved state if being reconstructed.
+     */
     @Override
     public void onViewCreated(@NonNull View view,
                               @Nullable Bundle savedInstanceState) {
@@ -72,9 +97,11 @@ public class AddGroupFragment extends Fragment {
         if (!a.vmsReady()) return;
         vm = a.fieldsVM();
 
+        // Load all existing fields and categorize them as available for group assignment
         cd.add(
                 vm.getAllGroups().subscribe(
                         groups -> {
+                            fields.clear();
                             for (GroupWithFields g : groups) {
                                 if (g.getFields() == null) continue;
 
@@ -84,7 +111,7 @@ public class AddGroupFragment extends Fragment {
                                                     f.getId(),
                                                     f.getCropType().getImageResId(),
                                                     f.getAddress(),
-                                                    requireContext().getString(f.getCropType().getResourceId()), // TODO: call displayName?
+                                                    requireContext().getString(f.getCropType().getResourceId()),
                                                     f.getGroupName(),
                                                     false
                                             )
@@ -95,18 +122,22 @@ public class AddGroupFragment extends Fragment {
                             rvFields.setAdapter(adapter);
                         },
                         err -> {
-                            android.util.Log.e("FieldsListFragment", "Errore DB", err);
+                            android.util.Log.e("AddGroupFragment", "Database error", err);
                         }
                 )
         );
 
         imgGroupIcon.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Selezione icona (da implementare)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Icon selection (to be implemented)", Toast.LENGTH_SHORT).show()
         );
 
         btnSaveGroup.setOnClickListener(v -> onSaveGroup());
     }
 
+    /**
+     * Validates the input and saves the new group to the database.
+     * Also updates the group assignment for any selected fields.
+     */
     private void onSaveGroup() {
         layoutGroupName.setError(null);
 
@@ -114,20 +145,23 @@ public class AddGroupFragment extends Fragment {
         String description = edtDescription.getText() != null ? edtDescription.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(name)) {
-            layoutGroupName.setError("*Campo obbligatorio");
+            layoutGroupName.setError("*Required field");
             return;
         }
 
+        // Check if group name already exists
         cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
             for (GroupWithFields g : groups) {
-                if (g.getGroup().getName().equals(name)) {
-                    layoutGroupName.setError("Nome già esistente");
+                if (g.getGroup().getName().equalsIgnoreCase(name)) {
+                    layoutGroupName.setError("Group name already exists");
                     return;
                 }
             }
 
+            // Insert new group
             cd.add(vm.insertGroup(new FieldsGroup(name, description)).subscribe(() -> {
                 List<Completable> comp = new ArrayList<>();
+                // Prepare updates for selected fields
                 for (GroupFieldUiModel f : fields) {
                     if (f.selected) {
                         comp.add(vm.getFieldById((int) f.id).flatMapCompletable(field -> {
@@ -136,12 +170,14 @@ public class AddGroupFragment extends Fragment {
                         }));
                     }
                 }
+
+                // Execute all field updates and navigate back upon completion
                 Completable updateFields = Completable.mergeArray(comp.toArray(new Completable[0]));
                 cd.add(updateFields.subscribe(() -> {
-                    String msg = "Gruppo \"" + name + "\" salvato!";
+                    String msg = "Group \"" + name + "\" saved!";
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
 
-                    // Torna alla schermata precedente (lista gruppi)
+                    // Go back to the previous screen (groups list)
                     NavHostFragment.findNavController(AddGroupFragment.this)
                             .navigateUp();
                 }));
@@ -150,6 +186,9 @@ public class AddGroupFragment extends Fragment {
         }));
     }
 
+    /**
+     * Clears RxJava disposables when the view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();

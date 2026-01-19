@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
@@ -26,25 +27,50 @@ import java.util.List;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import kotlin.Pair;
 
+/**
+ * Fragment for configuring alert settings for a specific agricultural field.
+ * Allows users to enable/disable different alert types and set custom threshold values.
+ */
 public class SetAlertsFragment extends Fragment {
 
+    /** Tag for logging. */
     private static final String TAG = "SetAlerts";
 
+    /** Container for managing RxJava subscriptions. */
     private final CompositeDisposable cd = new CompositeDisposable();
 
-    private androidx.recyclerview.widget.RecyclerView rvAlertSettings;
+    /** RecyclerView displaying the list of configurable alert settings. */
+    private RecyclerView rvAlertSettings;
+    
+    /** Button to save the updated alert configurations to the database. */
     private MaterialButton btnSaveField;
 
-    // LISTA STABILE (mai riassegnare!)
+    /** 
+     * Stable list of UI models representing alert settings. 
+     * This list is populated from the database and used by the adapter.
+     */
     private final List<AlertSettingUiModel> items = new ArrayList<>();
+    
+    /** Adapter for the alert settings RecyclerView. */
     private AlertSettingsAdapter adapter;
 
+    /** The ID of the field for which alerts are being configured. */
     private int fieldId = -1;
 
+    /**
+     * Initializes the fragment with the layout resource.
+     */
     public SetAlertsFragment() {
         super(R.layout.fragment_set_alerts);
     }
 
+    /**
+     * Called after the view has been created. Initializes components, retrieves arguments,
+     * and sets up data loading and UI interaction logic.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Saved state if the fragment is being reconstructed.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -52,38 +78,36 @@ public class SetAlertsFragment extends Fragment {
         rvAlertSettings = view.findViewById(R.id.rvAlertSettings);
         btnSaveField = view.findViewById(R.id.btnSaveField);
 
-        // 0) prendo fieldId
+        // 0) Retrieve fieldId from arguments
         Bundle args = getArguments();
         if (args != null) fieldId = args.getInt("fieldId", -1);
 
-        // TODO: remove
+        // Fallback: attempt to retrieve field ID from ViewModel if not provided in arguments
         if (fieldId == -1) {
-            // fallback: se vuoi prenderlo dal FieldsViewModel (se ce l’hai)
             MainActivity a0 = (MainActivity) requireActivity();
             if (a0.vmsReady()) {
                 FieldsViewModel fvm0 = a0.fieldsVM();
-                // <-- se hai un metodo tipo getCurrentFieldId(), mettilo qui:
-                // fieldId = fvm0.getCurrentFieldId();
+                // Potential usage: fieldId = fvm0.getCurrentFieldId();
             }
         }
 
         if (fieldId == -1) {
-            Log.e(TAG, "fieldId mancante: passalo come arg a SetAlertsFragment!");
+            Log.e(TAG, "Missing fieldId: pass it as an argument to SetAlertsFragment!");
             btnSaveField.setEnabled(false);
             return;
         }
 
-        // 1) recycler
+        // 1) Set up RecyclerView
         rvAlertSettings.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // 2) adapter + listener (QUI si fixano lista che sparisce e toggle)
-        adapter = new AlertSettingsAdapter(items,updatedItems->{
-
+        // 2) Initialize adapter with an empty listener (changes are handled via the shared 'items' list)
+        adapter = new AlertSettingsAdapter(items, updatedItems -> {
+            // Data is updated in-place within the 'items' list
         });
 
         rvAlertSettings.setAdapter(adapter);
 
-        // 3) carico alert types dal DB e costruisco la UI list
+        // 3) Load alert types from database and build the UI list
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;
 
@@ -93,19 +117,21 @@ public class SetAlertsFragment extends Fragment {
                 avm.getAllAlertTypes()
                         .subscribe(
                                 alertTypes -> {
-                                    // costruisci items da DB (ID veri!)
-
+                                    // Map all possible alert types to UI models
                                     items.clear();
                                     items.addAll(mapAlertTypesToUi(alertTypes));
+                                    
+                                    // Fetch currently activated alerts for this specific field
                                     cd.add(avm.getActivatedAlertsFromField(fieldId).subscribe(activeList -> {
                                         List<AlertWithThreshold> active = activeList.getAlerts();
                                         for (AlertSettingUiModel asUi : items) {
                                             for (AlertWithThreshold activeAlert : active) {
                                                 if (asUi.getId() == activeAlert.getAlertType().getId()) {
+                                                    // Synchronize UI state with database values
                                                     asUi.enabled = true;
                                                     asUi.hasPrimaryThreshold = true;
                                                     asUi.primaryValue = activeAlert.getThreshold().getThreshold1().intValue();
-                                                    if(activeAlert.getThreshold().getThreshold2() != null) {
+                                                    if (activeAlert.getThreshold().getThreshold2() != null) {
                                                         asUi.hasSecondaryThreshold = true;
                                                         asUi.secondaryValue = activeAlert.getThreshold().getThreshold2().intValue();
                                                     }
@@ -115,39 +141,24 @@ public class SetAlertsFragment extends Fragment {
                                         adapter.notifyDataSetChanged();
                                     }));
                                 },
-                                err -> Log.e(TAG, "Errore getAllAlertTypes", err)
+                                err -> Log.e(TAG, "Error fetching all alert types", err)
                         )
         );
-        // TODO: check for alerts with 2 threshold
-        // 4) salva relazioni alert <-> field
+
+        // 4) Save alert configurations for the current field
         btnSaveField.setOnClickListener(v -> {
             MainActivity a2 = (MainActivity) requireActivity();
             if (!a2.vmsReady()) return;
             FieldsViewModel vm = a2.fieldsVM();
 
-            Log.d(TAG, "=== UI STATE | fieldId=" + fieldId + " ===");
-
-            for (AlertSettingUiModel m : items) {
-                Log.d(TAG,
-                        "UI -> id=" + m.id +
-                                " | name=" + m.title +
-                                " | enabled=" + m.enabled +
-                                " | primary=" + m.primaryValue +
-                                (m.hasSecondaryThreshold ? " | secondary=" + m.secondaryValue : "")
-                );
-            }
+            Log.d(TAG, "=== Saving UI State | fieldId=" + fieldId + " ===");
 
             List<Pair<Integer, Threshold>> selected = new ArrayList<>();
 
             for (AlertSettingUiModel m : items) {
                 if (m != null && m.enabled) {
-                    selected.add(new Pair<>(m.getId(), new Threshold((double)m.primaryValue, (double)m.secondaryValue)));
+                    selected.add(new Pair<>(m.getId(), new Threshold((double) m.primaryValue, (double) m.secondaryValue)));
                 }
-            }
-
-            Log.d(TAG, "=== SEND TO DB | fieldId=" + fieldId + " | count=" + selected.size() + " ===");
-            for (Pair<Integer, Threshold> p : selected) {
-                Log.d(TAG, "SEND -> alertTypeId=" + p.getFirst() + "  threshold=" + p.getSecond());
             }
 
             cd.add(
@@ -155,39 +166,30 @@ public class SetAlertsFragment extends Fragment {
                             .andThen(vm.getActivatedAlertsFromField(fieldId).firstOrError())
                             .subscribe(
                                     activated -> {
-
-                                        Log.d(TAG, "=== DB DOPO IL SAVE | fieldId=" + fieldId + " ===");
-                                        Log.d(TAG, "DB alerts size = " + activated.getAlerts().size());
-
-                                        for (AlertWithThreshold b : activated.getAlerts()) {
-                                            Log.d(TAG,
-                                                    "DB -> alertId=" + b.getAlertType().getId() +
-                                                            " name=" + b.getAlertType().getName() +
-                                                            " threshold=" + b.getThreshold()
-                                            );
-                                        }
-
                                         Toast.makeText(requireContext(),
-                                                "Alert salvati",
+                                                "Alerts saved successfully",
                                                 Toast.LENGTH_SHORT).show();
 
                                         NavHostFragment.findNavController(this)
                                                 .popBackStack(R.id.fieldsListFragment, false);
-
                                     },
                                     err -> {
-                                        Log.e(TAG, "Errore save/read DB", err);
+                                        Log.e(TAG, "Error saving to DB", err);
                                         Toast.makeText(requireContext(),
-                                                "Errore salvataggio",
+                                                "Error while saving alerts",
                                                 Toast.LENGTH_LONG).show();
                                     }
                             )
             );
-
         });
     }
 
-    // Mappa AlertType(DB) -> AlertSettingUiModel(UI)
+    /**
+     * Maps the database AlertType entities to UI models used by the adapter.
+     *
+     * @param alertTypes List of alert types from the database.
+     * @return List of UI models for the settings screen.
+     */
     private List<AlertSettingUiModel> mapAlertTypesToUi(List<AlertType> alertTypes) {
         List<AlertSettingUiModel> out = new ArrayList<>();
         if (alertTypes == null) return out;
@@ -195,25 +197,26 @@ public class SetAlertsFragment extends Fragment {
         for (AlertType t : alertTypes) {
             if (t == null) continue;
 
-            AlertMeta meta = metaFor(t.getName()); // <-- qui metti icona/label/unit/2a soglia dal sample
+            // Retrieve metadata (icons, labels, units) based on alert name
+            AlertMeta meta = metaFor(t.getName());
 
             int primary = (t.getDefaultThreshold().getThreshold1() == null) ? meta.primaryDefault : (int) Math.round(t.getDefaultThreshold().getThreshold1());
             int secondary = (t.getDefaultThreshold().getThreshold2() == null) ? meta.secondaryDefault : (int) Math.round(t.getDefaultThreshold().getThreshold2());
 
             AlertSettingUiModel ui = new AlertSettingUiModel(
-                    t.getId(),                 // id
-                    meta.iconRes,                     // iconRes (DAL SAMPLE)
-                    t.getName(),                      // title
-                    t.getDescription(),               // description
-                    false,                            // enabled default (all’inizio OFF)
-                    true,                             // hasPrimaryThreshold
-                    meta.primaryLabel,                // primaryLabel (DAL SAMPLE)
-                    primary,                          // primaryValue
-                    meta.primaryUnit,                 // primaryUnit
-                    meta.hasSecondary,                // hasSecondaryThreshold
-                    meta.secondaryLabel,              // secondaryLabel
-                    secondary,                        // secondaryValue
-                    meta.secondaryUnit                // secondaryUnit
+                    t.getId(),
+                    meta.iconRes,
+                    t.getName(),
+                    t.getDescription(),
+                    false, // disabled by default until matched with active alerts
+                    true,
+                    meta.primaryLabel,
+                    primary,
+                    meta.primaryUnit,
+                    meta.hasSecondary,
+                    meta.secondaryLabel,
+                    secondary,
+                    meta.secondaryUnit
             );
 
             out.add(ui);
@@ -222,6 +225,9 @@ public class SetAlertsFragment extends Fragment {
         return out;
     }
 
+    /**
+     * Helper class to store metadata (icons, labels, and defaults) for different alert types.
+     */
     private static class AlertMeta {
         int iconRes;
         String primaryLabel;
@@ -246,89 +252,98 @@ public class SetAlertsFragment extends Fragment {
         }
     }
 
+    /**
+     * Provides metadata for an alert based on its name.
+     *
+     * @param name The name of the alert type.
+     * @return An {@link AlertMeta} object containing UI-specific metadata.
+     */
     private AlertMeta metaFor(String name) {
         if (name == null) name = "";
 
         switch (name) {
             case "Ondata di calore":
                 return new AlertMeta(
-                        /*icon*/ R.drawable.ic_alert_calore,
-                        "Temperatura massima", "°C", 35,
-                        true, "Per oltre", "h", 24
+                        R.drawable.ic_alert_calore,
+                        "Maximum temperature", "°C", 35,
+                        true, "For more than", "h", 24
                 );
 
             case "Gelo / Brina":
                 return new AlertMeta(
                         R.drawable.ic_alert_gelo,
-                        "Temperatura minima", "°C", 0,
-                        true, "Per oltre", "h", 6
+                        "Minimum temperature", "°C", 0,
+                        true, "For more than", "h", 6
                 );
 
             case "Pioggia intensa":
                 return new AlertMeta(
                         R.drawable.ic_alert_pioggia,
-                        "Pioggia maggiore di", "mm", 30,
-                        true, "In meno di", "h", 3
+                        "Rain greater than", "mm", 30,
+                        true, "In less than", "h", 3
                 );
 
             case "Vento forte":
                 return new AlertMeta(
                         R.drawable.ic_alert_vento,
-                        "Velocità vento maggiore di", "km/h", 50,
+                        "Wind speed greater than", "km/h", 50,
                         false, "", "", 0
                 );
 
             case "Temporale / Grandine":
                 return new AlertMeta(
                         R.drawable.ic_alert_temporale,
-                        "Probabilità temporale maggiore di", "%", 60,
-                        true, "Probabilità grandine maggiore di", "%", 40
+                        "Storm probability greater than", "%", 60,
+                        true, "Hail probability greater than", "%", 40
                 );
 
             case "Siccità prolungata":
                 return new AlertMeta(
                         R.drawable.ic_alert_siccita,
-                        "Giorni senza pioggia", "giorni", 5,
+                        "Days without rain", "days", 5,
                         false, "", "", 0
                 );
 
             case "Umidità elevata":
                 return new AlertMeta(
                         R.drawable.ic_alert_umidita,
-                        "Umidità maggiore di", "%", 80,
+                        "Humidity greater than", "%", 80,
                         false, "", "", 0
                 );
 
             case "Escursione termica elevata":
                 return new AlertMeta(
                         R.drawable.ic_alert_escursione,
-                        "Escursione maggiore di", "°C", 12,
+                        "Temperature range greater than", "°C", 12,
                         false, "", "", 0
                 );
 
             case "Rischio incendio":
                 return new AlertMeta(
                         R.drawable.ic_alert_incendio,
-                        "Temperatura maggiore di", "°C", 30,
-                        true, "Umidità minore di", "%", 30
+                        "Temperature greater than", "°C", 30,
+                        true, "Humidity less than", "%", 30
                 );
 
             case "Scarsa ventilazione":
                 return new AlertMeta(
                         R.drawable.ic_alert_ventilazione,
-                        "Velocità vento minore di", "km/h", 5,
+                        "Wind speed less than", "km/h", 5,
                         false, "", "", 0
                 );
 
             default:
                 return new AlertMeta(
-                        R.drawable.ic_group_default,  // fallback
-                        "Soglia", "", 0,
+                        R.drawable.ic_group_default,
+                        "Threshold", "", 0,
                         false, "", "", 0
                 );
         }
     }
 
+    /**
+     * Clears subscriptions to avoid memory leaks when the view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();

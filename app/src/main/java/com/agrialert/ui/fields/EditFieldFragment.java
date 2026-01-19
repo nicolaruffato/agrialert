@@ -53,24 +53,50 @@ import java.util.List;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment for editing an existing agricultural field.
+ * Users can update the field's address, crop type, and group assignment,
+ * or navigate to alert settings and field deletion.
+ */
 public class EditFieldFragment extends Fragment {
 
+    /** Layout for the address input field. */
     private TextInputLayout tilAddress;
-    TextInputEditText edtAddress;
-    AutoCompleteTextView ddlCrop;
-    AutoCompleteTextView ddlGroup;
-    PointAnnotationManager pointAnnotationManager;
+    /** EditText for entering or displaying the field's physical address. */
+    private TextInputEditText edtAddress;
+    /** Dropdown for selecting the crop type planted in the field. */
+    private AutoCompleteTextView ddlCrop;
+    /** Dropdown for selecting or changing the field's assigned group. */
+    private AutoCompleteTextView ddlGroup;
+    /** Manager for handling point annotations (markers) on the map. */
+    private PointAnnotationManager pointAnnotationManager;
 
-    MapView mapView;
+    /** Map view for selecting or displaying the field location. */
+    private MapView mapView;
+    /** Flag to prevent recursive search triggers when address is set from map interaction. */
     private boolean isFromMap = false;
 
+    /** Runnable for delayed geocoding searches to avoid excessive API calls. */
     private Runnable searchRunnable = null;
+    /** Handler for managing UI delayed tasks. */
     private final Handler handler = new Handler(Looper.getMainLooper());
 
+    /** Container for managing RxJava subscriptions and disposables. */
     private final CompositeDisposable cd = new CompositeDisposable();
 
+    /**
+     * Default constructor for EditFieldFragment.
+     */
     public EditFieldFragment() { }
 
+    /**
+     * Inflates the layout for this fragment.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState Fragment's previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -79,11 +105,18 @@ public class EditFieldFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_edit_field, container, false);
     }
 
+    /**
+     * Initializes UI components, loads existing field data, and sets up Mapbox and button listeners.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Fragment's previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view,
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Find views
         edtAddress = view.findViewById(R.id.inputAddress);
         ddlCrop = view.findViewById(R.id.dropCropType);
         ddlGroup = view.findViewById(R.id.dropGroup);
@@ -94,7 +127,7 @@ public class EditFieldFragment extends Fragment {
 
         Bundle args = getArguments();
         if (args == null) {
-            Log.e("EditField", "field mancante: passalo come arg a EditFieldFragment!");
+            Log.e("EditField", "Missing field: pass it as an argument to EditFieldFragment!");
             return;
         }
 
@@ -104,11 +137,13 @@ public class EditFieldFragment extends Fragment {
         if (!a.vmsReady()) return;
         FieldsViewModel vm = a.fieldsVM();
 
+        // Load existing field data
         cd.add(vm.getFieldById(fieldId).subscribe(f -> {
             edtAddress.setText(f.getAddress());
             ddlCrop.setText(requireContext().getString(f.getCropType().getResourceId()), false);
             ddlGroup.setText(f.getGroupName(), false);
 
+            // Configure Mapbox
             mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS, style -> {
                 mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
                         .center(Point.fromLngLat(f.getLongitude(), f.getLatitude()))
@@ -126,15 +161,14 @@ public class EditFieldFragment extends Fragment {
                         isFromMap = true;
                         edtAddress.setText(address);
                         if(address.isEmpty()) {
-                            // inputAddress not found by API call
-                            tilAddress.setError("Il punto selezionato non ha un indirizzo valido!");
+                            tilAddress.setError("The selected point does not have a valid address!");
                             pointAnnotationManager.deleteAll();
                         } else {
                             addOrUpdateMarker(point, f);
                         }
                     }, throwable -> {
-                        Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
-                        tilAddress.setError("Non riesco ad ottenere il punto selezionato");
+                        Toast.makeText(requireContext(), "No internet connection!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Unable to get the selected point");
                         pointAnnotationManager.deleteAll();
                     }));
                     return true;
@@ -143,65 +177,77 @@ public class EditFieldFragment extends Fragment {
 
             setupDropdowns(f);
 
+            // Handle edit alerts button click
             btnEditAlerts.setOnClickListener(v -> {
-                // Save field changes and go to set alerts
                 if (!validateForm()) return;
 
                 String address = edtAddress.getText().toString().trim();
-
                 String selectedCropName = ddlCrop.getText().toString().trim();
                 CropType selectedCrop = CropType.getFromName(selectedCropName, requireContext());
-
                 String groupName = ddlGroup.getText().toString().trim();
                 if (groupName.isEmpty()) groupName = "Default";
 
                 f.setAddress(address);
                 f.setGroupName(groupName);
                 f.setCropType(selectedCrop);
+                
+                // Update field in database and navigate to alert settings
                 cd.add(vm.updateField(f).subscribe(() -> {
                     Bundle b = new Bundle();
                     b.putInt("fieldId", f.getId());
-
                     NavHostFragment.findNavController(EditFieldFragment.this)
                             .navigate(R.id.action_editField_to_setAlerts, b);
                 }));
             });
 
+            // Handle delete field button click
             btnDeleteField.setOnClickListener(v -> {
                 Bundle b = new Bundle();
                 b.putInt("fieldId", f.getId());
-
                 NavHostFragment.findNavController(EditFieldFragment.this)
                         .navigate(R.id.action_editField_to_confirmDeleteField, b);
             });
         }));
     }
 
+    /**
+     * Adds a marker to the map at the specified point or updates the existing one.
+     * Updates the field object with the new geographic coordinates.
+     *
+     * @param point The geographic coordinates for the marker.
+     * @param f     The field object to update.
+     */
     private void addOrUpdateMarker(Point point, Field f) {
-        // Rimuovi eventuali marker precedenti per averne solo uno sulla mappa
+        // Remove previous markers to ensure only one is present on the map
         pointAnnotationManager.deleteAll();
 
-        // Crea il bitmap per l'icona del marker
+        // Create bitmap for the marker icon
         Bitmap markerBitmap = bitmapFromDrawableRes(getContext(), R.drawable.ic_location_pin);
         if (markerBitmap == null) {
-            Log.e("AddFieldFragment", "Impossibile creare il bitmap per il marker");
+            Log.e("EditFieldFragment", "Unable to create marker bitmap");
             return;
         }
 
-        // Definisci le opzioni per il nuovo marker
+        // Define marker options
         PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
                 .withPoint(point)
                 .withIconImage(markerBitmap);
 
-        // Crea e aggiungi il marker alla mappa
+        // Create and add the marker to the map
         pointAnnotationManager.create(pointAnnotationOptions);
 
-        // Salva le coordinate del punto cliccato
+        // Save the coordinates of the clicked point
         f.setLatitude(point.latitude());
         f.setLongitude(point.longitude());
     }
 
-    // Metodo helper per convertire un drawable in un Bitmap
+    /**
+     * Converts a drawable resource into a Bitmap.
+     *
+     * @param context    The context.
+     * @param resourceId The resource ID of the drawable.
+     * @return The resulting Bitmap, or null if conversion fails.
+     */
     private Bitmap bitmapFromDrawableRes(Context context, @DrawableRes int resourceId) {
         if (context == null) return null;
         Drawable drawable = AppCompatResources.getDrawable(context, resourceId);
@@ -215,6 +261,11 @@ public class EditFieldFragment extends Fragment {
         return bitmap;
     }
 
+    /**
+     * Configures dropdown menus for crop types and groups, and sets up the address search listener.
+     *
+     * @param f The field object whose data is used to initialize the UI.
+     */
     private void setupDropdowns(Field f) {
         edtAddress.addTextChangedListener(new TextWatcher() {
             @Override
@@ -222,7 +273,7 @@ public class EditFieldFragment extends Fragment {
                 if(!isFromMap) {
                     searchRunnable = () -> cd.add(ApiManager.getCoordinatesFromAddress(edtAddress.getText().toString().trim()).subscribe(coords -> {
                         if (coords.first == null) {
-                            tilAddress.setError("L'indirizzo non è stato trovato!");
+                            tilAddress.setError("Address not found!");
                             pointAnnotationManager.deleteAll();
                         } else {
                             tilAddress.setError(null);
@@ -234,8 +285,8 @@ public class EditFieldFragment extends Fragment {
                             addOrUpdateMarker(Point.fromLngLat((double) coords.first, (double) coords.second), f);
                         }
                     }, throwable -> {
-                        Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
-                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
+                        Toast.makeText(requireContext(), "No internet connection!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Unable to get the address");
                         pointAnnotationManager.deleteAll();
                     }));
                     handler.postDelayed(searchRunnable, 2000);
@@ -252,16 +303,16 @@ public class EditFieldFragment extends Fragment {
             }
         });
 
+        // Initialize crop type dropdown
         CropType[] cropTypes = CropType.values();
-
         List<String> cropTypeNames = new ArrayList<>();
         for (CropType crop : cropTypes) {
             cropTypeNames.add(requireContext().getString(crop.getResourceId()));
         }
-
         ArrayAdapter<String> cropAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, cropTypeNames);
         ddlCrop.setAdapter(cropAdapter);
 
+        // Load and initialize group dropdown
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;
         FieldsViewModel vm = a.fieldsVM();
@@ -271,7 +322,6 @@ public class EditFieldFragment extends Fragment {
             for(GroupWithFields group : groups) {
                 groupNames.add(group.getGroup().getName());
             }
-
             ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(
                     requireContext(),
                     android.R.layout.simple_list_item_1,
@@ -281,23 +331,34 @@ public class EditFieldFragment extends Fragment {
         }));
     }
 
+    /**
+     * Validates the form data before updating.
+     *
+     * @return True if the form is valid, false otherwise.
+     */
     private boolean validateForm() {
         boolean ok = true;
-
         String address = textOrEmpty(edtAddress);
-
         if (TextUtils.isEmpty(address) || tilAddress.getError() != null) {
-            tilAddress.setError("Devi inserire un indirizzo valido!");
+            tilAddress.setError("You must enter a valid address!");
             ok = false;
         }
-
         return ok;
     }
 
+    /**
+     * Helper method to safely extract text from an EditText.
+     *
+     * @param edit The EditText view.
+     * @return The trimmed text or an empty string if null.
+     */
     private String textOrEmpty(TextInputEditText edit) {
         return edit.getText() != null ? edit.getText().toString().trim() : "";
     }
 
+    /**
+     * Clears RxJava disposables and removes pending search callbacks when the fragment is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();

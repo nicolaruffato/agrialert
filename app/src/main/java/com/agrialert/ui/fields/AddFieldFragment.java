@@ -52,36 +52,77 @@ import java.util.List;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment for adding a new agricultural field to the system.
+ * It allows users to specify an address (via manual input or map interaction),
+ * select a crop type, and assign the field to a group.
+ */
 public class AddFieldFragment extends Fragment {
 
+    /** Container for managing RxJava subscriptions. */
     private final CompositeDisposable cd = new CompositeDisposable();
 
-    // UI
+    // --- UI Components ---
+    /** Layout container for the address input. */
     private TextInputLayout tilAddress;
+    /** Layout container for the crop type dropdown. */
     private TextInputLayout tilCrop;
+    /** EditText for entering the field's physical address. */
     private TextInputEditText inputAddress;
-    private AutoCompleteTextView dropCropType, dropGroup;
-    private MaterialButton btnSaveField, btnSetAlerts;
+    /** Dropdown for selecting the crop type planted in the field. */
+    private AutoCompleteTextView dropCropType;
+    /** Dropdown for selecting the field's group. */
+    private AutoCompleteTextView dropGroup;
+    /** Button to save the field information. */
+    private MaterialButton btnSaveField;
+    /** Button to proceed to alert configuration for the field. */
+    private MaterialButton btnSetAlerts;
+    /** Stores the ID of the field after it has been saved. */
     private int savedFieldId = -1;
 
-    // Mapbox
+    // --- Mapbox Components ---
+    /** Map view for selecting the field location visually. */
     private MapView mapView;
+    /** Manager for handling point annotations (markers) on the map. */
     private PointAnnotationManager pointAnnotationManager;
 
+    /** ViewModel for field-related data operations. */
     private FieldsViewModel vm;
+    /** The latitude of the selected location. */
     private double selectedLat = 0;
+    /** The longitude of the selected location. */
     private double selectedLng = 0;
+    /** Flag indicating if the current address was set via a map interaction. */
     private boolean isFromMap = false;
+    /** Runnable for delayed geocoding searches based on text input. */
     private Runnable searchRunnable = null;
+    /** Handler for managing UI-related delayed tasks. */
     private final Handler handler = new Handler(Looper.getMainLooper());
 
+    /**
+     * Default constructor for AddFieldFragment.
+     */
     public AddFieldFragment() {}
 
+    /**
+     * Inflates the layout for the fragment.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState Fragment's previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_add_field, container, false);
     }
 
+    /**
+     * Initializes UI components, listeners, and Mapbox functionality.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Fragment's previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -110,6 +151,7 @@ public class AddFieldFragment extends Fragment {
         view.post(this::setupDropdowns);
         setupListeners();
 
+        // --- Mapbox Setup ---
         mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS, style -> {
             mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
                     .center(Point.fromLngLat(12.5, 42.5))
@@ -125,15 +167,14 @@ public class AddFieldFragment extends Fragment {
                     isFromMap = true;
                     inputAddress.setText(address);
                     if(address.isEmpty()) {
-                        // inputAddress not found by API call
-                        tilAddress.setError("Il punto selezionato non ha un indirizzo valido!");
+                        tilAddress.setError("The selected point does not have a valid address!");
                         pointAnnotationManager.deleteAll();
                     } else {
                         addOrUpdateMarker(point);
                     }
                 }, throwable -> {
-                    Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
-                    tilAddress.setError("Non riesco ad ottenere il punto selezionato");
+                    Toast.makeText(requireContext(), "No internet connection!", Toast.LENGTH_LONG).show();
+                    tilAddress.setError("Unable to get the selected point");
                     pointAnnotationManager.deleteAll();
                 }));
                 return true;
@@ -142,31 +183,42 @@ public class AddFieldFragment extends Fragment {
 
     }
 
+    /**
+     * Adds a marker to the map at the specified point or updates the existing one.
+     *
+     * @param point The geographic coordinates for the marker.
+     */
     private void addOrUpdateMarker(Point point) {
-        // Rimuovi eventuali marker precedenti per averne solo uno sulla mappa
+        // Remove previous markers to ensure only one is present
         pointAnnotationManager.deleteAll();
 
-        // Crea il bitmap per l'icona del marker
+        // Create bitmap for the marker icon
         Bitmap markerBitmap = bitmapFromDrawableRes(getContext(), R.drawable.ic_location_pin);
         if (markerBitmap == null) {
-            Log.e("AddFieldFragment", "Impossibile creare il bitmap per il marker");
+            Log.e("AddFieldFragment", "Unable to create marker bitmap");
             return;
         }
 
-        // Definisci le opzioni per il nuovo marker
+        // Define marker options
         PointAnnotationOptions pointAnnotationOptions = new PointAnnotationOptions()
                 .withPoint(point)
                 .withIconImage(markerBitmap);
 
-        // Crea e aggiungi il marker alla mappa
+        // Create and add the marker
         pointAnnotationManager.create(pointAnnotationOptions);
 
-        // Salva le coordinate del punto cliccato
+        // Store selected coordinates
         selectedLat = point.latitude();
         selectedLng = point.longitude();
     }
 
-    // Metodo helper per convertire un drawable in un Bitmap
+    /**
+     * Converts a drawable resource into a Bitmap.
+     *
+     * @param context    The context.
+     * @param resourceId The resource ID of the drawable.
+     * @return The resulting Bitmap, or null if the conversion fails.
+     */
     private Bitmap bitmapFromDrawableRes(Context context, @DrawableRes int resourceId) {
         if (context == null) return null;
         Drawable drawable = AppCompatResources.getDrawable(context, resourceId);
@@ -181,7 +233,9 @@ public class AddFieldFragment extends Fragment {
     }
 
 
-    // --- Dropdowns ---
+    /**
+     * Configures dropdown menus for crop types and field groups, and sets up address search logic.
+     */
     private void setupDropdowns() {
         inputAddress.addTextChangedListener(new TextWatcher() {
             @Override
@@ -189,7 +243,7 @@ public class AddFieldFragment extends Fragment {
                 if(!isFromMap) {
                     searchRunnable = () -> cd.add(ApiManager.getCoordinatesFromAddress(inputAddress.getText().toString().trim()).subscribe(coords -> {
                         if (coords.first == null) {
-                            tilAddress.setError("L'indirizzo non è stato trovato!");
+                            tilAddress.setError("Address not found!");
                             pointAnnotationManager.deleteAll();
                         } else {
                             tilAddress.setError(null);
@@ -201,8 +255,8 @@ public class AddFieldFragment extends Fragment {
                             addOrUpdateMarker(Point.fromLngLat((double) coords.first, (double) coords.second));
                         }
                     }, throwable -> {
-                        Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
-                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
+                        Toast.makeText(requireContext(), "No internet connection!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Unable to get the address");
                         pointAnnotationManager.deleteAll();
                     }));
                     handler.postDelayed(searchRunnable, 2000);
@@ -243,7 +297,9 @@ public class AddFieldFragment extends Fragment {
         }));
     }
 
-    // --- Listeners ---
+    /**
+     * Sets up click listeners for the save and alert configuration buttons.
+     */
     private void setupListeners() {
         btnSaveField.setOnClickListener(v -> {
             if (!validateForm()) return;
@@ -267,11 +323,11 @@ public class AddFieldFragment extends Fragment {
                             }
                         }
                         if (id <= 0) {
-                            Toast.makeText(requireContext(), "Il salvataggio non e' andato a buon fine", Toast.LENGTH_LONG).show();
+                            Toast.makeText(requireContext(), "Save failed", Toast.LENGTH_LONG).show();
                             return;
                         }
                         savedFieldId = id;
-                        Toast.makeText(requireContext(), "Campo Salvato", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), "Field saved", Toast.LENGTH_SHORT).show();
                         btnSetAlerts.setEnabled(true);
                         btnSaveField.setEnabled(false);
                     }, err -> {
@@ -288,20 +344,27 @@ public class AddFieldFragment extends Fragment {
         });
     }
 
-    // --- Validation & Helpers ---
+    /**
+     * Validates the form data before saving.
+     *
+     * @return True if the form is valid, false otherwise.
+     */
     private boolean validateForm() {
         boolean ok = true;
         if (TextUtils.isEmpty(inputAddress.getText()) || tilAddress.getError() != null) {
-            tilAddress.setError("Devi inserire un indirizzo valido!");
+            tilAddress.setError("You must enter a valid address!");
             ok = false;
         }
         if (TextUtils.isEmpty(dropCropType.getText())) {
-            tilCrop.setError("Devi selezionare una coltivazione!");
+            tilCrop.setError("You must select a crop!");
             ok = false;
         }
         return ok;
     }
 
+    /**
+     * Clears RxJava disposables and removes pending search callbacks when the view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();

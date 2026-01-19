@@ -24,10 +24,24 @@ import java.util.List;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment that displays a confirmation dialog before deleting a field group.
+ * When confirmed, it moves all fields within the group to the "Default" group
+ * before deleting the group entry from the database.
+ */
 public class ConfirmDeleteGroupFragment extends Fragment {
 
-    CompositeDisposable cd = new CompositeDisposable();
+    /** Container for managing RxJava disposables. */
+    private final CompositeDisposable cd = new CompositeDisposable();
 
+    /**
+     * Inflates the confirmation dialog layout.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState Fragment's previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -36,6 +50,12 @@ public class ConfirmDeleteGroupFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_confirm_delete_group, container, false);
     }
 
+    /**
+     * Sets up the confirmation and cancellation logic.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Saved state if being reconstructed.
+     */
     @Override
     public void onViewCreated(@NonNull View view,
                               @Nullable Bundle savedInstanceState) {
@@ -48,7 +68,7 @@ public class ConfirmDeleteGroupFragment extends Fragment {
         assert(args != null);
         String groupName = args.getString("groupName");
 
-        // Conferma eliminazione
+        // Confirm deletion process
         btnConfirm.setOnClickListener(v -> {
             MainActivity a = (MainActivity) requireActivity();
             if (!a.vmsReady()) return;
@@ -66,28 +86,31 @@ public class ConfirmDeleteGroupFragment extends Fragment {
                 cd.add(moveFields.subscribe(() -> {
                     cd.add(vm.deleteGroup(g.getGroup()).subscribe(() -> {
                         Toast.makeText(requireContext(),
-                                "Gruppo eliminato",
+                                "Group deleted",
                                 Toast.LENGTH_SHORT).show();
 
-                        // Torna alla lista gruppi
+                        // Return to groups list
                         NavHostFragment.findNavController(ConfirmDeleteGroupFragment.this)
-                                .popBackStack(R.id.fieldsListFragment,false);
+                                .popBackStack(R.id.fieldsListFragment, false);
                     }, err -> {
-                        Log.e("DELETE", "Non sono riuscito a eliminare il gruppo", err);
+                        Log.e("DELETE", "Failed to delete the group", err);
                     }));
                 }));
             }, err -> {
-                Log.e("DELETE", "Il Gruppo che vuoi eliminare non è stato trovato!");
+                Log.e("DELETE", "The group to delete was not found!");
             }));
         });
 
-        // Annulla → torna a Visualizza gruppo
+        // Cancel and return to group view
         btnCancel.setOnClickListener(v ->
                 NavHostFragment.findNavController(ConfirmDeleteGroupFragment.this)
                         .popBackStack()
         );
     }
 
+    /**
+     * Clears RxJava disposables when the view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();
