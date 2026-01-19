@@ -33,8 +33,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:menu="@menu/bottom_nav_menu"
-        android:background="@color/white_background_nav"
-        android:elevation="8dp"/>
+        android:background="@color/green"
+        android:elevation="8dp"
+        app:itemActiveIndicatorStyle="@style/App.CustomIndicator"
+        app:itemTextColor="@color/white"
+        app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

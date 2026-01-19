@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -43,6 +44,26 @@
             app:cornerRadius="24dp" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
+    <ImageView
+        android:id="@+id/emptyImage"
+        android:layout_width="51dp"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/emptyText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="50dp"
+        android:gravity="center|center_horizontal|center_vertical"
+        android:text="Non hai creato nessun campo, clicca il bottone sotto per aggiungere un nuovo campo"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFields"
         android:layout_width="match_parent"
@@ -57,10 +78,11 @@
         android:id="@+id/btnAddField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="30dp"
         android:text="Aggiungi un nuovo campo"
         android:textAllCaps="false"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="30dp" />
+        android:textColor="@color/white" />
 
 </LinearLayout>
 

@@ -2,41 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
     android:padding="24dp">
-
-    <TextView
-        android:id="@+id/txtTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Elimina campo"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:paddingBottom="16dp" />
 
     <TextView
         android:id="@+id/txtMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sei sicuro di voler eliminare questo campo?"
         android:gravity="center"
-        android:paddingBottom="24dp" />
+        android:paddingBottom="24dp"
+        android:text="Sei sicuro di voler eliminare questo campo?"
+        android:textStyle="bold" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnConfirmDeleteField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Elimina"
-        android:textAllCaps="false" />
+        android:text="Conferma eliminazione"
+        android:textAllCaps="false"
+        android:textColor="@color/white" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCancelDeleteField"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Annulla" />
+        android:backgroundTint="@android:color/darker_gray"
+        android:text="Annulla"
+        android:textColor="@color/white" />
 
 </LinearLayout>

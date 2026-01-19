@@ -12,7 +12,7 @@
     <fragment
         android:id="@+id/fieldsListFragment"
         android:name="com.agrialert.ui.fields.FieldsListFragment"
-        android:label="Campi">
+        android:label="Gestione Campi">
 
         <action
             android:id="@+id/action_fieldsListFragment_to_viewFieldFragment"
@@ -82,7 +82,7 @@
     <fragment
         android:id="@+id/confirmDeleteGroupFragment"
         android:name="com.agrialert.ui.fields.groups.ConfirmDeleteGroupFragment"
-        android:label="Conferma eliminazione" />
+        android:label="Elima gruppo" />
 
     <fragment
         android:id="@+id/editFieldFragment"

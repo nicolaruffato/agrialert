@@ -18,8 +18,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Indirizzo*"
-            app:endIconMode="custom"
-            app:endIconDrawable="@drawable/ic_location">
+            app:endIconMode="custom">
+            <!-- app:endIconDrawable="@drawable/ic_location"> -->
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputAddress"
@@ -86,14 +86,16 @@
             android:id="@+id/btnSaveField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Salva campo" />
+            android:text="Salva campo"
+            android:textColor="@color/white" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSetAlerts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
             android:text="Imposta alert"
-            android:layout_marginTop="32dp" />
+            android:textColor="@color/white" />
 
     </LinearLayout>
 </ScrollView>

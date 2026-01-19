@@ -75,18 +75,9 @@
             android:id="@+id/btnEditAlerts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
             android:text="Modifica alert"
-            android:layout_marginTop="32dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDeleteField"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Elimina campo"
-            android:textColor="@color/error"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
+            android:textColor="@color/white" />
 
     </LinearLayout>
 </ScrollView>

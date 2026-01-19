@@ -1,9 +1,12 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,6 +42,8 @@ public class FieldsListFragment extends Fragment
     private MaterialButton btnFieldGroups;
     private MaterialButton btnAddField;
     private RecyclerView rvFields;
+    private ImageView emptyImage;
+    private TextView emptyText;
 
     // FALSE = Campi, TRUE = Gruppi di campi
     private boolean showingGroups = false;
@@ -70,6 +75,8 @@ public class FieldsListFragment extends Fragment
         btnFieldGroups = view.findViewById(R.id.btnFieldGroups);
         btnAddField = view.findViewById(R.id.btnAddField);
         rvFields = view.findViewById(R.id.rvFields);
+        emptyImage = view.findViewById(R.id.emptyImage);
+        emptyText = view.findViewById(R.id.emptyText);
 
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 

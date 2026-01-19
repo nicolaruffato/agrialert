@@ -89,7 +89,6 @@ public class EditFieldFragment extends Fragment {
         ddlGroup = view.findViewById(R.id.dropGroup);
         tilAddress = view.findViewById(R.id.tilAddress);
         MaterialButton btnEditAlerts = view.findViewById(R.id.btnEditAlerts);
-        MaterialButton btnDeleteField = view.findViewById(R.id.btnDeleteField);
         mapView = view.findViewById(R.id.mapView);
 
         Bundle args = getArguments();
@@ -165,14 +164,6 @@ public class EditFieldFragment extends Fragment {
                     NavHostFragment.findNavController(EditFieldFragment.this)
                             .navigate(R.id.action_editField_to_setAlerts, b);
                 }));
-            });
-
-            btnDeleteField.setOnClickListener(v -> {
-                Bundle b = new Bundle();
-                b.putInt("fieldId", f.getId());
-
-                NavHostFragment.findNavController(EditFieldFragment.this)
-                        .navigate(R.id.action_editField_to_confirmDeleteField, b);
             });
         }));
     }

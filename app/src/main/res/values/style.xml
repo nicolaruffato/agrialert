@@ -4,4 +4,7 @@
         <item name="cornerSize">8dp</item>
         <item name="cornerFamily">rounded</item>
     </style>
+    <style name="App.CustomIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">?attr/bottomNavSelection</item>
+    </style>
 </resources>

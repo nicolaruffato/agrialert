@@ -78,12 +78,13 @@
             android:paddingBottom="8dp"/>
 
         <!-- Bottone salva -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Salva gruppo"
-            android:layout_marginBottom="30dp" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaveGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="30dp"
+        android:text="Salva gruppo"
+        android:textColor="@color/white" />
 
 </LinearLayout>

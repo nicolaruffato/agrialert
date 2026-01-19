@@ -61,8 +61,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Vedi tutti"
-                            android:textSize="14sp"
-                            android:textColor="?attr/colorPrimary" />
+                            android:textColor="@color/green"
+                            android:textSize="14sp" />
                     </LinearLayout>
 
                     <!-- TESTO NESSUN ALERT -->

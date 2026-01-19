@@ -62,15 +62,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Modifica gruppo" />
+        android:text="Modifica gruppo"
+        android:textColor="@color/white" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDeleteGroup"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:layout_marginBottom="30dp"
         android:text="Elimina gruppo"
-        android:layout_marginBottom="30dp" />
+        android:textColor="@color/error"
+        app:strokeColor="@color/green"
+        app:strokeWidth="2dp" />
 
 </LinearLayout>

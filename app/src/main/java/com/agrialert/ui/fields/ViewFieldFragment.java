@@ -105,7 +105,7 @@ public class ViewFieldFragment extends Fragment {
         adapter = new AlertsAdapter((alert, isResolved) -> {
             // aggiorno il model
             alert.isResolved = isResolved;
-            avm.setAlertResolved(alert.id);
+            cd.add(avm.setAlertResolved(alert.id).subscribe(() -> getAlerts(field)));
         });
         rvFieldAlerts.setAdapter(adapter);
 
@@ -113,7 +113,7 @@ public class ViewFieldFragment extends Fragment {
     }
 
     private void getAlerts(FieldUiModel field) {
-        cd.add(avm.getActiveAlertsFromField((int)field.id).subscribe(alerts -> {
+        cd.add(avm.getActiveAlertsFromField((int)field.id).firstOrError().subscribe(alerts -> {
             List<AlertUiModel>  uiAlerts = new ArrayList<>();
             for(Alert alert : alerts) {
                 String groupOrField;
@@ -133,7 +133,6 @@ public class ViewFieldFragment extends Fragment {
                         alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
                 ));
             }
-
             adapter.submitList(uiAlerts);
         }));
     };
