@@ -38,14 +38,36 @@
             android:textColor="@color/toggle_text"
             app:cornerRadius="24dp"
             app:checkedIcon="@null" />
+
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <!-- LISTA ALERT -->
+    <ImageView
+        android:id="@+id/noAlertsImage"
+        android:layout_width="51dp"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/noAlertsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center|center_horizontal|center_vertical"
+        android:text="Non ci sono alert attivi"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvAlerts"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="12dp" >
+
+    </androidx.recyclerview.widget.RecyclerView>
 
 </LinearLayout>

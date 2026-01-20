@@ -35,7 +35,7 @@ public class GroupUiModel implements Parcelable {
         icons = in.readArrayList(Integer.class.getClassLoader());
     }
 
-    public static final Creator<GroupUiModel> CREATOR = new Creator<GroupUiModel>() {
+    public static final Creator<GroupUiModel> CREATOR = new Creator<>() {
         @Override
         public GroupUiModel createFromParcel(Parcel in) {
             return new GroupUiModel(in);

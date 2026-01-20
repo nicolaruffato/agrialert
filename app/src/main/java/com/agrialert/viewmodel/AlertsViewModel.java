@@ -11,6 +11,7 @@ import java.util.List;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class AlertsViewModel {
@@ -57,6 +58,16 @@ public class AlertsViewModel {
         return dm.getActiveAlertsFromField(fieldId);
     }
 
+    public Flowable<List<Alert>> getAlertsFromField(int fieldId) {
+        return dm.getAlertsFromField(fieldId);
+    }
 
+    public Maybe<Alert> findLatestActiveByField(long fieldId) {
+        return dm.findLatestActiveByField(fieldId);
+    }
+
+    public Completable deleteAlert(int alertId) {
+        return dm.deleteAlert(alertId);
+    }
 
 }

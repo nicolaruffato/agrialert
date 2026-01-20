@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
 
 public class ViewGroupFragment extends Fragment {
 
@@ -37,8 +36,8 @@ public class ViewGroupFragment extends Fragment {
     private TextView txtGroupName;
     private TextView txtGroupDescription;
     private RecyclerView rvGroupFields;
-    private MaterialButton btnEditGroup;
-    private MaterialButton btnDeleteGroup;
+    private ImageView noFieldsGroupImage;
+    private TextView noFieldsGroupText;
     private final CompositeDisposable cd = new CompositeDisposable();
 
     public ViewGroupFragment() {
@@ -60,8 +59,10 @@ public class ViewGroupFragment extends Fragment {
         txtGroupName = view.findViewById(R.id.txtGroupName);
         txtGroupDescription = view.findViewById(R.id.txtGroupDescription);
         rvGroupFields = view.findViewById(R.id.rvGroupFields);
-        btnEditGroup = view.findViewById(R.id.btnEditGroup);
-        btnDeleteGroup = view.findViewById(R.id.btnDeleteGroup);
+        MaterialButton btnEditGroup = view.findViewById(R.id.btnEditGroup);
+        MaterialButton btnDeleteGroup = view.findViewById(R.id.btnDeleteGroup);
+        noFieldsGroupImage = view.findViewById(R.id.noFieldsGroupImage);
+        noFieldsGroupText = view.findViewById(R.id.noFieldsGroupText);
 
         Bundle args = getArguments();
         if (args == null) {
@@ -97,6 +98,15 @@ public class ViewGroupFragment extends Fragment {
                         f.getCropType().getImageResId(),
                         Collections.emptyList()
                 ));
+            }
+            if (fields.isEmpty()) {
+               rvGroupFields.setVisibility(View.GONE);
+               noFieldsGroupImage.setVisibility(View.VISIBLE);
+               noFieldsGroupText.setVisibility(View.VISIBLE);
+            } else {
+               noFieldsGroupImage.setVisibility(View.GONE);
+               noFieldsGroupText.setVisibility(View.GONE);
+               rvGroupFields.setVisibility(View.VISIBLE);
             }
             adapter.submitList(fields);
         }));

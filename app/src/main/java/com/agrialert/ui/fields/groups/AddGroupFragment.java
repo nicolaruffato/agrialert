@@ -34,14 +34,12 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 public class AddGroupFragment extends Fragment {
 
-    private ImageView imgGroupIcon;
     private TextInputLayout layoutGroupName;
     private TextInputEditText edtGroupName, edtDescription;
     private RecyclerView rvFields;
-    private MaterialButton btnSaveGroup;
 
     private GroupFieldsAdapter adapter;
-    private List<GroupFieldUiModel> fields = new ArrayList<>();
+    private final List<GroupFieldUiModel> fields = new ArrayList<>();
     CompositeDisposable cd = new CompositeDisposable();
     FieldsViewModel vm;
 
@@ -59,12 +57,12 @@ public class AddGroupFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        imgGroupIcon = view.findViewById(R.id.imgGroupIcon);
+        ImageView imgGroupIcon = view.findViewById(R.id.imgGroupIcon);
         layoutGroupName = view.findViewById(R.id.layoutGroupName);
         edtGroupName = view.findViewById(R.id.edtGroupName);
         edtDescription = view.findViewById(R.id.edtDescription);
         rvFields = view.findViewById(R.id.rvFields);
-        btnSaveGroup = view.findViewById(R.id.btnSaveGroup);
+        MaterialButton btnSaveGroup = view.findViewById(R.id.btnSaveGroup);
 
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -94,9 +92,7 @@ public class AddGroupFragment extends Fragment {
                             adapter = new GroupFieldsAdapter(fields);
                             rvFields.setAdapter(adapter);
                         },
-                        err -> {
-                            android.util.Log.e("FieldsListFragment", "Errore DB", err);
-                        }
+                        err -> android.util.Log.e("FieldsListFragment", "Errore DB", err)
                 )
         );
 

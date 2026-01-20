@@ -58,7 +58,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="50dp"
+        android:layout_marginBottom="356dp"
         android:gravity="center|center_horizontal|center_vertical"
         android:text="Non hai creato nessun campo, clicca il bottone sotto per aggiungere un nuovo campo"
         android:textStyle="bold"
@@ -68,10 +68,11 @@
         android:id="@+id/rvFields"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         android:layout_marginTop="12dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
         android:paddingBottom="96dp"
-        android:clipToPadding="false"/>
+        android:visibility="visible" />
 
     <!-- BOTTONE AGGIUNGI -->
     <com.google.android.material.button.MaterialButton

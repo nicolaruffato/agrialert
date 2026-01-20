@@ -24,21 +24,14 @@
     </fragment>
 
     <fragment
-        android:id="@+id/viewGroupFragment"
-        android:name="com.agrialert.ui.fields.groups.ViewGroupFragment"
-        android:label="Visualizza gruppo" />
-
-
-
-    <fragment
-        android:id="@+id/viewFieldFragment"
-        android:name="com.agrialert.ui.fields.ViewFieldFragment"
-        android:label="Visualizza campo" />
-
-    <fragment
         android:id="@+id/dashboardFragment"
         android:name="com.agrialert.ui.dashboard.DashboardFragment"
-        android:label="Dashboard" />
+        android:label="Dashboard" >
+        <action
+            android:id="@+id/action_dashboardFragment_to_viewFieldFragment"
+            app:destination="@id/viewFieldFragment" />
+    </fragment>
+
 
     <fragment
         android:id="@+id/addFieldFragment"

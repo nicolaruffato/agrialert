@@ -7,6 +7,7 @@
     android:padding="16dp">
 
     <!-- HEADER ICONA + NOME + DESCRIZIONE -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -49,6 +50,26 @@
         android:textSize="16sp" />
 
     <!-- LISTA CAMPI DEL GRUPPO -->
+    <ImageView
+        android:id="@+id/noFieldsGroupImage"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/noFieldsGroupText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="100dp"
+        android:gravity="center|center_horizontal|center_vertical"
+        android:text="Questo gruppo non contiene nessun campo"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvGroupFields"
         android:layout_width="match_parent"

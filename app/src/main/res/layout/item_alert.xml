@@ -103,6 +103,8 @@
                 android:id="@+id/switchResolved"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:trackTint="@color/toggle_selected"
+                app:thumbTint="@color/dark_green"
                 android:layout_marginBottom="0dp"
                 android:checked="false" />
 

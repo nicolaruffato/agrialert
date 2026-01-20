@@ -30,7 +30,6 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -46,16 +45,19 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         super(R.layout.fragment_dashboard);
     }
 
-    private TextView txtAlertCount, txtNoActiveAlerts, txtSeeAllAlerts;
+    private TextView txtAlertCount;
+    private TextView txtNoActiveAlerts;
     private LinearLayout layoutAlertPreview;
     private MaterialButtonToggleGroup toggleDash;
-    private MaterialButton btnDashFields, btnDashGroups;
+    private MaterialButton btnDashFields;
     private RecyclerView rvDashboardPreview;
+    private ImageView noFieldsImage;
+    private TextView noFieldsText;
 
     // riuso adapter già esistenti
     private FieldsAdapter fieldsAdapter;
     private GroupsAdapter groupsAdapter;
-    private CompositeDisposable cd = new CompositeDisposable();
+    private final CompositeDisposable cd = new CompositeDisposable();
     FieldsViewModel vm;
     AlertsViewModel avm;
 
@@ -66,23 +68,21 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
 
         txtAlertCount = view.findViewById(R.id.txtAlertCount);
         txtNoActiveAlerts = view.findViewById(R.id.txtNoActiveAlerts);
-        txtSeeAllAlerts = view.findViewById(R.id.txtSeeAllAlerts);
         layoutAlertPreview = view.findViewById(R.id.layoutAlertPreview);
         TextView txtSeeAllAlerts = view.findViewById(R.id.txtSeeAllAlerts);
-
+        noFieldsImage = view.findViewById(R.id.noFieldsImage);
+        noFieldsText = view.findViewById(R.id.noFieldsText);
 
         txtSeeAllAlerts.setOnClickListener(v -> {
-            BottomNavigationView bottomNav =
-                    (BottomNavigationView) requireActivity().findViewById(R.id.bottom_nav);
+            BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_nav);
             bottomNav.setSelectedItemId(R.id.alertsListFragment);
         });
 
         toggleDash = view.findViewById(R.id.toggleFieldsGroupsDash);
         btnDashFields = view.findViewById(R.id.btnDashFields);
-        btnDashGroups = view.findViewById(R.id.btnDashGroups);
         rvDashboardPreview = view.findViewById(R.id.rvDashboardPreview);
-
         rvDashboardPreview.setLayoutManager(new LinearLayoutManager(requireContext()));
+        btnDashFields.setChecked(true);
 
         // IMPORTANTISSIMO: qui usi gli adapter che hai già (quelli della lista)
         fieldsAdapter = new FieldsAdapter(this);
@@ -93,8 +93,14 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
             vm = a.fieldsVM();
             avm = a.alertsVM();
 
-            btnDashFields.setChecked(true);
-            showDashFields();
+            view.post(() -> {
+                if (btnDashFields.isChecked()) {
+                    showDashFields();
+                } else {
+                    showDashGroups();
+                }
+            });
+
 
             toggleDash.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
                 if (!isChecked) return;
@@ -114,7 +120,7 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
     public void onFieldClick(FieldUiModel field) {
         Bundle b = new Bundle();
         b.putParcelable("field", field);
-        NavHostFragment.findNavController(this).navigate(R.id.viewFieldFragment, b);
+        NavHostFragment.findNavController(this).navigate(R.id.action_dashboardFragment_to_viewFieldFragment, b);
     }
 
     @Override
@@ -125,7 +131,7 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
     }
 
     private void renderActiveAlerts() {
-        cd.add(avm.getActiveAlerts().firstOrError().subscribe(alerts -> {
+        cd.add(avm.getActiveAlerts().subscribe(alerts -> {
             int total = 0;
             int maxPreview = 3;
             LayoutInflater inflater = LayoutInflater.from(requireContext());
@@ -199,13 +205,13 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         Date endDate = end.getTime();
 
         if (isSameDay(start, end)) {
-            return startLabel + "\u2013" + timeFormat.format(endDate);
+            return startLabel + "–" + timeFormat.format(endDate);
         }
 
         String endDayLabel = isSameDay(end, today)
                 ? "Oggi"
                 : (isSameDay(end, tomorrow) ? "Domani" : dateFormat.format(endDate));
-        return startLabel + "\u2013" + endDayLabel + " " + timeFormat.format(endDate);
+        return startLabel + "–" + endDayLabel + " " + timeFormat.format(endDate);
     }
 
     private boolean isSameDay(Calendar a, Calendar b) {
@@ -213,42 +219,6 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
-    private int getIconForType(int typeId) {
-        switch (typeId) {
-            case 1:
-                return R.drawable.ic_alert_vento;
-
-            case 2:
-                return R.drawable.ic_alert_calore;
-
-            case 3:
-                return R.drawable.ic_alert_ventilazione;
-
-            case 4:
-                return R.drawable.ic_alert_gelo;
-
-            case 5:
-                return R.drawable.ic_alert_pioggia;
-
-            case 6:
-                return R.drawable.ic_alert_temporale;
-
-            case 7:
-                return R.drawable.ic_alert_siccita;
-
-            case 8:
-                return R.drawable.ic_alert_umidita;
-
-            case 9:
-                return R.drawable.ic_alert_escursione;
-
-            case 10:
-                return R.drawable.ic_alert_incendio;
-
-            default:
-                return R.drawable.ic_alert; // fallback
-        }
-    }
 
     private void showDashFields() {
         cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
@@ -261,7 +231,7 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
                     uiFields.add(new FieldUiModel(
                             field.getId(),
                             field.getAddress(),
-                            getContext().getString(field.getCropType().getResourceId()),
+                            requireContext().getString(field.getCropType().getResourceId()),
                             field.getGroupName(),
                             field.getCropType().getImageResId(),
                             Collections.emptyList())
@@ -269,13 +239,24 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
                     count++;
                 }
             }
-
+            if (uiFields.isEmpty()) {
+               noFieldsImage.setVisibility(View.VISIBLE);
+               noFieldsText.setVisibility(View.VISIBLE);
+               rvDashboardPreview.setVisibility(View.GONE);
+            } else {
+                noFieldsImage.setVisibility(View.GONE);
+                noFieldsText.setVisibility(View.GONE);
+                rvDashboardPreview.setVisibility(View.VISIBLE);
+            }
             rvDashboardPreview.setAdapter(fieldsAdapter);
             fieldsAdapter.submitList(uiFields);
         }));
     }
 
     private void showDashGroups() {
+        noFieldsImage.setVisibility(View.GONE);
+        noFieldsText.setVisibility(View.GONE);
+        rvDashboardPreview.setVisibility(View.VISIBLE);
         cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
             List<GroupUiModel> uiGroups = new ArrayList<>();
             int count = 0;
@@ -293,15 +274,6 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
             rvDashboardPreview.setAdapter(groupsAdapter);
             groupsAdapter.submitList(uiGroups);
         }));
-    }
-
-    private List<String> getSampleActiveAlerts() {
-        List<String> list = new ArrayList<>();
-        // per test "0 alert" lascia vuoto
-        list.add("Caldo estremo");
-        list.add("Gelo/Brina");
-        list.add("Scarsa ventilazione");
-        return list;
     }
 
     @Override

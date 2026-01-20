@@ -111,10 +111,15 @@ public class FieldsListFragment extends Fragment
 
         // schermata iniziale: Campi
 
+        btnFieldGroups.setChecked(false);
+        btnFields.setChecked(true);
+
         view.post(() -> {
-            btnFieldGroups.setChecked(false);
-            btnFields.setChecked(true);
-            showFields();
+           if(btnFields.isChecked()){
+               showFields();
+           } else {
+               showGroups();
+           }
         });
     }
 
@@ -183,6 +188,15 @@ public class FieldsListFragment extends Fragment
                                 }
                             }
 
+                            if (uiList.isEmpty()) {
+                               rvFields.setVisibility(View.GONE);
+                               emptyImage.setVisibility(View.VISIBLE);
+                               emptyText.setVisibility(View.VISIBLE);
+                            } else {
+                                rvFields.setVisibility(View.VISIBLE);
+                                emptyImage.setVisibility(View.GONE);
+                                emptyText.setVisibility(View.GONE);
+                            }
                             fieldsAdapter.submitList(uiList);
                         },
                         err -> {
@@ -193,6 +207,9 @@ public class FieldsListFragment extends Fragment
     }
 
     private void showGroups() {
+        emptyImage.setVisibility(View.GONE);
+        emptyText.setVisibility(View.GONE);
+        rvFields.setVisibility(View.VISIBLE);
         showingGroups = true;
 
         btnFields.setChecked(false);

@@ -16,4 +16,6 @@
     <string name="crop_Oilseeds">Oleaginose</string>
     <string name="crop_aromatic_and_medicinal">Aromatiche e Medicinali</string>
     <string name="crop_none">Nessuna</string>
+    <string name="no_resolved_alerts">Non ci sono alert risolti</string>
+    <string name="no_active_alerts">Non ci sono alert attivi</string>
 </resources>

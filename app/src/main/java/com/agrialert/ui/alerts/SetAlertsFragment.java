@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
@@ -33,9 +34,6 @@ public class SetAlertsFragment extends Fragment {
 
     private final CompositeDisposable cd = new CompositeDisposable();
 
-    private androidx.recyclerview.widget.RecyclerView rvAlertSettings;
-    private MaterialButton btnSaveField;
-
     // LISTA STABILE (mai riassegnare!)
     private final List<AlertSettingUiModel> items = new ArrayList<>();
     private AlertSettingsAdapter adapter;
@@ -50,23 +48,12 @@ public class SetAlertsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        rvAlertSettings = view.findViewById(R.id.rvAlertSettings);
-        btnSaveField = view.findViewById(R.id.btnSaveField);
+        RecyclerView rvAlertSettings = view.findViewById(R.id.rvAlertSettings);
+        MaterialButton btnSaveField = view.findViewById(R.id.btnSaveField);
 
         // 0) prendo fieldId
         Bundle args = getArguments();
         if (args != null) fieldId = args.getInt("fieldId", -1);
-
-        // TODO: remove
-        if (fieldId == -1) {
-            // fallback: se vuoi prenderlo dal FieldsViewModel (se ce l’hai)
-            MainActivity a0 = (MainActivity) requireActivity();
-            if (a0.vmsReady()) {
-                FieldsViewModel fvm0 = a0.fieldsVM();
-                // <-- se hai un metodo tipo getCurrentFieldId(), mettilo qui:
-                // fieldId = fvm0.getCurrentFieldId();
-            }
-        }
 
         if (fieldId == -1) {
             Log.e(TAG, "fieldId mancante: passalo come arg a SetAlertsFragment!");
@@ -177,7 +164,7 @@ public class SetAlertsFragment extends Fragment {
 
                                         AlertManagerInitializer.triggerImmediateSync(requireContext());
                                         NavHostFragment.findNavController(this)
-                                                .popBackStack(R.id.fieldsListFragment, false);
+                                                .navigate(R.id.fieldsListFragment);
 
                                     },
                                     err -> {

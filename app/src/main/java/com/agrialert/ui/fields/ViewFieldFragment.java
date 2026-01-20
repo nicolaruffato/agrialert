@@ -40,6 +40,8 @@ public class ViewFieldFragment extends Fragment {
     private TextView txtCrop;
     private TextView txtGroup;
     private RecyclerView rvFieldAlerts;
+    private ImageView noAlertsListImage;
+    private TextView noAlertsListText;
 
     private MaterialButton btnEditField;
     private MaterialButton btnDeleteField;
@@ -71,7 +73,10 @@ public class ViewFieldFragment extends Fragment {
         rvFieldAlerts = view.findViewById(R.id.rvFieldAlerts);
         btnEditField = view.findViewById(R.id.btnEditField);
         btnDeleteField = view.findViewById(R.id.btnDeleteField);
+        noAlertsListImage = view.findViewById(R.id.noAlertsListImage);
+        noAlertsListText = view.findViewById(R.id.noAlertsListText);
 
+        // PASSAGGIO CAMPO
         Bundle args = getArguments();
         if (args == null) {
             Log.e(TAG, "field mancante: passalo come arg a ViewFieldFragment!");
@@ -105,7 +110,7 @@ public class ViewFieldFragment extends Fragment {
         adapter = new AlertsAdapter((alert, isResolved) -> {
             // aggiorno il model
             alert.isResolved = isResolved;
-            cd.add(avm.setAlertResolved(alert.id).subscribe(() -> getAlerts(field)));
+            cd.add(avm.setAlertResolved(alert.id).subscribe());
         });
         rvFieldAlerts.setAdapter(adapter);
 
@@ -113,7 +118,7 @@ public class ViewFieldFragment extends Fragment {
     }
 
     private void getAlerts(FieldUiModel field) {
-        cd.add(avm.getActiveAlertsFromField((int)field.id).firstOrError().subscribe(alerts -> {
+        cd.add(avm.getActiveAlertsFromField((int)field.id).subscribe(alerts -> {
             List<AlertUiModel>  uiAlerts = new ArrayList<>();
             for(Alert alert : alerts) {
                 String groupOrField;
@@ -132,6 +137,16 @@ public class ViewFieldFragment extends Fragment {
                         alert.isResolved(),
                         alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
                 ));
+            }
+
+            if (uiAlerts.isEmpty()) {
+                rvFieldAlerts.setVisibility(View.GONE);
+                noAlertsListImage.setVisibility(View.VISIBLE);
+                noAlertsListText.setVisibility(View.VISIBLE);
+            } else {
+                noAlertsListImage.setVisibility(View.GONE);
+                noAlertsListText.setVisibility(View.GONE);
+                rvFieldAlerts.setVisibility(View.VISIBLE);
             }
             adapter.submitList(uiAlerts);
         }));

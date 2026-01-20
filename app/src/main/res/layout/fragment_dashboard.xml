@@ -11,6 +11,7 @@
         android:padding="16dp">
 
         <!-- CARD ALERT ATTIVI -->
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,7 +53,6 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="0 Alert Attivi"
                             android:textSize="18sp"
                             android:textStyle="bold" />
 
@@ -151,6 +151,25 @@
 
 
         <!-- PREVIEW LISTA (3 elementi) -->
+        <ImageView
+            android:id="@+id/noFieldsImage"
+            android:layout_width="match_parent"
+            android:layout_height="53dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_info" />
+
+        <TextView
+            android:id="@+id/noFieldsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center|center_horizontal|center_vertical"
+            android:text="Non hai creato nessun campo, vai nella sezione campi per aggiungerne uno nuovo"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvDashboardPreview"
             android:layout_width="match_parent"

@@ -1,10 +1,11 @@
 package com.agrialert.ui.alerts;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -32,6 +33,8 @@ public class AlertsListFragment extends Fragment {
     private RecyclerView rvAlerts;
     private MaterialButton btnAlertsActive;
     private MaterialButton btnAlertsResolved;
+    private ImageView noAlertsImage;
+    private TextView noAlertsText;
 
     private AlertsAdapter adapter;
     AlertsViewModel avm;
@@ -56,6 +59,8 @@ public class AlertsListFragment extends Fragment {
         rvAlerts = view.findViewById(R.id.rvAlerts);
         btnAlertsActive = view.findViewById(R.id.btnFields);
         btnAlertsResolved = view.findViewById(R.id.btnFieldGroups);
+        noAlertsImage = view.findViewById(R.id.noAlertsImage);
+        noAlertsText = view.findViewById(R.id.noAlertsText);
 
         // RecyclerView
         rvAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -69,9 +74,9 @@ public class AlertsListFragment extends Fragment {
             // Ricalcolo la lista da mostrare in base al toggle
 
             if (btnAlertsActive.isChecked()) {
-                cd.add(avm.setAlertResolved(alert.id).subscribe(this::showActiveAlerts));
+                cd.add(avm.setAlertResolved(alert.id).subscribe());
             } else {
-                cd.add(avm.setAlertActive(alert.id).subscribe(this::showResolvedAlerts));
+                cd.add(avm.setAlertActive(alert.id).subscribe());
             }
         });
 
@@ -91,27 +96,39 @@ public class AlertsListFragment extends Fragment {
         btnAlertsActive.setChecked(true);
         btnAlertsResolved.setChecked(false);
 
-        cd.add(avm.getActiveAlerts().firstOrError().subscribe(alerts -> {
-            List<AlertUiModel> active = new ArrayList<>();
-            for(Alert alert : alerts) {
-                String groupOrField = "";
-                if(alert.getFieldId() == 0) {
-                    groupOrField = "Gruppo: " + alert.getGroupName();
-                } else {
-                    groupOrField = "Campo: " + alert.getFieldAddress();
+        cd.add(avm.getActiveAlerts().subscribe(alerts -> {
+            if(btnAlertsActive.isChecked()) {
+                List<AlertUiModel> active = new ArrayList<>();
+                for(Alert alert : alerts) {
+                    String groupOrField;
+                    if(alert.getFieldId() == 0) {
+                        groupOrField = "Gruppo: " + alert.getGroupName();
+                    } else {
+                        groupOrField = "Campo: " + alert.getFieldAddress();
+                    }
+                    active.add(new AlertUiModel(
+                            alert.getId(),
+                            String.valueOf(alert.getTypeId()),
+                            alert.getTitle(),
+                            formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
+                            groupOrField,
+                            formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
+                            alert.isResolved(),
+                            alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
+                    ));
                 }
-                active.add(new AlertUiModel(
-                        alert.getId(),
-                        String.valueOf(alert.getTypeId()),
-                        alert.getTitle(),
-                        formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
-                        groupOrField,
-                        formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
-                        alert.isResolved(),
-                        alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
-                ));
+                if(active.isEmpty()) {
+                   noAlertsText.setText(R.string.no_active_alerts);
+                   noAlertsImage.setVisibility(View.VISIBLE);
+                   noAlertsText.setVisibility(View.VISIBLE);
+                   rvAlerts.setVisibility(View.GONE);
+                } else {
+                    noAlertsImage.setVisibility(View.GONE);
+                    noAlertsText.setVisibility(View.GONE);
+                    rvAlerts.setVisibility(View.VISIBLE);
+                }
+                adapter.submitList(active);
             }
-            adapter.submitList(active);
         }));
     }
 
@@ -119,27 +136,39 @@ public class AlertsListFragment extends Fragment {
         btnAlertsActive.setChecked(false);
         btnAlertsResolved.setChecked(true);
 
-        cd.add(avm.getResolvedAlerts().firstOrError().subscribe(alerts -> {
-            List<AlertUiModel> resolved = new ArrayList<>();
-            for(Alert alert : alerts) {
-                String groupOrField;
-                if(alert.getFieldId() == 0) {
-                    groupOrField = "Gruppo: " + alert.getGroupName();
-                } else {
-                    groupOrField = "Campo: " + alert.getFieldAddress();
+        cd.add(avm.getResolvedAlerts().subscribe(alerts -> {
+            if(btnAlertsResolved.isChecked()) {
+                List<AlertUiModel> resolved = new ArrayList<>();
+                for (Alert alert : alerts) {
+                    String groupOrField;
+                    if (alert.getFieldId() == 0) {
+                        groupOrField = "Gruppo: " + alert.getGroupName();
+                    } else {
+                        groupOrField = "Campo: " + alert.getFieldAddress();
+                    }
+                    resolved.add(new AlertUiModel(
+                            alert.getId(),
+                            String.valueOf(alert.getTypeId()),
+                            alert.getTitle(),
+                            formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
+                            groupOrField,
+                            formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
+                            alert.isResolved(),
+                            alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
+                    ));
                 }
-                resolved.add(new AlertUiModel(
-                        alert.getId(),
-                        String.valueOf(alert.getTypeId()),
-                        alert.getTitle(),
-                        formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
-                        groupOrField,
-                        formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
-                        alert.isResolved(),
-                        alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
-                ));
+                if (resolved.isEmpty()) {
+                    noAlertsText.setText(R.string.no_resolved_alerts);
+                    noAlertsImage.setVisibility(View.VISIBLE);
+                    noAlertsText.setVisibility(View.VISIBLE);
+                    rvAlerts.setVisibility(View.GONE);
+                } else {
+                    noAlertsImage.setVisibility(View.GONE);
+                    noAlertsText.setVisibility(View.GONE);
+                    rvAlerts.setVisibility(View.VISIBLE);
+                }
+                adapter.submitList(resolved);
             }
-            adapter.submitList(resolved);
         }));
     }
 
@@ -152,9 +181,9 @@ public class AlertsListFragment extends Fragment {
         }
 
         String normalized = description.trim()
-                .replace(" \u2022 ", "\n")
+                .replace(" • ", "\n")
                 .replace(" | ", "\n")
-                .replace('\u2022', '\n');
+                .replace('•', '\n');
 
         String condition = "";
         String durationLine = "";

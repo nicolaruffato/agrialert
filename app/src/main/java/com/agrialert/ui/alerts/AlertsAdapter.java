@@ -63,7 +63,6 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         TextView txtDuration;
         TextView txtFieldAddress;
         TextView txtTime;
-        TextView txtResolvedLabel;
         SwitchMaterial switchResolved;
 
         public AlertViewHolder(@NonNull View itemView) {
@@ -76,7 +75,6 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtFieldAddress = itemView.findViewById(R.id.txtAlertFieldAddress);
             txtTime = itemView.findViewById(R.id.txtAlertTimeLabel);
             switchResolved = itemView.findViewById(R.id.switchResolved);
-            //txtResolvedLabel = itemView.findViewById(R.id.txtResolvedLabel);
         }
 
         void bind(AlertUiModel item, OnResolvedChangeListener listener) {
@@ -110,7 +108,6 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
                 txtTime.setVisibility(View.VISIBLE);
                 txtTime.setText(item.timeLabel);
             }
-            //txtResolvedLabel.setText(time[1]);
 
             // evito che il listener scatti quando faccio setChecked
             switchResolved.setOnCheckedChangeListener(null);

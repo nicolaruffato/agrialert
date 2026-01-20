@@ -22,14 +22,6 @@ public class GroupFieldsAdapter extends RecyclerView.Adapter<GroupFieldsAdapter.
         this.items = items;
     }
 
-    public void submitList(List<GroupFieldUiModel> newItems) {
-        items.clear();
-        if (newItems != null) {
-            items.addAll(newItems);
-        }
-        notifyDataSetChanged();
-    }
-
     @NonNull
     @Override
     public FieldViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -48,7 +40,7 @@ public class GroupFieldsAdapter extends RecyclerView.Adapter<GroupFieldsAdapter.
         return items != null ? items.size() : 0;
     }
 
-    class FieldViewHolder extends RecyclerView.ViewHolder {
+    static class FieldViewHolder extends RecyclerView.ViewHolder {
 
         ImageView imgIcon;
         TextView txtAddress, txtCrop, txtGroup;
@@ -72,9 +64,7 @@ public class GroupFieldsAdapter extends RecyclerView.Adapter<GroupFieldsAdapter.
             switchSelected.setOnCheckedChangeListener(null);
             switchSelected.setChecked(item.selected);
 
-            switchSelected.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                item.selected = isChecked;
-            });
+            switchSelected.setOnCheckedChangeListener((buttonView, isChecked) -> item.selected = isChecked);
         }
     }
 }

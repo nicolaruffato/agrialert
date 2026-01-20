@@ -18,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
+import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -96,12 +98,24 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // NAVCONTROLLER dal NAVHOST
+
         NavHostFragment navHostFragment =
                 (NavHostFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
+
         bottomNav = binding.bottomNav;
-        NavigationUI.setupWithNavController(bottomNav, navController);
+        //NavigationUI.setupWithNavController(bottomNav, navController);
+        bottomNav.setOnItemSelectedListener(item -> {
+            NavOptions options = new NavOptions.Builder()
+                    .setLaunchSingleTop(true)
+                    .setRestoreState(false)
+                    .setPopUpTo(navController.getGraph().getStartDestinationId(), false, false)
+                    .build();
+
+            navController.navigate(item.getItemId(), null, options);
+            return true;
+        });
 
         // DESTINAZIONI "TOP LEVEL" (non mostrano freccia indietro)
         appBarConfiguration = new AppBarConfiguration.Builder(
@@ -113,9 +127,18 @@ public class MainActivity extends AppCompatActivity {
         // Collega toolbar al navController (titolo + back)
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
-        // BOTTOM NAV
-        BottomNavigationView bottomNav = binding.bottomNav;
-        NavigationUI.setupWithNavController(bottomNav, navController);
+        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            int id = destination.getId();
+
+            // Controlla se la destinazione è una di quelle presenti nella BottomNav
+            if (id == R.id.dashboardFragment ||
+                    id == R.id.alertsListFragment ||
+                    id == R.id.fieldsListFragment) {
+
+                // Forza la selezione dell'elemento corretto nella BottomNav
+                bottomNav.getMenu().findItem(id).setChecked(true);
+            }
+        });
 
         MapboxOptions.setAccessToken(BuildConfig.MAPBOX_API_KEY);
     }

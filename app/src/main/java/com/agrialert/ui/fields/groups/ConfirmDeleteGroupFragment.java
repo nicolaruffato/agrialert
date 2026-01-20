@@ -63,22 +63,16 @@ public class ConfirmDeleteGroupFragment extends Fragment {
                 }
 
                 Completable moveFields = Completable.mergeArray(comp.toArray(new Completable[0]));
-                cd.add(moveFields.subscribe(() -> {
-                    cd.add(vm.deleteGroup(g.getGroup()).subscribe(() -> {
-                        Toast.makeText(requireContext(),
-                                "Gruppo eliminato",
-                                Toast.LENGTH_SHORT).show();
+                cd.add(moveFields.subscribe(() -> cd.add(vm.deleteGroup(g.getGroup()).subscribe(() -> {
+                    Toast.makeText(requireContext(),
+                            "Gruppo eliminato",
+                            Toast.LENGTH_SHORT).show();
 
-                        // Torna alla lista gruppi
-                        NavHostFragment.findNavController(ConfirmDeleteGroupFragment.this)
-                                .popBackStack(R.id.fieldsListFragment,false);
-                    }, err -> {
-                        Log.e("DELETE", "Non sono riuscito a eliminare il gruppo", err);
-                    }));
-                }));
-            }, err -> {
-                Log.e("DELETE", "Il Gruppo che vuoi eliminare non è stato trovato!");
-            }));
+                    // Torna alla lista gruppi
+                    NavHostFragment.findNavController(ConfirmDeleteGroupFragment.this)
+                            .navigate(R.id.fieldsListFragment);
+                }, err -> Log.e("DELETE", "Non sono riuscito a eliminare il gruppo", err)))));
+            }, err -> Log.e("DELETE", "Il Gruppo che vuoi eliminare non è stato trovato!")));
         });
 
         // Annulla → torna a Visualizza gruppo
