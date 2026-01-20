@@ -24,14 +24,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-import com.agrialert.data_manager.AlertType;
-import com.agrialert.data_manager.FieldsGroup;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.alert_manager.AlertManagerInitializer;
-import com.agrialert.data_manager.CropType;
 import com.agrialert.data_manager.DataManager;
-import com.agrialert.data_manager.Field;
 import com.agrialert.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -40,40 +36,82 @@ import com.mapbox.common.MapboxOptions;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
+/**
+ * Main Activity of the application.
+ * Manages the connection to the DataManager service, initializes ViewModels,
+ * and sets up the primary navigation components (Toolbar, Bottom Navigation).
+ */
 public class MainActivity extends AppCompatActivity {
+    /** Navigation view for switching between top-level destinations. */
     private BottomNavigationView bottomNav;
+    /** View binding for the activity layout. */
     private ActivityMainBinding binding;
+    /** Configuration for the App Bar, defining top-level navigation destinations. */
     private AppBarConfiguration appBarConfiguration;
+    /** Instance of the DataManager service. */
     private DataManager dataManager;
+    /** Flag indicating whether the activity is bound to the DataManager service. */
     private boolean mBound = false;
+    /** Request code for notification permission. */
     private static final int REQ_NOTIFICATIONS = 1001;
+    /** ViewModel for field-related operations. */
     private FieldsViewModel fieldsVM;
+    /** ViewModel for alert-related operations. */
     private AlertsViewModel alertsVM;
+
+    /**
+     * Gets the current FieldsViewModel.
+     * @return The FieldsViewModel instance.
+     */
     public FieldsViewModel fieldsVM() { return fieldsVM; }
+
+    /**
+     * Gets the current AlertsViewModel.
+     * @return The AlertsViewModel instance.
+     */
     public AlertsViewModel alertsVM() { return alertsVM; }
+
+    /** Subject emitting the binding state of the DataManager service. */
     private final BehaviorSubject<Boolean> isBoundSubject = BehaviorSubject.create();
 
+    /**
+     * Checks if all ViewModels and the DataManager are initialized and ready.
+     * @return True if ready, false otherwise.
+     */
     public boolean vmsReady() {
         return mBound && dataManager != null && fieldsVM != null && alertsVM != null;
     }
 
+    /**
+     * Returns a Single that completes when the activity is bound to the DataManager.
+     * @return A Single emitting true when bound.
+     */
     public Single<Boolean> isBound() {
         return isBoundSubject.filter(bound -> bound).firstOrError();
     }
 
+    /**
+     * Connection object for the DataManager service.
+     */
     private ServiceConnection connection = new ServiceConnection() {
+        /**
+         * Called when a connection with the service has been established.
+         * Initializes ViewModels once the service is available.
+         */
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance.
             DataManager.LocalBinder binder = (DataManager.LocalBinder) service;
             dataManager = binder.getService();
             mBound = true;
-            Toast.makeText(MainActivity.this, "DataManger Bound", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "DataManager Bound", Toast.LENGTH_SHORT).show();
             fieldsVM = new FieldsViewModel(dataManager);
             alertsVM = new AlertsViewModel(dataManager);
             isBoundSubject.onNext(true);
         }
 
+        /**
+         * Called when the service has crashed or been killed.
+         */
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mBound = false;
@@ -82,10 +120,18 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    /**
+     * Initializes the activity, sets up navigation components, and starts background services.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after
+     *     previously being shut down then this Bundle contains the data it most
+     *     recently supplied in {@link #onSaveInstanceState}.  <b><i>Note: Otherwise it is null.</i></b>
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Initialize background alert management
         AlertManagerInitializer.init(getApplicationContext());
         requestNotificationPermissionIfNeeded();
 
@@ -97,8 +143,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialToolbar toolbar = binding.topAppBar;
         setSupportActionBar(toolbar);
 
-        // NAVCONTROLLER dal NAVHOST
-
+        // NAVCONTROLLER from NAVHOST
         NavHostFragment navHostFragment =
                 (NavHostFragment) getSupportFragmentManager()
                         .findFragmentById(R.id.nav_host_fragment);
@@ -117,14 +162,14 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // DESTINAZIONI "TOP LEVEL" (non mostrano freccia indietro)
+        // TOP LEVEL DESTINATIONS (no back arrow shown)
         appBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.dashboardFragment,
                 R.id.alertsListFragment,
                 R.id.fieldsListFragment
         ).build();
 
-        // Collega toolbar al navController (titolo + back)
+        // Link toolbar to navController (title + back)
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
@@ -140,9 +185,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Set Mapbox API key
         MapboxOptions.setAccessToken(BuildConfig.MAPBOX_API_KEY);
     }
 
+    /**
+     * Binds the activity to the DataManager service when it starts.
+     */
     @Override
     protected void onStart() {
         super.onStart();
@@ -151,12 +200,18 @@ public class MainActivity extends AppCompatActivity {
         bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
+    /**
+     * Lifecycle callback called when the activity is no longer visible.
+     */
     @Override
     protected void onStop() {
         super.onStop();
-        // NON fare unbind qui: l'Activity è ancora in uso (navigation)
+        // Do NOT unbind here: activity is still in use (navigation)
     }
 
+    /**
+     * Unbinds the DataManager service and cleans up resources.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -166,6 +221,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Requests notification permission if the device is running Android 13 or higher.
+     */
     private void requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             return;
@@ -181,14 +239,26 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
+    /**
+     * Callback for the result from requesting permissions.
+     *
+     * @param requestCode The request code passed in {@link #requestPermissions}.
+     * @param permissions The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQ_NOTIFICATIONS) {
-            // no-op: AlertNotificationManager logga e continua anche se negato
+            // Permission result handled by the system or AlertNotificationManager
         }
     }
 
+    /**
+     * Handles navigation when the up button in the toolbar is pressed.
+     *
+     * @return true if navigation was successful.
+     */
     @Override
     public boolean onSupportNavigateUp() {
         NavHostFragment navHostFragment =

@@ -39,29 +39,54 @@ import java.text.SimpleDateFormat;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment that displays a high-level summary of the application status.
+ * It shows active alerts, a preview of fields and groups, and provides quick
+ * navigation to more detailed views.
+ */
 public class DashboardFragment extends Fragment implements FieldsAdapter.OnFieldClickListener, GroupsAdapter.OnGroupClickListener {
 
+    /**
+     * Initializes the fragment with the dashboard layout.
+     */
     public DashboardFragment() {
         super(R.layout.fragment_dashboard);
     }
 
+    /** View displaying the number of active alerts. */
     private TextView txtAlertCount;
+    /** View shown when there are no active alerts. */
     private TextView txtNoActiveAlerts;
+    /** Container for a vertical list of alert previews. */
     private LinearLayout layoutAlertPreview;
+    /** Toggle group to switch between field and group previews. */
     private MaterialButtonToggleGroup toggleDash;
+    /** Button within the toggle group for fields. */
     private MaterialButton btnDashFields;
+    /** RecyclerView displaying a preview of fields or groups. */
     private RecyclerView rvDashboardPreview;
+    /** Image to display when there's no fields */
     private ImageView noFieldsImage;
+    /** Text to display when there's no fields */
     private TextView noFieldsText;
 
-    // riuso adapter già esistenti
+    /** Adapter for displaying a limited set of fields. */
     private FieldsAdapter fieldsAdapter;
+    /** Adapter for displaying a limited set of groups. */
     private GroupsAdapter groupsAdapter;
+    /** Container for RxJava disposables. */
     private final CompositeDisposable cd = new CompositeDisposable();
-    FieldsViewModel vm;
-    AlertsViewModel avm;
+    /** ViewModel for field-related data. */
+    private FieldsViewModel vm;
+    /** ViewModel for alert-related data. */
+    private AlertsViewModel avm;
 
-
+    /**
+     * Initializes views, adapters, and data observers after the view is created.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Saved state if being reconstructed.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -73,6 +98,8 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         noFieldsImage = view.findViewById(R.id.noFieldsImage);
         noFieldsText = view.findViewById(R.id.noFieldsText);
 
+
+        // Navigation to Alerts List
         txtSeeAllAlerts.setOnClickListener(v -> {
             BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottom_nav);
             bottomNav.setSelectedItemId(R.id.alertsListFragment);
@@ -84,7 +111,7 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         rvDashboardPreview.setLayoutManager(new LinearLayoutManager(requireContext()));
         btnDashFields.setChecked(true);
 
-        // IMPORTANTISSIMO: qui usi gli adapter che hai già (quelli della lista)
+        // Reuse existing adapters for fields and groups
         fieldsAdapter = new FieldsAdapter(this);
         groupsAdapter = new GroupsAdapter(this);
 
@@ -116,13 +143,23 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         }));
     }
 
+    /**
+     * Navigates to the field details screen when a field is clicked.
+     *
+     * @param field The field model that was clicked.
+     */
     @Override
     public void onFieldClick(FieldUiModel field) {
         Bundle b = new Bundle();
         b.putParcelable("field", field);
-        NavHostFragment.findNavController(this).navigate(R.id.action_dashboardFragment_to_viewFieldFragment, b);
+        NavHostFragment.findNavController(this).navigate(R.id.viewFieldFragment, b);
     }
 
+    /**
+     * Navigates to the group details screen when a group is clicked.
+     *
+     * @param group The group model that was clicked.
+     */
     @Override
     public void onGroupClick(GroupUiModel group) {
         Bundle b = new Bundle();
@@ -130,6 +167,9 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         NavHostFragment.findNavController(this).navigate(R.id.viewGroupFragment, b);
     }
 
+    /**
+     * Fetches and renders the top active alerts in the preview area.
+     */
     private void renderActiveAlerts() {
         cd.add(avm.getActiveAlerts().subscribe(alerts -> {
             int total = 0;
@@ -164,11 +204,9 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
             txtAlertCount.setText(total + " Alert Attivi");
 
             if (total == 0) {
-                // Nessun alert
                 txtNoActiveAlerts.setVisibility(View.VISIBLE);
                 layoutAlertPreview.setVisibility(View.GONE);
             } else {
-                // Ci sono alert
                 txtNoActiveAlerts.setVisibility(View.GONE);
                 layoutAlertPreview.setVisibility(View.VISIBLE);
             }
@@ -220,6 +258,9 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
     }
 
 
+    /**
+     * Shows a limited preview of fields in the dashboard RecyclerView.
+     */
     private void showDashFields() {
         cd.add(vm.getAllGroups().firstOrError().subscribe(groups -> {
             List<FieldUiModel> uiFields = new ArrayList<>();
@@ -253,6 +294,9 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         }));
     }
 
+    /**
+     * Shows a limited preview of groups in the dashboard RecyclerView.
+     */
     private void showDashGroups() {
         noFieldsImage.setVisibility(View.GONE);
         noFieldsText.setVisibility(View.GONE);
@@ -276,6 +320,9 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         }));
     }
 
+    /**
+     * Clears RxJava disposables when the view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();

@@ -30,19 +30,39 @@ import java.util.List;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment for editing an existing field group.
+ * Allows users to modify the group name, description, and manage the list of fields
+ * associated with the group.
+ */
 public class EditGroupFragment extends Fragment {
 
+    /** ImageView for the group's icon. */
     private ImageView imgGroupIcon;
     private TextView edtGroupName;
+    /** TextInputEditText for the group description input. */
     private TextInputEditText edtDescription;
+    /** RecyclerView displaying fields belonging to the group. */
     private RecyclerView rvFields;
+    /** Button to save the modified group details. */
     private MaterialButton btnSaveGroup;
+    /** Adapter for managing fields within the group. */
     private GroupFieldsAdapter fieldsAdapter;
+    /** List of field UI models used by the adapter. */
     private List<GroupFieldUiModel> fields;
+    /** ViewModel for field and group data management. */
     private FieldsViewModel vm;
+    /** Container for managing RxJava disposables. */
     private final CompositeDisposable cd = new CompositeDisposable();
 
-    //  QUI gonfiamo il layout
+    /**
+     * Inflates the fragment's layout.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState Fragment's previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -51,11 +71,17 @@ public class EditGroupFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_edit_group, container, false);
     }
 
+    /**
+     * Initializes UI components and loads the group data based on arguments.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Saved state if being reconstructed.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // --- TROVA LE VIEW ---
+        // Find views
         imgGroupIcon   = view.findViewById(R.id.imgGroupIcon);
         edtDescription = view.findViewById(R.id.edtDescription);
         rvFields       = view.findViewById(R.id.rvFields);
@@ -64,7 +90,7 @@ public class EditGroupFragment extends Fragment {
 
         Bundle args = getArguments();
         if (args == null) {
-            Log.e("EditGroup", "Gruppo mancante: passalo come arg a EditGroupFragment!");
+            Log.e("EditGroup", "Missing group: pass it as an argument to EditGroupFragment!");
             return;
         }
         String groupName = args.getString("groupName");
@@ -73,6 +99,7 @@ public class EditGroupFragment extends Fragment {
         if (!a.vmsReady()) return;
         vm = a.fieldsVM();
 
+        // Load group details and associated fields from database
         cd.add(vm.getGroupByName(groupName).subscribe(g -> {
             edtGroupName.setText(g.getGroup().getName());
             edtDescription.setText(g.getGroup().getDescription());
@@ -84,7 +111,7 @@ public class EditGroupFragment extends Fragment {
                             f.getId(),
                             f.getCropType().getImageResId(),
                             f.getAddress(),
-                            requireContext().getString(f.getCropType().getResourceId()), // TODO: call displayName?
+                            requireContext().getString(f.getCropType().getResourceId()),
                             f.getGroupName(),
                             true
                         )
@@ -95,11 +122,16 @@ public class EditGroupFragment extends Fragment {
             fieldsAdapter = new GroupFieldsAdapter(fields);
             rvFields.setAdapter(fieldsAdapter);
 
-            // --- CLICK SU "SALVA GRUPPO" ---
+            // Save button listener
             btnSaveGroup.setOnClickListener(v -> onSaveGroup(g));
         }));
     }
 
+    /**
+     * Validates input and updates the group and its associated fields in the database.
+     *
+     * @param group The current group with its fields.
+     */
     private void onSaveGroup(GroupWithFields group) {
 
         String description = edtDescription.getText() != null ? edtDescription.getText().toString().trim() : "";
@@ -136,6 +168,9 @@ public class EditGroupFragment extends Fragment {
         }));
     }
 
+    /**
+     * Clears RxJava disposables when the fragment's view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         cd.clear();

@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
-import com.agrialert.alert_manager.repo.AlertRepository;
 import com.agrialert.data_manager.Alert;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
@@ -33,26 +32,56 @@ import java.util.Locale;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
+/**
+ * Fragment that displays detailed information about a specific agricultural field.
+ * It shows the field's address, crop type, associated group, and a list of active alerts.
+ * Users can navigate to edit or delete the field from here.
+ */
 public class ViewFieldFragment extends Fragment {
+    /** Tag for logging. */
     private static final String TAG = "ViewField";
+
+    /** ImageView displaying the icon for the field's crop type. */
     private ImageView imgCrop;
+    /** TextView for the field's address. */
     private TextView txtAddress;
+    /** TextView for the field's crop type name. */
     private TextView txtCrop;
+    /** TextView for the name of the group the field belongs to. */
     private TextView txtGroup;
+    /** RecyclerView displaying the list of active alerts for this field. */
     private RecyclerView rvFieldAlerts;
+    /** Image to display when there's no active alerts from the field. */
     private ImageView noAlertsListImage;
+    /** Text to display when there's no active alerts from the field. */
     private TextView noAlertsListText;
 
+    /** Button to navigate to the field editing screen. */
     private MaterialButton btnEditField;
+    /** Button to navigate to the field deletion confirmation screen. */
     private MaterialButton btnDeleteField;
+    /** Adapter for the alerts RecyclerView. */
     private AlertsAdapter adapter;
+    /** ViewModel for accessing alert data. */
     private AlertsViewModel avm;
-    private CompositeDisposable cd = new CompositeDisposable();
+    /** Container for managing RxJava disposables. */
+    private final CompositeDisposable cd = new CompositeDisposable();
 
+    /**
+     * Required empty public constructor for Fragment instantiation.
+     */
     public ViewFieldFragment() {
-        // costruttore vuoto richiesto dal Fragment
+        // Required empty constructor
     }
 
+    /**
+     * Inflates the fragment layout.
+     *
+     * @param inflater           The LayoutInflater object.
+     * @param container          The parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState Fragment's previous saved state.
+     * @return The View for the fragment's UI.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container,
@@ -60,12 +89,18 @@ public class ViewFieldFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_view_field, container, false);
     }
 
+    /**
+     * Initializes UI components, listeners, and loads alert data for the field.
+     *
+     * @param view               The inflated view.
+     * @param savedInstanceState Fragment's previous saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view,
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // BIND VIEW
+        // Bind views
         imgCrop = view.findViewById(R.id.imgCrop);
         txtAddress = view.findViewById(R.id.txtAddress);
         txtCrop = view.findViewById(R.id.txtCrop);
@@ -76,10 +111,9 @@ public class ViewFieldFragment extends Fragment {
         noAlertsListImage = view.findViewById(R.id.noAlertsListImage);
         noAlertsListText = view.findViewById(R.id.noAlertsListText);
 
-        // PASSAGGIO CAMPO
         Bundle args = getArguments();
         if (args == null) {
-            Log.e(TAG, "field mancante: passalo come arg a ViewFieldFragment!");
+            Log.e(TAG, "Missing field: pass it as an argument to ViewFieldFragment!");
             return;
         }
         FieldUiModel field = args.getParcelable("field");
@@ -87,15 +121,15 @@ public class ViewFieldFragment extends Fragment {
         Bundle b = new Bundle();
         b.putInt("fieldId", (int)field.id);
 
-        //LISTENER
+        // Set up listeners
         btnEditField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
-                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment, b)); // Try to use args
+                        .navigate(R.id.action_viewFieldFragment_to_editFieldFragment, b));
 
         btnDeleteField.setOnClickListener(v ->
                 NavHostFragment.findNavController(ViewFieldFragment.this)
                         .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment, b));
-        ;
+
         txtAddress.setText(field.address);
         txtCrop.setText(field.crop);
         txtGroup.setText(field.groupName);
@@ -105,10 +139,10 @@ public class ViewFieldFragment extends Fragment {
         if (!a.vmsReady()) return;
         avm = a.alertsVM();
 
-        // LISTA ALERT COLLEGATI AL CAMPO
+        // LIST OF ALERTS ASSOCIATED WITH THE FIELD
         rvFieldAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new AlertsAdapter((alert, isResolved) -> {
-            // aggiorno il model
+            // Update the model
             alert.isResolved = isResolved;
             cd.add(avm.setAlertResolved(alert.id).subscribe());
         });
@@ -117,22 +151,21 @@ public class ViewFieldFragment extends Fragment {
         getAlerts(field);
     }
 
+    /**
+     * Fetches active alerts for the given field and updates the RecyclerView adapter.
+     *
+     * @param field The field UI model to fetch alerts for.
+     */
     private void getAlerts(FieldUiModel field) {
         cd.add(avm.getActiveAlertsFromField((int)field.id).subscribe(alerts -> {
-            List<AlertUiModel>  uiAlerts = new ArrayList<>();
+            List<AlertUiModel> uiAlerts = new ArrayList<>();
             for(Alert alert : alerts) {
-                String groupOrField;
-                if(alert.getFieldId() == 0) {
-                    groupOrField = "Gruppo: " + alert.getGroupName();
-                } else {
-                    groupOrField = "Campo: " + alert.getFieldAddress();
-                }
                 uiAlerts.add(new AlertUiModel(
                         alert.getId(),
                         String.valueOf(alert.getTypeId()),
                         alert.getTitle(),
                         formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
-                        groupOrField,
+                        alert.getFieldAddress(),
                         formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
                         alert.isResolved(),
                         alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
@@ -150,7 +183,7 @@ public class ViewFieldFragment extends Fragment {
             }
             adapter.submitList(uiAlerts);
         }));
-    };
+    }
 
     private String formatDescriptionForList(String description, long durationMs) {
         String fallbackCondition = "Condizione meteo rilevata";
@@ -250,5 +283,14 @@ public class ViewFieldFragment extends Fragment {
     private boolean isSameDay(Calendar a, Calendar b) {
         return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
+    }
+
+    /**
+     * Clears RxJava disposables when the fragment's view is destroyed.
+     */
+    @Override
+    public void onDestroyView() {
+        cd.clear();
+        super.onDestroyView();
     }
 }
