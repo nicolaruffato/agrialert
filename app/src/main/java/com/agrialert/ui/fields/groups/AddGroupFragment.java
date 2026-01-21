@@ -5,7 +5,6 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -79,7 +78,6 @@ public class AddGroupFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        ImageView imgGroupIcon = view.findViewById(R.id.imgGroupIcon);
         layoutGroupName = view.findViewById(R.id.layoutGroupName);
         edtGroupName = view.findViewById(R.id.edtGroupName);
         edtDescription = view.findViewById(R.id.edtDescription);

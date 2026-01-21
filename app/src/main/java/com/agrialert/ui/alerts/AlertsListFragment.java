@@ -1,7 +1,6 @@
 package com.agrialert.ui.alerts;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -142,18 +141,12 @@ public class AlertsListFragment extends Fragment {
             if(btnAlertsActive.isChecked()) {
                 List<AlertUiModel> active = new ArrayList<>();
                 for(Alert alert : alerts) {
-                    String groupOrField;
-                    if(alert.getFieldId() == 0) {
-                        groupOrField = "Gruppo: " + alert.getGroupName();
-                    } else {
-                        groupOrField = "Campo: " + alert.getFieldAddress();
-                    }
                     active.add(new AlertUiModel(
                             alert.getId(),
                             String.valueOf(alert.getTypeId()),
                             alert.getTitle(),
                             formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
-                            groupOrField,
+                            alert.getFieldAddress(),
                             formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
                             alert.isResolved(),
                             alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
@@ -186,18 +179,12 @@ public class AlertsListFragment extends Fragment {
             if(btnAlertsResolved.isChecked()) {
                 List<AlertUiModel> resolved = new ArrayList<>();
                 for (Alert alert : alerts) {
-                    String groupOrField;
-                    if (alert.getFieldId() == 0) {
-                        groupOrField = "Gruppo: " + alert.getGroupName();
-                    } else {
-                        groupOrField = "Campo: " + alert.getFieldAddress();
-                    }
                     resolved.add(new AlertUiModel(
                             alert.getId(),
                             String.valueOf(alert.getTypeId()),
                             alert.getTitle(),
                             formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
-                            groupOrField,
+                            alert.getFieldAddress(),
                             formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
                             alert.isResolved(),
                             alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
@@ -333,6 +320,13 @@ public class AlertsListFragment extends Fragment {
         return startLabel + "\n" + endLabel;
     }
 
+    /**
+     * Checks if two Calendar objects represent the same calendar day.
+     *
+     * @param a The first calendar object to compare.
+     * @param b The second calendar object to compare.
+     * @return True if both objects share the same year and day of the year, false otherwise.
+     */
     private boolean isSameDay(Calendar a, Calendar b) {
         return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);

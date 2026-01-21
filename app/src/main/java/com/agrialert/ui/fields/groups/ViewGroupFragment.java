@@ -97,6 +97,7 @@ public class ViewGroupFragment extends Fragment {
         }
 
         GroupUiModel group = args.getParcelable("group");
+        assert group != null;
 
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;

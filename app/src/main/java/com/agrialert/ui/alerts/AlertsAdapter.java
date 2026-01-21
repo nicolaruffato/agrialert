@@ -1,6 +1,5 @@
 package com.agrialert.ui.alerts;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -139,11 +138,6 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
          * View displaying the time of the alert.
          */
         TextView txtTime;
-
-        /**
-         * Label showing the alert time information.
-         */
-        TextView txtAlertTimeLabel;
 
         /**
          * Switch to mark the alert as resolved or unresolved.

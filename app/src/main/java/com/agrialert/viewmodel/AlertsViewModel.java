@@ -8,11 +8,9 @@ import com.google.firebase.perf.metrics.AddTrace;
 
 import java.util.List;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * ViewModel for managing and interacting with alerts data.

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -50,6 +50,8 @@
             android:gravity="center"
             android:paddingBottom="16dp" />
 
+    </LinearLayout>
+
         <!-- LISTA ALERT ASSOCIATI -->
         <TextView
             android:layout_width="wrap_content"
@@ -59,12 +61,13 @@
             android:textSize="16sp"
             android:paddingBottom="8dp" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvFieldAlerts"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFieldAlerts"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        </androidx.recyclerview.widget.RecyclerView>
+    </androidx.recyclerview.widget.RecyclerView>
 
         <!-- BOTTONI-->
 
@@ -108,8 +111,7 @@
             app:strokeColor="@color/green"
             app:strokeWidth="2dp" />
 
-    </LinearLayout>
 
 
 
-</ScrollView>
+</LinearLayout>

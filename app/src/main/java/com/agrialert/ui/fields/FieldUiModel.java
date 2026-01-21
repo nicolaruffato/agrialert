@@ -109,7 +109,7 @@ public class FieldUiModel implements Parcelable {
     /**
      * Creator constant for generating instances of FieldUiModel from a Parcel.
      */
-    public static final Creator<FieldUiModel> CREATOR = new Creator<FieldUiModel>() {
+    public static final Creator<FieldUiModel> CREATOR = new Creator<>() {
         @Override
         public FieldUiModel createFromParcel(Parcel in) {
             return new FieldUiModel(in);

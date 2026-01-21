@@ -4,7 +4,7 @@
     <item android:state_checked="true"
         android:color="@color/green" /> <!-- viola selezionato -->
 
-    <item android:color="#EAE5FB" /> <!-- sfondo chiaro -->
+    <item android:color="@color/white_green" /> <!-- sfondo chiaro -->
 
 </selector>
 

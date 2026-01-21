@@ -3,7 +3,6 @@ package com.agrialert.ui.fields;
 import android.os.Bundle;
 
 import io.reactivex.rxjava3.core.Completable;
-import kotlin.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,8 +16,6 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.agrialert.MainActivity;
 import com.agrialert.R;
 import com.agrialert.data_manager.Alert;
-import com.agrialert.data_manager.Field;
-import com.agrialert.data_manager.Threshold;
 import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
@@ -85,30 +82,26 @@ public class ConfirmDeleteFieldFragment extends Fragment {
 
 
             // First, clear all alerts associated with the field
-            cd.add(vm.updateAlertsToField(fieldId, new ArrayList<Pair<Integer, Threshold>>()).subscribe(() -> {
+            cd.add(vm.updateAlertsToField(fieldId, new ArrayList<>()).subscribe(() -> {
                 // Then, fetch and delete the field itself
-                cd.add(vm.getFieldById(fieldId).subscribe(f -> {
-                    cd.add(avm.getAlertsFromField(fieldId).subscribe(alerts -> {
-                        // before deleting field, delete alerts
-                        List<Completable> comp = new ArrayList<>();
-                        for(Alert alert : alerts) {
-                            comp.add(avm.deleteAlert((int)alert.getId()));
-                        }
+                cd.add(vm.getFieldById(fieldId).subscribe(f -> cd.add(avm.getAlertsFromField(fieldId).subscribe(alerts -> {
+                    // before deleting field, delete alerts
+                    List<Completable> comp = new ArrayList<>();
+                    for(Alert alert : alerts) {
+                        comp.add(avm.deleteAlert((int)alert.getId()));
+                    }
 
-                        Completable deleteAlerts = Completable.mergeArray(comp.toArray(new Completable[0]));
-                        cd.add(deleteAlerts.subscribe(() -> {
-                            cd.add(vm.deleteField(f).subscribe(() -> {
-                                Toast.makeText(requireContext(),
-                                        "Campo eliminato",
-                                        Toast.LENGTH_SHORT).show();
+                    Completable deleteAlerts = Completable.mergeArray(comp.toArray(new Completable[0]));
+                    cd.add(deleteAlerts.subscribe(() -> cd.add(vm.deleteField(f).subscribe(() -> {
+                        Toast.makeText(requireContext(),
+                                "Campo eliminato",
+                                Toast.LENGTH_SHORT).show();
 
-                                // Return to the FIELDS list
-                                NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
-                                        .navigate(R.id.fieldsListFragment);
-                            }));
-                        }));
-                    }));
-                }));
+                        // Return to the FIELDS list
+                        NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
+                                .navigate(R.id.fieldsListFragment);
+                    }))));
+                }))));
             }));
         });
 

@@ -18,6 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Indirizzo*"
+            app:endIconDrawable="@drawable/ic_location"
             app:endIconMode="custom">
             <!-- app:endIconDrawable="@drawable/ic_location"> -->
 
@@ -38,6 +39,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
                 android:layout_marginTop="16dp"
+                app:mapbox_locationComponentEnabled="true"
                 android:visibility="visible"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"

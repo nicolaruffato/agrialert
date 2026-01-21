@@ -1,5 +1,6 @@
 package com.agrialert.ui.fields;
 
+import android.Manifest;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -18,6 +19,8 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,6 +38,9 @@ import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.mapbox.common.location.DeviceLocationProvider;
+import com.mapbox.common.location.LocationService;
+import com.mapbox.common.location.LocationServiceFactory;
 import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
@@ -151,13 +157,34 @@ public class AddFieldFragment extends Fragment {
         view.post(this::setupDropdowns);
         setupListeners();
 
+        ActivityResultLauncher<String[]> requestPermissionLauncher =
+                registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                    boolean fineLocationStatus = Boolean.TRUE.equals(result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false));
+                    boolean coarseLocationStatus = Boolean.TRUE.equals(result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false));
+                    if (fineLocationStatus || coarseLocationStatus) {
+                        LocationService locationService = LocationServiceFactory.getOrCreate();
+
+                        DeviceLocationProvider locationProvider = locationService.getDeviceLocationProvider(null).getValue();
+                        if(locationProvider != null) {
+                            locationProvider.getLastLocation(location -> {
+                                if(location != null) {
+                                    mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                                            .center(Point.fromLngLat(location.getLongitude(), location.getLatitude()))
+                                            .zoom(5.0)
+                                            .build());
+                                }
+                            });
+                        }
+                    }
+                });
+
+        requestPermissionLauncher.launch(new String[]{
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+        });
+
         // --- Mapbox Setup ---
         mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS, style -> {
-            mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
-                    .center(Point.fromLngLat(12.5, 42.5))
-                    .zoom(5.0)
-                    .build());
-
             AnnotationPlugin annotationPlugin = getAnnotations(mapView);
             pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationPlugin, null);
 
@@ -212,6 +239,41 @@ public class AddFieldFragment extends Fragment {
         selectedLng = point.longitude();
     }
 
+    private void loadCurrentLocation() {
+        LocationService locationService = LocationServiceFactory.getOrCreate();
+
+        DeviceLocationProvider locationProvider = locationService.getDeviceLocationProvider(null).getValue();
+        if(locationProvider != null) {
+            locationProvider.getLastLocation(expected -> {
+                if(expected != null) {
+                    cd.add(ApiManager.getAddressFromCoordinates(expected.getLatitude(), expected.getLongitude()).subscribe(address -> {
+                        inputAddress.setText(address);
+                        if(address.isEmpty()) {
+                            tilAddress.setError("La tua posizione non ha un indirizzo valido");
+                            pointAnnotationManager.deleteAll();
+                        } else {
+                            mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                                    .center(Point.fromLngLat(expected.getLongitude(), expected.getLatitude()))
+                                    .zoom(12.0)
+                                    .build());
+                            addOrUpdateMarker(Point.fromLngLat(expected.getLongitude(), expected.getLatitude()));
+                        }
+                    }, throwable -> {
+                        Toast.makeText(requireContext(), "Nessuna connessione ad internet!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
+                        pointAnnotationManager.deleteAll();
+                    }));
+                } else {
+                    tilAddress.setError("Non riesco ad ottenere la tua posizione");
+                }
+            });
+        } else {
+            Log.e("AddFieldFragment", "Unable to get location provider");
+        }
+
+    }
+
+
     /**
      * Converts a drawable resource into a Bitmap.
      *
@@ -259,7 +321,7 @@ public class AddFieldFragment extends Fragment {
                         tilAddress.setError("Unable to get the address");
                         pointAnnotationManager.deleteAll();
                     }));
-                    handler.postDelayed(searchRunnable, 2000);
+                    handler.postDelayed(searchRunnable, 500);
                 }
                 isFromMap = false;
             }
@@ -301,6 +363,8 @@ public class AddFieldFragment extends Fragment {
      * Sets up click listeners for the save and alert configuration buttons.
      */
     private void setupListeners() {
+        tilAddress.setEndIconOnClickListener(v -> loadCurrentLocation());
+
         btnSaveField.setOnClickListener(v -> {
             if (!validateForm()) return;
 

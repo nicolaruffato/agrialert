@@ -41,14 +41,6 @@ public class ViewFieldFragment extends Fragment {
     /** Tag for logging. */
     private static final String TAG = "ViewField";
 
-    /** ImageView displaying the icon for the field's crop type. */
-    private ImageView imgCrop;
-    /** TextView for the field's address. */
-    private TextView txtAddress;
-    /** TextView for the field's crop type name. */
-    private TextView txtCrop;
-    /** TextView for the name of the group the field belongs to. */
-    private TextView txtGroup;
     /** RecyclerView displaying the list of active alerts for this field. */
     private RecyclerView rvFieldAlerts;
     /** Image to display when there's no active alerts from the field. */
@@ -56,10 +48,6 @@ public class ViewFieldFragment extends Fragment {
     /** Text to display when there's no active alerts from the field. */
     private TextView noAlertsListText;
 
-    /** Button to navigate to the field editing screen. */
-    private MaterialButton btnEditField;
-    /** Button to navigate to the field deletion confirmation screen. */
-    private MaterialButton btnDeleteField;
     /** Adapter for the alerts RecyclerView. */
     private AlertsAdapter adapter;
     /** ViewModel for accessing alert data. */
@@ -101,13 +89,13 @@ public class ViewFieldFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Bind views
-        imgCrop = view.findViewById(R.id.imgCrop);
-        txtAddress = view.findViewById(R.id.txtAddress);
-        txtCrop = view.findViewById(R.id.txtCrop);
-        txtGroup = view.findViewById(R.id.txtGroup);
+        ImageView imgCrop = view.findViewById(R.id.imgCrop);
+        TextView txtAddress = view.findViewById(R.id.txtAddress);
+        TextView txtCrop = view.findViewById(R.id.txtCrop);
+        TextView txtGroup = view.findViewById(R.id.txtGroup);
         rvFieldAlerts = view.findViewById(R.id.rvFieldAlerts);
-        btnEditField = view.findViewById(R.id.btnEditField);
-        btnDeleteField = view.findViewById(R.id.btnDeleteField);
+        MaterialButton btnEditField = view.findViewById(R.id.btnEditField);
+        MaterialButton btnDeleteField = view.findViewById(R.id.btnDeleteField);
         noAlertsListImage = view.findViewById(R.id.noAlertsListImage);
         noAlertsListText = view.findViewById(R.id.noAlertsListText);
 
@@ -117,6 +105,7 @@ public class ViewFieldFragment extends Fragment {
             return;
         }
         FieldUiModel field = args.getParcelable("field");
+        assert field != null;
 
         Bundle b = new Bundle();
         b.putInt("fieldId", (int)field.id);
@@ -165,7 +154,7 @@ public class ViewFieldFragment extends Fragment {
                         String.valueOf(alert.getTypeId()),
                         alert.getTitle(),
                         formatDescriptionForList(alert.getDescription(), alert.getDurationMs()),
-                        alert.getFieldAddress(),
+                        "",
                         formatForecastLabel(alert.getForecastAt(), alert.getDurationMs()),
                         alert.isResolved(),
                         alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert
@@ -194,9 +183,9 @@ public class ViewFieldFragment extends Fragment {
         }
 
         String normalized = description.trim()
-                .replace(" \u2022 ", "\n")
+                .replace(" • ", "\n")
                 .replace(" | ", "\n")
-                .replace('\u2022', '\n');
+                .replace('•', '\n');
 
         String condition = "";
         String durationLine = "";

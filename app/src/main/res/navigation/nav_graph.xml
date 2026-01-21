@@ -75,7 +75,7 @@
     <fragment
         android:id="@+id/confirmDeleteGroupFragment"
         android:name="com.agrialert.ui.fields.groups.ConfirmDeleteGroupFragment"
-        android:label="Elima gruppo" />
+        android:label="Elimina gruppo" />
 
     <fragment
         android:id="@+id/editFieldFragment"

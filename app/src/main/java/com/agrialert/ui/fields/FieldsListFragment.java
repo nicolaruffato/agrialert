@@ -1,7 +1,6 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +27,6 @@ import com.google.android.material.button.MaterialButton;
 
 import androidx.navigation.fragment.NavHostFragment;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -236,9 +234,7 @@ public class FieldsListFragment extends Fragment
                             }
                             fieldsAdapter.submitList(uiList);
                         },
-                        err -> {
-                            android.util.Log.e("FieldsListFragment", "Database Error", err);
-                        }
+                        err -> android.util.Log.e("FieldsListFragment", "Database Error", err)
                 )
         );
     }
