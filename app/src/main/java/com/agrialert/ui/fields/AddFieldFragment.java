@@ -157,6 +157,7 @@ public class AddFieldFragment extends Fragment {
         view.post(this::setupDropdowns);
         setupListeners();
 
+        /*
         ActivityResultLauncher<String[]> requestPermissionLauncher =
                 registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                     boolean fineLocationStatus = Boolean.TRUE.equals(result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false));
@@ -182,11 +183,26 @@ public class AddFieldFragment extends Fragment {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
         });
+        */
 
         // --- Mapbox Setup ---
         mapView.getMapboxMap().loadStyle(Style.MAPBOX_STREETS, style -> {
             AnnotationPlugin annotationPlugin = getAnnotations(mapView);
             pointAnnotationManager = PointAnnotationManagerKt.createPointAnnotationManager(annotationPlugin, null);
+
+            LocationService locationService = LocationServiceFactory.getOrCreate();
+
+            DeviceLocationProvider locationProvider = locationService.getDeviceLocationProvider(null).getValue();
+            if(locationProvider != null) {
+                locationProvider.getLastLocation(location -> {
+                    if(location != null) {
+                        mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                                .center(Point.fromLngLat(location.getLongitude(), location.getLatitude()))
+                                .zoom(12.0)
+                                .build());
+                    }
+                });
+            }
 
             GesturesPlugin gesturesPlugin = getGestures(mapView);
             gesturesPlugin.addOnMapClickListener(point -> {
