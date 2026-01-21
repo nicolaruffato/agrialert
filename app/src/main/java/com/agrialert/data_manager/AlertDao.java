@@ -33,6 +33,12 @@ public interface AlertDao {
     @Query("DELETE FROM alerts WHERE resolved = 1 AND resolvedAt <= :resolvedBefore")
     Completable deleteResolvedBefore(long resolvedBefore);
 
+    @Query("DELETE FROM alerts WHERE fieldId = :fieldId")
+    Completable deleteByFieldId(long fieldId);
+
+    @Query("DELETE FROM alerts WHERE resolved = 0 AND fieldId = :fieldId AND typeId IN (:typeIds)")
+    Completable deleteActiveByFieldAndTypes(long fieldId, List<Integer> typeIds);
+
     @Query("SELECT * FROM alerts WHERE typeId = :typeId AND fieldId = :fieldId ORDER BY createdAt DESC LIMIT 1")
     Maybe<Alert> findLatestByTypeAndField(int typeId, long fieldId);
 

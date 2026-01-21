@@ -7,7 +7,13 @@ import android.os.IBinder;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -151,19 +157,77 @@ public class DataManager extends Service {
      */
     public Completable updateAlertsToField(int fieldId, List<Pair<Integer, Threshold>> alertsTypeWithThresholds) {
         List<AlertTypeCrossRef> crossRefs = new ArrayList<>();
-        for(var pair : alertsTypeWithThresholds) {
-            if(pair.getSecond() != null) {
-                crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, pair.getSecond().getThreshold1(), pair.getSecond().getThreshold2()));
-            }
-            else {
-                crossRefs.add(new AlertTypeCrossRef(pair.getFirst(), fieldId, null, null));
+        Map<Integer, Threshold> newThresholdsByType = new HashMap<>();
+
+        List<Pair<Integer, Threshold>> safeInput = alertsTypeWithThresholds != null
+                ? alertsTypeWithThresholds
+                : Collections.emptyList();
+
+        for (var pair : safeInput) {
+            if (pair == null) continue;
+
+            Integer typeId = pair.getFirst();
+            Threshold threshold = pair.getSecond();
+            if (typeId == null) continue;
+
+            newThresholdsByType.put(typeId, threshold);
+
+            if (threshold != null) {
+                crossRefs.add(new AlertTypeCrossRef(typeId, fieldId, threshold.getThreshold1(), threshold.getThreshold2()));
+            } else {
+                crossRefs.add(new AlertTypeCrossRef(typeId, fieldId, null, null));
             }
         }
 
-        return fieldsDao.deleteAlertsForField(fieldId)
-                .andThen(fieldsDao.insertFieldAlertRelations(crossRefs))
+        return fieldsDao.getAlertsFromField(fieldId)
+                .firstElement()
+                .defaultIfEmpty(new ActivatedAlerts())
+                .flatMapCompletable(current -> {
+                    Set<Integer> toClearActive = new HashSet<>();
+
+                    List<AlertWithThreshold> currentAlerts = current != null && current.getAlerts() != null
+                            ? current.getAlerts()
+                            : Collections.emptyList();
+
+                    for (AlertWithThreshold oldAlert : currentAlerts) {
+                        if (oldAlert == null || oldAlert.getAlertType() == null) continue;
+
+                        int typeId = oldAlert.getAlertType().getId();
+                        if (!newThresholdsByType.containsKey(typeId)) {
+                            // Alert disabilitato -> rimuovi eventuale alert attivo in lista.
+                            toClearActive.add(typeId);
+                            continue;
+                        }
+
+                        Threshold oldEffective = oldAlert.getThreshold();
+                        Threshold newEffective = newThresholdsByType.get(typeId) != null
+                                ? newThresholdsByType.get(typeId)
+                                : oldAlert.getAlertType().getDefaultThreshold();
+
+                        if (!thresholdsEqual(oldEffective, newEffective)) {
+                            // Threshold modificato -> invalida l'eventuale alert attivo e lascia che il sync rigeneri.
+                            toClearActive.add(typeId);
+                        }
+                    }
+
+                    Completable clearActive = Completable.complete();
+                    if (!toClearActive.isEmpty()) {
+                        clearActive = alertDao.deleteActiveByFieldAndTypes(fieldId, new ArrayList<>(toClearActive));
+                    }
+
+                    return clearActive
+                            .andThen(fieldsDao.deleteAlertsForField(fieldId))
+                            .andThen(fieldsDao.insertFieldAlertRelations(crossRefs));
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    private static boolean thresholdsEqual(Threshold a, Threshold b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        return Objects.equals(a.getThreshold1(), b.getThreshold1())
+                && Objects.equals(a.getThreshold2(), b.getThreshold2());
     }
 
     /**
@@ -193,7 +257,21 @@ public class DataManager extends Service {
      * @return A {@link Completable} that completes when the deletion is successful.
      */
     public Completable deleteField(Field field) {
-        return fieldsDao.deleteField(field).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+        long fieldId = field != null ? field.getId() : 0L;
+
+        Completable clearRelations = fieldId > 0L
+                ? fieldsDao.deleteAlertsForField((int) fieldId)
+                : Completable.complete();
+
+        Completable clearAlerts = fieldId > 0L
+                ? alertDao.deleteByFieldId(fieldId)
+                : Completable.complete();
+
+        return clearRelations
+                .andThen(clearAlerts)
+                .andThen(fieldsDao.deleteField(field))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
