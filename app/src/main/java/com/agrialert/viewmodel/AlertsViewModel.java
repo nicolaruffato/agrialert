@@ -101,10 +101,18 @@ public class AlertsViewModel {
      * @param fieldId The unique identifier of the field.
      * @return A Flowable emitting a list of active Alert objects for the field.
      */
+    @AddTrace(name = "getActiveAlertsFromField", enabled = enable_traces)
     public Flowable<List<Alert>> getActiveAlertsFromField(int fieldId) {
         return dm.getActiveAlertsFromField(fieldId);
     }
 
+    /**
+     * Retrieves all alerts associated with a specific field, regardless of their status.
+     *
+     * @param fieldId The unique identifier of the field.
+     * @return A Flowable emitting a list of Alert objects associated with the field.
+     */
+    @AddTrace(name = "getActiveAlertsFromField", enabled = enable_traces)
     public Flowable<List<Alert>> getAlertsFromField(int fieldId) {
         return dm.getAlertsFromField(fieldId);
     }
@@ -113,6 +121,13 @@ public class AlertsViewModel {
         return dm.findLatestActiveByField(fieldId);
     }
 
+    /**
+     * Deletes a specific alert from the database.
+     *
+     * @param alertId The unique identifier of the alert to be deleted.
+     * @return A Completable that completes once the alert has been deleted.
+     */
+    @AddTrace(name = "deleteAlertTrace", enabled = enable_traces)
     public Completable deleteAlert(int alertId) {
         return dm.deleteAlert(alertId);
     }
