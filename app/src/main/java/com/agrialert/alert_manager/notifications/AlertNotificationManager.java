@@ -21,10 +21,16 @@ import com.agrialert.R;
 import com.agrialert.data_manager.Alert;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Handles alert notification channel creation and dispatching of alert notifications.
@@ -113,6 +119,100 @@ public final class AlertNotificationManager {
         }
     }
 
+    /**
+     * Posts notifications for newly created alerts, aggregating notifications at group level when
+     * the majority of fields in a group have new alerts.
+     * <p>
+     * Rule: if a group has more than one field and the number of distinct fields to notify is
+     * greater than 50% of the total fields in that group, then a single group notification is
+     * posted and per-field notifications for that group are suppressed.
+     * </p>
+     *
+     * @param context            any context used to build notifications
+     * @param newAlerts          list of newly created alerts
+     * @param totalFieldsByGroup map of group name to total fields count
+     */
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    public static void notifyNewAlerts(Context context,
+                                       List<Alert> newAlerts,
+                                       Map<String, Integer> totalFieldsByGroup) {
+        if (newAlerts == null || newAlerts.isEmpty()) {
+            return;
+        }
+
+        if (!canNotify(context)) {
+            Log.w(TAG, "Permesso o stato notifiche non disponibile: skip invio notifiche alert");
+            return;
+        }
+
+        Map<String, Integer> safeTotals = totalFieldsByGroup != null
+                ? totalFieldsByGroup
+                : Collections.emptyMap();
+
+        Map<String, Set<Long>> fieldsToNotifyByGroup = new HashMap<>();
+        for (Alert alert : newAlerts) {
+            if (alert == null) {
+                continue;
+            }
+            long fieldId = alert.getFieldId();
+            if (fieldId <= 0L) {
+                continue;
+            }
+            String groupName = normalizeGroupName(alert.getGroupName());
+            fieldsToNotifyByGroup
+                    .computeIfAbsent(groupName, ignored -> new HashSet<>())
+                    .add(fieldId);
+        }
+
+        Set<String> groupsToAggregate = new HashSet<>();
+        Map<String, Integer> affectedFieldsCount = new HashMap<>();
+        for (Map.Entry<String, Set<Long>> entry : fieldsToNotifyByGroup.entrySet()) {
+            String groupName = entry.getKey();
+            int totalFields = safeTotals.getOrDefault(groupName, 0);
+            int affected = entry.getValue() != null ? entry.getValue().size() : 0;
+
+            if (totalFields > 1 && affected > totalFields / 2) {
+                groupsToAggregate.add(groupName);
+                affectedFieldsCount.put(groupName, affected);
+            }
+        }
+
+        if (!groupsToAggregate.isEmpty()) {
+            ensureChannel(context);
+            NotificationManagerCompat manager = NotificationManagerCompat.from(context);
+
+            for (String groupName : groupsToAggregate) {
+                int totalFields = safeTotals.getOrDefault(groupName, 0);
+                int affected = affectedFieldsCount.getOrDefault(groupName, 0);
+                notifyGroupAlert(context, manager, groupName, affected, totalFields);
+            }
+        }
+
+        List<Alert> remainingAlerts = new ArrayList<>();
+        if (groupsToAggregate.isEmpty()) {
+            remainingAlerts = newAlerts;
+        } else {
+            for (Alert alert : newAlerts) {
+                if (alert == null) {
+                    continue;
+                }
+                long fieldId = alert.getFieldId();
+                if (fieldId <= 0L) {
+                    remainingAlerts.add(alert);
+                    continue;
+                }
+                String groupName = normalizeGroupName(alert.getGroupName());
+                if (!groupsToAggregate.contains(groupName)) {
+                    remainingAlerts.add(alert);
+                }
+            }
+        }
+
+        if (remainingAlerts != null && !remainingAlerts.isEmpty()) {
+            notifyNewAlerts(context, remainingAlerts);
+        }
+    }
+
     private static String buildShortText(Alert alert) {
         String description = alert != null && alert.getDescription() != null && !alert.getDescription().trim().isEmpty()
                 ? alert.getDescription().trim()
@@ -165,6 +265,62 @@ public final class AlertNotificationManager {
             return formatDateTime(startMs) + "\u2013" + formatTime(endMs);
         }
         return formatDateTime(startMs) + "\u2013" + formatDateTime(endMs);
+    }
+
+    private static void notifyGroupAlert(Context context,
+                                         NotificationManagerCompat manager,
+                                         String groupName,
+                                         int affectedFields,
+                                         int totalFields) {
+        if (context == null || manager == null) {
+            return;
+        }
+
+        String safeGroupName = normalizeGroupName(groupName);
+        int notificationId = groupNotificationId(safeGroupName);
+
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context,
+                notificationId,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        String contentTitle = "Nuovi alert per il gruppo " + safeGroupName;
+        String contentText;
+        if (totalFields > 0 && affectedFields > 0) {
+            contentText = "Nuovi alert in " + affectedFields + " campi su " + totalFields;
+        } else {
+            contentText = "Ci sono nuovi alert meteo per questo gruppo";
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_alert)
+                .setContentTitle(contentTitle)
+                .setContentText(contentText)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+        manager.notify(notificationId, builder.build());
+    }
+
+    private static int groupNotificationId(String groupName) {
+        int hash = groupName != null ? groupName.hashCode() : 0;
+        int positive = hash == Integer.MIN_VALUE ? 0 : Math.abs(hash);
+        return 100_000 + (positive % 900_000);
+    }
+
+    private static String normalizeGroupName(String groupName) {
+        if (groupName == null) {
+            return "Default";
+        }
+        String trimmed = groupName.trim();
+        return trimmed.isEmpty() ? "Default" : trimmed;
     }
 
     private static boolean isSameDay(Calendar a, Calendar b) {

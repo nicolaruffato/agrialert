@@ -33,6 +33,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.mapbox.common.MapboxOptions;
 
+import java.util.ArrayList;
+
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     private DataManager dataManager;
     /** Flag indicating whether the activity is bound to the DataManager service. */
     private boolean mBound = false;
+    private static final int REQ_STARTUP_PERMISSIONS = 1001;
     /** Request code for notification permission. */
     private static final int REQ_NOTIFICATIONS = 1001;
     /** ViewModel for field-related operations. */
@@ -100,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
          */
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance.
             DataManager.LocalBinder binder = (DataManager.LocalBinder) service;
             dataManager = binder.getService();
             mBound = true;
@@ -133,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize background alert management
         AlertManagerInitializer.init(getApplicationContext());
-        requestNotificationPermissionIfNeeded();
+        requestStartupPermissionsIfNeeded();
 
         // VIEW BINDING
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -224,18 +228,32 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Requests notification permission if the device is running Android 13 or higher.
      */
-    private void requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    private void requestStartupPermissionsIfNeeded() {
+        ArrayList<String> toRequest = new ArrayList<>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            toRequest.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
+        boolean fineGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarseGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        if (!fineGranted && !coarseGranted) {
+            toRequest.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            toRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+
+        if (toRequest.isEmpty()) {
             return;
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                == PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
+
         ActivityCompat.requestPermissions(
                 this,
-                new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                REQ_NOTIFICATIONS
+                toRequest.toArray(new String[0]),
+                REQ_STARTUP_PERMISSIONS
         );
     }
 
@@ -249,8 +267,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_NOTIFICATIONS) {
-            // Permission result handled by the system or AlertNotificationManager
+        if (requestCode == REQ_STARTUP_PERMISSIONS) {
+            // no-op: alcune funzionalità si disabilitano automaticamente se negate
         }
     }
 
