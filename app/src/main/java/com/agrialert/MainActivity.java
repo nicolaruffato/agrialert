@@ -35,6 +35,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.mapbox.common.MapboxOptions;
 
+import java.util.ArrayList;
+
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.subjects.BehaviorSubject;
 
@@ -44,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration appBarConfiguration;
     private DataManager dataManager;
     private boolean mBound = false;
-    private static final int REQ_NOTIFICATIONS = 1001;
+    private static final int REQ_STARTUP_PERMISSIONS = 1001;
     private FieldsViewModel fieldsVM;
     private AlertsViewModel alertsVM;
     public FieldsViewModel fieldsVM() { return fieldsVM; }
@@ -85,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         AlertManagerInitializer.init(getApplicationContext());
-        requestNotificationPermissionIfNeeded();
+        requestStartupPermissionsIfNeeded();
 
         // VIEW BINDING
         binding = ActivityMainBinding.inflate(getLayoutInflater());
@@ -143,26 +145,40 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    private void requestStartupPermissionsIfNeeded() {
+        ArrayList<String> toRequest = new ArrayList<>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            toRequest.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
+        boolean fineGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean coarseGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        if (!fineGranted && !coarseGranted) {
+            toRequest.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            toRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+
+        if (toRequest.isEmpty()) {
             return;
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                == PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
+
         ActivityCompat.requestPermissions(
                 this,
-                new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                REQ_NOTIFICATIONS
+                toRequest.toArray(new String[0]),
+                REQ_STARTUP_PERMISSIONS
         );
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_NOTIFICATIONS) {
-            // no-op: AlertNotificationManager logga e continua anche se negato
+        if (requestCode == REQ_STARTUP_PERMISSIONS) {
+            // no-op: alcune funzionalità si disabilitano automaticamente se negate
         }
     }
 
