@@ -38,6 +38,9 @@ import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.mapbox.common.location.DeviceLocationProvider;
+import com.mapbox.common.location.LocationService;
+import com.mapbox.common.location.LocationServiceFactory;
 import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
@@ -175,6 +178,7 @@ public class EditFieldFragment extends Fragment {
                 });
             });
 
+            tilAddress.setEndIconOnClickListener(v -> loadCurrentLocation(f));
             setupDropdowns(f);
 
             // Handle edit alerts button click
@@ -200,6 +204,48 @@ public class EditFieldFragment extends Fragment {
                 }));
             });
         }));
+    }
+
+
+    /**
+     * Retrieves the device's current geographic location using the Mapbox Location Service.
+     * If the location is successfully retrieved, it performs reverse geocoding to obtain
+     * the physical address, updates the address input field, centers the map on the
+     * location, and places a marker.
+     */
+    private void loadCurrentLocation(Field f) {
+        LocationService locationService = LocationServiceFactory.getOrCreate();
+
+        DeviceLocationProvider locationProvider = locationService.getDeviceLocationProvider(null).getValue();
+        if(locationProvider != null) {
+            locationProvider.getLastLocation(expected -> {
+                if(expected != null) {
+                    cd.add(ApiManager.getAddressFromCoordinates(expected.getLatitude(), expected.getLongitude()).subscribe(address -> {
+                        isFromMap = true;
+                        edtAddress.setText(address);
+                        if(address.isEmpty()) {
+                            tilAddress.setError("La tua posizione non ha un indirizzo valido");
+                            pointAnnotationManager.deleteAll();
+                        } else {
+                            mapView.getMapboxMap().setCamera(new CameraOptions.Builder()
+                                    .center(Point.fromLngLat(expected.getLongitude(), expected.getLatitude()))
+                                    .zoom(12.0)
+                                    .build());
+                            addOrUpdateMarker(Point.fromLngLat(expected.getLongitude(), expected.getLatitude()), f);
+                        }
+                    }, throwable -> {
+                        Toast.makeText(requireContext(), "Nessuna connessione ad internet!", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
+                        pointAnnotationManager.deleteAll();
+                    }));
+                } else {
+                    tilAddress.setError("Non riesco ad ottenere la tua posizione");
+                }
+            });
+        } else {
+            Log.e("AddFieldFragment", "Unable to get location provider");
+        }
+
     }
 
     /**
@@ -259,6 +305,8 @@ public class EditFieldFragment extends Fragment {
      * @param f The field object whose data is used to initialize the UI.
      */
     private void setupDropdowns(Field f) {
+        tilAddress.setEndIconOnClickListener(v -> loadCurrentLocation(f));
+
         edtAddress.addTextChangedListener(new TextWatcher() {
             @Override
             public void afterTextChanged(Editable s) {

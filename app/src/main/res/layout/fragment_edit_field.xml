@@ -34,6 +34,7 @@
             android:layout_height="220dp"
             android:layout_marginTop="16dp"
             android:visibility="visible"
+            app:mapbox_locationComponentEnabled="true"
             app:mapbox_cameraTargetLat="42.5"
             app:mapbox_cameraTargetLng="12.5"
             app:mapbox_cameraZoom="5.0" />

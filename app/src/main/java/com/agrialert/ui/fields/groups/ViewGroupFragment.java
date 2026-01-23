@@ -144,6 +144,8 @@ public class ViewGroupFragment extends Fragment {
         if(group.name.equals("Default")) {
             btnDeleteGroup.setEnabled(false);
             btnEditGroup.setEnabled(false);
+            btnDeleteGroup.setVisibility(View.GONE);
+            btnEditGroup.setVisibility(View.GONE);
         }
 
         Bundle b = new Bundle();

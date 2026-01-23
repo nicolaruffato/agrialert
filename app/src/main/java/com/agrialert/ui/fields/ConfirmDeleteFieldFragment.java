@@ -78,30 +78,19 @@ public class ConfirmDeleteFieldFragment extends Fragment {
             MainActivity a = (MainActivity) requireActivity();
             if (!a.vmsReady()) return;
             FieldsViewModel vm = a.fieldsVM();
-            AlertsViewModel avm = a.alertsVM();
 
-
-            // First, clear all alerts associated with the field
+            // First, clear all alert types associated with the field
             cd.add(vm.updateAlertsToField(fieldId, new ArrayList<>()).subscribe(() -> {
                 // Then, fetch and delete the field itself
-                cd.add(vm.getFieldById(fieldId).subscribe(f -> cd.add(avm.getAlertsFromField(fieldId).subscribe(alerts -> {
-                    // before deleting field, delete alerts
-                    List<Completable> comp = new ArrayList<>();
-                    for(Alert alert : alerts) {
-                        comp.add(avm.deleteAlert((int)alert.getId()));
-                    }
+                cd.add(vm.getFieldById(fieldId).subscribe(f -> cd.add(vm.deleteField(f).subscribe(() -> {
+                   Toast.makeText(requireContext(),
+                           "Campo eliminato",
+                           Toast.LENGTH_SHORT).show();
 
-                    Completable deleteAlerts = Completable.mergeArray(comp.toArray(new Completable[0]));
-                    cd.add(deleteAlerts.subscribe(() -> cd.add(vm.deleteField(f).subscribe(() -> {
-                        Toast.makeText(requireContext(),
-                                "Campo eliminato",
-                                Toast.LENGTH_SHORT).show();
-
-                        // Return to the FIELDS list
-                        NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
-                                .navigate(R.id.fieldsListFragment);
-                    }))));
-                }))));
+                   // Return to the FIELDS list
+                   NavHostFragment.findNavController(ConfirmDeleteFieldFragment.this)
+                           .navigate(R.id.fieldsListFragment);
+               }))));
             }));
         });
 

@@ -255,8 +255,13 @@ public class AddFieldFragment extends Fragment {
         selectedLng = point.longitude();
     }
 
+    /**
+     * Retrieves the device's current geographic location using the Mapbox Location Service.
+     * If the location is successfully retrieved, it performs reverse geocoding to obtain
+     * the physical address, updates the address input field, centers the map on the
+     * location, and places a marker.
+     */
     private void loadCurrentLocation() {
-
         LocationService locationService = LocationServiceFactory.getOrCreate();
 
         DeviceLocationProvider locationProvider = locationService.getDeviceLocationProvider(null).getValue();
@@ -264,6 +269,7 @@ public class AddFieldFragment extends Fragment {
             locationProvider.getLastLocation(expected -> {
                 if(expected != null) {
                     cd.add(ApiManager.getAddressFromCoordinates(expected.getLatitude(), expected.getLongitude()).subscribe(address -> {
+                        isFromMap = true;
                         inputAddress.setText(address);
                         if(address.isEmpty()) {
                             tilAddress.setError("La tua posizione non ha un indirizzo valido");
@@ -290,7 +296,6 @@ public class AddFieldFragment extends Fragment {
 
     }
 
-
     /**
      * Converts a drawable resource into a Bitmap.
      *
@@ -310,7 +315,6 @@ public class AddFieldFragment extends Fragment {
         drawable.draw(canvas);
         return bitmap;
     }
-
 
     /**
      * Configures dropdown menus for crop types and field groups, and sets up address search logic.

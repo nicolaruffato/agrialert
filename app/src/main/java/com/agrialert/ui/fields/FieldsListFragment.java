@@ -44,11 +44,8 @@ public class FieldsListFragment extends Fragment
 
     /** When true, the "Groups" tab is forcibly selected upon the next resume. */
     public static boolean forceGroupsTab = false;
-
     /** Button to switch to the fields view. */
     private MaterialButton btnFields;
-    /** Button to switch to the field groups view. */
-    private MaterialButton btnFieldGroups;
     /** Button to add a new field or group, depending on the current tab. */
     private MaterialButton btnAddField;
     /** RecyclerView for displaying either fields or groups. */
@@ -57,9 +54,6 @@ public class FieldsListFragment extends Fragment
     private ImageView emptyImage;
     /** Text to display when there's no field */
     private TextView emptyText;
-
-    /** Current view state: FALSE = Fields, TRUE = Field Groups. */
-    private boolean showingGroups = false;
 
     /** Adapter for the fields list. */
     private FieldsAdapter fieldsAdapter;
@@ -99,7 +93,8 @@ public class FieldsListFragment extends Fragment
 
         // Manual view binding
         btnFields = view.findViewById(R.id.btnFields);
-        btnFieldGroups = view.findViewById(R.id.btnFieldGroups);
+        /** Button to switch to the field groups view. */
+        MaterialButton btnFieldGroups = view.findViewById(R.id.btnFieldGroups);
         btnAddField = view.findViewById(R.id.btnAddField);
         rvFields = view.findViewById(R.id.rvFields);
         emptyImage = view.findViewById(R.id.emptyImage);
@@ -118,8 +113,8 @@ public class FieldsListFragment extends Fragment
 
         // Set up "Add" button logic based on the active tab
         btnAddField.setOnClickListener(v -> {
-            if (showingGroups) {
-                // Tab: Field Groups
+            if (!btnFields.isChecked()) {
+                // Tab: Groups
                 NavHostFragment.findNavController(FieldsListFragment.this)
                         .navigate(R.id.addGroupFragment);
             } else {
@@ -134,11 +129,7 @@ public class FieldsListFragment extends Fragment
         vm = a.fieldsVM();
         avm = a.alertsVM();
 
-        // Handle navigation fallback from field creation process
-        vm.isFieldPending = false;
-
         // Default initial view: Fields
-
         btnFieldGroups.setChecked(false);
         btnFields.setChecked(true);
 
@@ -197,10 +188,6 @@ public class FieldsListFragment extends Fragment
      * Configures the UI to display the list of individual fields.
      */
     private void showFields() {
-        showingGroups = false;
-
-        btnFields.setChecked(true);
-        btnFieldGroups.setChecked(false);
         btnAddField.setText("Aggiungi un nuovo campo");
 
         rvFields.setAdapter(fieldsAdapter);
@@ -263,10 +250,7 @@ public class FieldsListFragment extends Fragment
         emptyImage.setVisibility(View.GONE);
         emptyText.setVisibility(View.GONE);
         rvFields.setVisibility(View.VISIBLE);
-        showingGroups = true;
 
-        btnFields.setChecked(false);
-        btnFieldGroups.setChecked(true);
         btnAddField.setText("Aggiungi un nuovo gruppo");
 
         rvFields.setAdapter(groupsAdapter);

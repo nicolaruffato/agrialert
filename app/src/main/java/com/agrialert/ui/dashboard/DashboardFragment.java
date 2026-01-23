@@ -220,6 +220,19 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         }));
     }
 
+    /**
+     * Formats a forecast time interval into a human-readable string.
+     * <p>
+     * The label uses relative terms like "Oggi" (Today) or "Domani" (Tomorrow) for the current
+     * and following day, otherwise it uses the "dd/MM" format. It includes the start time
+     * and, if a duration is provided, the end time.
+     * </p>
+     *
+     * @param startMs    The start time of the forecast in milliseconds.
+     * @param durationMs The duration of the forecast in milliseconds. If <= 0, only the start time is shown.
+     * @return A formatted string representing the time range (e.g., "Oggi 14:30–16:00" or "12/05 22:00–Domani 02:00"),
+     *         or an empty string if the start time is invalid.
+     */
     private String formatForecastLabel(long startMs, long durationMs) {
         if (startMs <= 0L) {
             return "";
