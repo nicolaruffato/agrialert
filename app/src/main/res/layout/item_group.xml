@@ -9,15 +9,15 @@
     android:padding="14dp">
 
     <LinearLayout
-        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="82dp"
+        android:orientation="horizontal">
 
         <!-- ICONA GRUPPO (grande) -->
         <ImageView
             android:id="@+id/imgGroupIcon"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="82dp"
+            android:layout_height="match_parent"
             android:layout_marginEnd="16dp"
             android:src="@drawable/ic_group_default" />
 
@@ -25,30 +25,30 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_gravity="center_vertical"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/txtGroupName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="Nome gruppo"
                 android:textSize="16sp"
-                android:layout_gravity="center_vertical"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/txtGroupDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:layout_marginTop="4dp"
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:text="Descrizione breve del gruppo"
-                android:layout_gravity="center_vertical"
                 android:textSize="14sp" />
 
             <!-- ICONCINE ALERT SEMPRE PRESENTI -->

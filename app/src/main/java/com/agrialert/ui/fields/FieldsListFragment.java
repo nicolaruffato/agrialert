@@ -1,6 +1,7 @@
 package com.agrialert.ui.fields;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +15,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.R;
+import com.agrialert.data_manager.Alert;
 import com.agrialert.ui.fields.groups.GroupUiModel;
 import com.agrialert.ui.fields.groups.GroupsAdapter;
 import com.agrialert.MainActivity;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.data_manager.Field;
@@ -27,6 +30,7 @@ import com.google.android.material.button.MaterialButton;
 
 import androidx.navigation.fragment.NavHostFragment;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,6 +67,8 @@ public class FieldsListFragment extends Fragment
     private GroupsAdapter groupsAdapter;
     /** ViewModel for field and group data management. */
     private FieldsViewModel vm;
+    /** ViewModel for alerts data management. */
+    private AlertsViewModel avm;
     /** Container for managing RxJava disposables. */
     private final CompositeDisposable cd = new CompositeDisposable();
 
@@ -126,6 +132,7 @@ public class FieldsListFragment extends Fragment
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;
         vm = a.fieldsVM();
+        avm = a.alertsVM();
 
         // Handle navigation fallback from field creation process
         vm.isFieldPending = false;
@@ -198,44 +205,54 @@ public class FieldsListFragment extends Fragment
 
         rvFields.setAdapter(fieldsAdapter);
 
-        cd.clear();
-        cd.add(
-                vm.getAllGroups().subscribe(
-                        groups -> {
-                            List<FieldUiModel> uiList = new java.util.ArrayList<>();
+        cd.add(io.reactivex.rxjava3.core.Observable.combineLatest(
+                        vm.getAllGroups().firstOrError().toObservable(),
+                        avm.getActiveAlerts().toObservable(),
+                        (groups, alerts) -> {
+                            // This function executes everytime that alerts change
+                            List<FieldUiModel> uiFields = new ArrayList<>();
 
-                            for (GroupWithFields g : groups) {
-                                if (g.getFields() == null) continue;
+                            for (GroupWithFields group : groups) {
+                                for (Field field : group.getFields()) {
+                                    List<Integer> icons = new ArrayList<>();
+                                    for (Alert alert : alerts) {
+                                        if (icons.size() == 5) {
+                                            break;
+                                        }
+                                        if (alert.getFieldId() == field.getId()) {
+                                            icons.add(alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert);
+                                        }
+                                    }
 
-                                for (Field f : g.getFields()) {
-                                    uiList.add(
-                                            new FieldUiModel(
-                                                    f.getId(),
-                                                    f.getAddress(),
-                                                    f.getLatitude(),
-                                                    f.getLongitude(),
-                                                    requireContext().getString(f.getCropType().getResourceId()),
-                                                    f.getGroupName(),
-                                                    f.getCropType().getImageResId(),
-                                                    Collections.emptyList() // alert icons → TODO
+                                    uiFields.add(new FieldUiModel(
+                                                    field.getId(),
+                                                    field.getAddress(),
+                                                    requireContext().getString(field.getCropType().getResourceId()),
+                                                    field.getGroupName(),
+                                                    field.getCropType().getImageResId(),
+                                                    icons
                                             )
                                     );
                                 }
                             }
-
-                            if (uiList.isEmpty()) {
-                               rvFields.setVisibility(View.GONE);
-                               emptyImage.setVisibility(View.VISIBLE);
-                               emptyText.setVisibility(View.VISIBLE);
-                            } else {
-                                rvFields.setVisibility(View.VISIBLE);
-                                emptyImage.setVisibility(View.GONE);
-                                emptyText.setVisibility(View.GONE);
-                            }
-                            fieldsAdapter.submitList(uiList);
-                        },
-                        err -> android.util.Log.e("FieldsListFragment", "Database Error", err)
-                )
+                            return uiFields;
+                        })
+                .subscribeOn(io.reactivex.rxjava3.schedulers.Schedulers.io())
+                .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread())
+                .subscribe(uiFields -> {
+                    if (uiFields.isEmpty()) {
+                        emptyImage.setVisibility(View.VISIBLE);
+                        emptyText.setVisibility(View.VISIBLE);
+                        rvFields.setVisibility(View.GONE);
+                    } else {
+                        emptyImage.setVisibility(View.GONE);
+                        emptyText.setVisibility(View.GONE);
+                        rvFields.setVisibility(View.VISIBLE);
+                    }
+                    fieldsAdapter.submitList(uiFields);
+                }, throwable -> {
+                    Log.e("FieldsListFragment", "Database Error");
+                })
         );
     }
 
@@ -254,26 +271,43 @@ public class FieldsListFragment extends Fragment
 
         rvFields.setAdapter(groupsAdapter);
 
-        MainActivity a = (MainActivity) requireActivity();
-        if (!a.vmsReady()) return;
-
-        vm = a.fieldsVM();
-        cd.add(vm.getAllGroups().subscribe(
-                groups -> {
-                    List<GroupUiModel> uiList = new java.util.ArrayList<>();
-
-                    for (GroupWithFields g : groups) {
-                        uiList.add(new GroupUiModel(
-                                0, // TODO: remove
-                                g.getGroup().getName(),
-                                g.getGroup().getDescription(),
-                                R.drawable.ic_group_default,
-                                Collections.emptyList() // TODO: fetch alert list for group
-                        ));
-                    }
-
-                    groupsAdapter.submitList(uiList);
-                }));
+        cd.add(io.reactivex.rxjava3.core.Observable.combineLatest(
+                        vm.getAllGroups().firstOrError().toObservable(),
+                        avm.getActiveAlerts().toObservable(),
+                        (groups, alerts) -> {
+                            // This function executes everytime that alerts change
+                            List<GroupUiModel> uiGroups = new ArrayList<>();
+                            for (GroupWithFields group : groups) {
+                                List<Integer> icons = new ArrayList<>();
+                                for (Field field : group.getFields()) {
+                                    for (Alert alert : alerts) {
+                                        if (icons.size() == 5) {
+                                            break;
+                                        }
+                                        if (alert.getFieldId() == field.getId()) {
+                                            icons.add(alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert);
+                                        }
+                                    }
+                                }
+                                uiGroups.add(new GroupUiModel(
+                                                0,
+                                                group.getGroup().getName(),
+                                                group.getGroup().getDescription(),
+                                                R.drawable.ic_group_default,
+                                                icons
+                                        )
+                                );
+                            }
+                            return uiGroups;
+                        })
+                .subscribeOn(io.reactivex.rxjava3.schedulers.Schedulers.io())
+                .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread())
+                .subscribe(uiFields -> {
+                    groupsAdapter.submitList(uiFields);
+                }, throwable -> {
+                    Log.e("FieldsListFragment", "Database Error");
+                })
+        );
     }
 
     /**

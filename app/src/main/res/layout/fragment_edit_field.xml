@@ -17,7 +17,8 @@
             android:layout_height="wrap_content"
             android:hint="Indirizzo*"
             app:endIconMode="custom"
-            app:endIconDrawable="@drawable/ic_location">
+            app:endIconDrawable="@drawable/ic_location"
+            app:errorIconDrawable="@null">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputAddress"

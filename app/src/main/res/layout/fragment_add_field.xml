@@ -19,7 +19,8 @@
             android:layout_height="wrap_content"
             android:hint="Indirizzo*"
             app:endIconDrawable="@drawable/ic_location"
-            app:endIconMode="custom">
+            app:endIconMode="custom"
+            app:errorIconDrawable="@null">
             <!-- app:endIconDrawable="@drawable/ic_location"> -->
 
             <com.google.android.material.textfield.TextInputEditText
@@ -84,10 +85,12 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- BOTTONI -->
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
             android:text="Salva campo"
             android:textColor="@color/white" />
 
@@ -95,7 +98,7 @@
             android:id="@+id/btnSetAlerts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="20dp"
             android:text="Imposta alert"
             android:textColor="@color/white" />
 

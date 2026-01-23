@@ -210,14 +210,14 @@ public class AddFieldFragment extends Fragment {
                     isFromMap = true;
                     inputAddress.setText(address);
                     if(address.isEmpty()) {
-                        tilAddress.setError("The selected point does not have a valid address!");
+                        tilAddress.setError("Il punto selezionato non ha un indirizzo valido");
                         pointAnnotationManager.deleteAll();
                     } else {
                         addOrUpdateMarker(point);
                     }
                 }, throwable -> {
-                    Toast.makeText(requireContext(), "No internet connection!", Toast.LENGTH_LONG).show();
-                    tilAddress.setError("Unable to get the selected point");
+                    Toast.makeText(requireContext(), "Nessuna connessione a Internet!", Toast.LENGTH_LONG).show();
+                    tilAddress.setError("Non riesco ad ottenere l'indirizzo");
                     pointAnnotationManager.deleteAll();
                 }));
                 return true;
@@ -256,6 +256,7 @@ public class AddFieldFragment extends Fragment {
     }
 
     private void loadCurrentLocation() {
+
         LocationService locationService = LocationServiceFactory.getOrCreate();
 
         DeviceLocationProvider locationProvider = locationService.getDeviceLocationProvider(null).getValue();
@@ -321,7 +322,7 @@ public class AddFieldFragment extends Fragment {
                 if(!isFromMap) {
                     searchRunnable = () -> cd.add(ApiManager.getCoordinatesFromAddress(inputAddress.getText().toString().trim()).subscribe(coords -> {
                         if (coords.first == null) {
-                            tilAddress.setError("Address not found!");
+                            tilAddress.setError("Indirizzo non trovato");
                             pointAnnotationManager.deleteAll();
                         } else {
                             tilAddress.setError(null);
@@ -333,8 +334,8 @@ public class AddFieldFragment extends Fragment {
                             addOrUpdateMarker(Point.fromLngLat((double) coords.first, (double) coords.second));
                         }
                     }, throwable -> {
-                        Toast.makeText(requireContext(), "No internet connection!", Toast.LENGTH_LONG).show();
-                        tilAddress.setError("Unable to get the address");
+                        Toast.makeText(requireContext(), "Nessuna connessione a Internet", Toast.LENGTH_LONG).show();
+                        tilAddress.setError("Non riesco ad ottenere l'indirizzo");
                         pointAnnotationManager.deleteAll();
                     }));
                     handler.postDelayed(searchRunnable, 500);
@@ -403,11 +404,11 @@ public class AddFieldFragment extends Fragment {
                             }
                         }
                         if (id <= 0) {
-                            Toast.makeText(requireContext(), "Save failed", Toast.LENGTH_LONG).show();
+                            Toast.makeText(requireContext(), "Salvataggio fallito, riprova", Toast.LENGTH_LONG).show();
                             return;
                         }
                         savedFieldId = id;
-                        Toast.makeText(requireContext(), "Field saved", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), "Campo salvato", Toast.LENGTH_SHORT).show();
                         btnSetAlerts.setEnabled(true);
                         btnSaveField.setEnabled(false);
                     }, err -> {
@@ -432,11 +433,11 @@ public class AddFieldFragment extends Fragment {
     private boolean validateForm() {
         boolean ok = true;
         if (TextUtils.isEmpty(inputAddress.getText()) || tilAddress.getError() != null) {
-            tilAddress.setError("You must enter a valid address!");
+            tilAddress.setError("Devi inserire un indirizzo valido!");
             ok = false;
         }
         if (TextUtils.isEmpty(dropCropType.getText())) {
-            tilCrop.setError("You must select a crop!");
+            tilCrop.setError("Devi selezionare una coltivazione!");
             ok = false;
         }
         return ok;
