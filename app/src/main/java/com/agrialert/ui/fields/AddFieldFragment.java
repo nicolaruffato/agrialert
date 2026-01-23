@@ -287,6 +287,9 @@ public class AddFieldFragment extends Fragment {
                         pointAnnotationManager.deleteAll();
                     }));
                 } else {
+                    isFromMap = true;
+                    inputAddress.setText("");
+                    pointAnnotationManager.deleteAll();
                     tilAddress.setError("Non riesco ad ottenere la tua posizione");
                 }
             });

@@ -239,6 +239,9 @@ public class EditFieldFragment extends Fragment {
                         pointAnnotationManager.deleteAll();
                     }));
                 } else {
+                    isFromMap = true;
+                    edtAddress.setText("");
+                    pointAnnotationManager.deleteAll();
                     tilAddress.setError("Non riesco ad ottenere la tua posizione");
                 }
             });
