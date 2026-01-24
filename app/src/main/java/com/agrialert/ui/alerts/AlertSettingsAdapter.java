@@ -114,6 +114,7 @@ public class AlertSettingsAdapter extends RecyclerView.Adapter<AlertSettingsAdap
         TextView txtThresholdLabel2, txtThresholdValue2;
         /** Buttons to increment or decrement threshold values. */
         MaterialButton btnMinus1, btnPlus1, btnMinus2, btnPlus2;
+        TextView txtStatus;
 
 
         /**
@@ -141,6 +142,8 @@ public class AlertSettingsAdapter extends RecyclerView.Adapter<AlertSettingsAdap
             txtThresholdValue2 = itemView.findViewById(R.id.txtThresholdValue2);
             btnMinus2 = itemView.findViewById(R.id.btnMinus2);
             btnPlus2 = itemView.findViewById(R.id.btnPlus2);
+            txtStatus = itemView.findViewById(R.id.txtStatus);
+
 
         }
 
@@ -158,6 +161,8 @@ public class AlertSettingsAdapter extends RecyclerView.Adapter<AlertSettingsAdap
             // Temporarily remove listener to prevent unwanted triggers during data binding
             switchEnabled.setOnCheckedChangeListener(null);
             switchEnabled.setChecked(item.enabled);
+            txtStatus.setText(switchEnabled.isChecked() ? "Risolto" : "Attivo");
+
 
             // Update threshold container visibility based on current state
             if (item.enabled && (item.hasPrimaryThreshold || item.hasSecondaryThreshold)) {
