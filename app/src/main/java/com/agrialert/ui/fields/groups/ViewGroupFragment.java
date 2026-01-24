@@ -17,10 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.agrialert.MainActivity;
 import com.agrialert.R;
+import com.agrialert.data_manager.Alert;
 import com.agrialert.data_manager.Field;
 import com.agrialert.ui.fields.FieldUiModel;
 import com.agrialert.ui.fields.FieldsAdapter;
 import com.agrialert.ui.fields.FieldsListFragment;
+import com.agrialert.viewmodel.AlertsViewModel;
 import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 /**
@@ -102,6 +105,7 @@ public class ViewGroupFragment extends Fragment {
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;
         FieldsViewModel vm = a.fieldsVM();
+        AlertsViewModel avm = a.alertsVM();
 
         // Load group details
         cd.add(vm.getGroupByName(group.name).subscribe(g -> {
@@ -115,26 +119,41 @@ public class ViewGroupFragment extends Fragment {
         FieldsAdapter adapter = new FieldsAdapter();
         rvGroupFields.setAdapter(adapter);
 
-        cd.add(vm.getGroupByName(group.name).subscribe(g -> {
-            List<FieldUiModel> fields = new ArrayList<>();
-            for (Field f : g.getFields()) {
-                fields.add(new FieldUiModel(
-                        f.getId(),
-                        f.getAddress(),
-                        requireContext().getString(f.getCropType().getResourceId()),
-                        f.getGroupName(),
-                        f.getCropType().getImageResId(),
-                        Collections.emptyList()
-                ));
-            }
+        cd.add(Observable.combineLatest(
+                vm.getGroupByName(group.name).toObservable(),
+                avm.getActiveAlerts().toObservable(),
+                (g, alerts) -> {
+                    List<FieldUiModel> fields = new ArrayList<>();
+                    for (Field f : g.getFields()) {
+                        List<Integer> icons = new ArrayList<>();
+                        for (Alert alert : alerts) {
+                            if (icons.size() == 5) {
+                                break;
+                            }
+                            if (alert.getFieldId() == f.getId()) {
+                                icons.add(alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert);
+                            }
+                        }
+                        fields.add(new FieldUiModel(
+                                f.getId(),
+                                f.getAddress(),
+                                requireContext().getString(f.getCropType().getResourceId()),
+                                f.getGroupName(),
+                                f.getCropType().getImageResId(),
+                                icons
+                        ));
+                    }
+                    return fields;
+                }
+        ).subscribe(fields -> {
             if (fields.isEmpty()) {
-               rvGroupFields.setVisibility(View.GONE);
-               noFieldsGroupImage.setVisibility(View.VISIBLE);
-               noFieldsGroupText.setVisibility(View.VISIBLE);
+                rvGroupFields.setVisibility(View.GONE);
+                noFieldsGroupImage.setVisibility(View.VISIBLE);
+                noFieldsGroupText.setVisibility(View.VISIBLE);
             } else {
-               noFieldsGroupImage.setVisibility(View.GONE);
-               noFieldsGroupText.setVisibility(View.GONE);
-               rvGroupFields.setVisibility(View.VISIBLE);
+                noFieldsGroupImage.setVisibility(View.GONE);
+                noFieldsGroupText.setVisibility(View.GONE);
+                rvGroupFields.setVisibility(View.VISIBLE);
             }
             adapter.submitList(fields);
         }));

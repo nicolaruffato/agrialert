@@ -128,6 +128,7 @@ public class FieldsListFragment extends Fragment
         if (!a.vmsReady()) return;
         vm = a.fieldsVM();
         avm = a.alertsVM();
+        vm.isFieldPending = false;
 
         // Default initial view: Fields
         btnFieldGroups.setChecked(false);

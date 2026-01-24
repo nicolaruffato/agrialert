@@ -15,6 +15,10 @@ public class WeatherApiResponse {
     @SerializedName("hourly")
     public Hourly hourly;
 
+    /**
+     * Represents the current weather conditions returned by the Open-Meteo API.
+     * Includes instantaneous measurements such as temperature, wind data, and weather status codes.
+     */
     public static class CurrentWeather {
         @SerializedName("temperature")
         public double temperature;
@@ -32,6 +36,10 @@ public class WeatherApiResponse {
         public String time;
     }
 
+    /**
+     * Represents the hourly weather data provided by the Open-Meteo API.
+     * This class contains lists of weather parameters indexed by time.
+     */
     public static class Hourly {
         @SerializedName("time")
         public List<String> time;

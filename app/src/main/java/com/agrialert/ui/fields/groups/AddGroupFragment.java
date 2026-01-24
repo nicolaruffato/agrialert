@@ -5,6 +5,8 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -83,6 +85,9 @@ public class AddGroupFragment extends Fragment {
         edtDescription = view.findViewById(R.id.edtDescription);
         rvFields = view.findViewById(R.id.rvFields);
         MaterialButton btnSaveGroup = view.findViewById(R.id.btnSaveGroup);
+        ImageView noFieldsAddGroupImage = view.findViewById(R.id.noFieldsAddGroupImage);
+        TextView noFieldsAddGroupText = view.findViewById(R.id.noFieldsAddGroupText);
+
 
         rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -111,6 +116,12 @@ public class AddGroupFragment extends Fragment {
                                     );
                                 }
                             }
+                            if (fields.isEmpty()) {
+                                rvFields.setVisibility(View.GONE);
+                                noFieldsAddGroupImage.setVisibility(View.VISIBLE);
+                                noFieldsAddGroupText.setVisibility(View.VISIBLE);
+                            }
+                            
                             adapter = new GroupFieldsAdapter(fields);
                             rvFields.setAdapter(adapter);
                         },

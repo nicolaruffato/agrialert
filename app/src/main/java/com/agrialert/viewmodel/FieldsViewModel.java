@@ -27,9 +27,6 @@ public class FieldsViewModel {
     /** The data manager used for persistent storage operations. */
     private final DataManager dm;
 
-    /** A temporary field object used during the multi-step creation process. */
-    public Field pendingField = null;
-
     /** Flag indicating whether a field creation process is currently in progress. */
     public boolean isFieldPending = false;
 
@@ -40,33 +37,6 @@ public class FieldsViewModel {
      */
     public FieldsViewModel(DataManager dm) {
         this.dm = dm;
-    }
-
-    // --------- TEMPORARY FIELD MANAGEMENT ---------
-
-    /**
-     * Sets the temporary field being created.
-     *
-     * @param field The field to set as pending.
-     */
-    public void setPendingField(Field field) {
-        this.pendingField = field;
-    }
-
-    /**
-     * Retrieves the current temporary field.
-     *
-     * @return The pending field, or null if none exists.
-     */
-    public Field getPendingField() {
-        return pendingField;
-    }
-
-    /**
-     * Clears the temporary field state.
-     */
-    public void clearPendingField() {
-        pendingField = null;
     }
 
     // --------- READ OPERATIONS ---------

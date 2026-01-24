@@ -70,14 +70,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="none" />
+
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- BOTTONI-->
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveEdit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Modifica campo"
+            android:textColor="@color/white" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEditAlerts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="20dp"
             android:text="Modifica alert"
             android:textColor="@color/white" />
 

@@ -14,12 +14,13 @@
             android:orientation="vertical"
             android:layout_marginBottom="16dp">
 
-            <ImageView
+            <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/imgGroupIcon"
                 android:layout_width="96dp"
                 android:layout_height="96dp"
+                android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_group_default"
-                android:contentDescription="@string/app_name" />
+                app:shapeAppearanceOverlay="@style/ImageView.Corner" />
 
         </LinearLayout>
 
@@ -63,14 +64,37 @@
             android:textStyle="bold" />
 
         <!-- Lista campi -->
-        <androidx.recyclerview.widget.RecyclerView
+    <ImageView
+        android:id="@+id/noFieldsAddGroupImage"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/noFieldsAddGroupText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:gravity="center|center_horizontal|top"
+        android:text="Non hai creato nessun campo"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvFields"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_width="match_parent"
-            android:paddingBottom="8dp"/>
+            android:paddingBottom="8dp">
+
+        </androidx.recyclerview.widget.RecyclerView>
 
         <!-- Bottone salva -->
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveGroup"
         android:layout_width="match_parent"

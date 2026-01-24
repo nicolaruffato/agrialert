@@ -15,12 +15,13 @@
         android:orientation="vertical"
         android:paddingBottom="16dp">
 
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgGroupIcon"
             android:layout_width="96dp"
             android:layout_height="96dp"
             android:src="@drawable/ic_group_default"
-            android:contentDescription="Icona gruppo" />
+            android:contentDescription="Icona gruppo"
+            app:shapeAppearanceOverlay="@style/ImageView.Corner"/>
 
         <TextView
             android:id="@+id/txtGroupName"
@@ -62,10 +63,10 @@
     <TextView
         android:id="@+id/noFieldsGroupText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="100dp"
-        android:gravity="center|center_horizontal|center_vertical"
+        android:layout_weight="1"
+        android:gravity="center|center_horizontal|top"
         android:text="Questo gruppo non contiene nessun campo"
         android:textStyle="bold"
         android:visibility="gone" />

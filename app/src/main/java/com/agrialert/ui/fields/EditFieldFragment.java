@@ -125,6 +125,7 @@ public class EditFieldFragment extends Fragment {
         ddlGroup = view.findViewById(R.id.dropGroup);
         tilAddress = view.findViewById(R.id.tilAddress);
         MaterialButton btnEditAlerts = view.findViewById(R.id.btnEditAlerts);
+        MaterialButton btnSaveEdit = view.findViewById(R.id.btnSaveEdit);
         mapView = view.findViewById(R.id.mapView);
 
         Bundle args = getArguments();
@@ -181,8 +182,7 @@ public class EditFieldFragment extends Fragment {
             tilAddress.setEndIconOnClickListener(v -> loadCurrentLocation(f));
             setupDropdowns(f);
 
-            // Handle edit alerts button click
-            btnEditAlerts.setOnClickListener(v -> {
+            btnSaveEdit.setOnClickListener(v -> {
                 if (!validateForm()) return;
 
                 String address = edtAddress.getText().toString().trim();
@@ -195,13 +195,18 @@ public class EditFieldFragment extends Fragment {
                 f.setGroupName(groupName);
                 f.setCropType(selectedCrop);
 
-                // Update field in database and navigate to alert settings
-                cd.add(vm.updateField(f).subscribe(() -> {
-                    Bundle b = new Bundle();
-                    b.putInt("fieldId", f.getId());
-                    NavHostFragment.findNavController(EditFieldFragment.this)
-                            .navigate(R.id.action_editField_to_setAlerts, b);
-                }));
+                // Update field in database
+                cd.add(vm.updateField(f).subscribe());
+
+                Toast.makeText(requireContext(), "Campo modificato!", Toast.LENGTH_SHORT).show();
+            });
+
+            // Handle edit alerts button click
+            btnEditAlerts.setOnClickListener(v -> {
+                Bundle b = new Bundle();
+                b.putInt("fieldId", f.getId());
+                NavHostFragment.findNavController(EditFieldFragment.this)
+                        .navigate(R.id.action_editField_to_setAlerts, b);
             });
         }));
     }

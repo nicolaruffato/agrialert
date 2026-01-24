@@ -39,6 +39,7 @@ public class EditGroupFragment extends Fragment {
 
     /** ImageView for the group's icon. */
     private ImageView imgGroupIcon;
+    /** TextView displaying the name of the group. */
     private TextView edtGroupName;
     /** TextInputEditText for the group description input. */
     private TextInputEditText edtDescription;
@@ -87,7 +88,10 @@ public class EditGroupFragment extends Fragment {
         rvFields       = view.findViewById(R.id.rvFields);
         btnSaveGroup   = view.findViewById(R.id.btnSaveGroup);
         edtGroupName = view.findViewById(R.id.txtGroupNameEdit);
+        ImageView noFieldsEditGroupImage = view.findViewById(R.id.noFieldsEditGroupImage);
+        TextView noFieldsEditGroupText = view.findViewById(R.id.noFieldsEditGroupText);
 
+        // Get group name from arguments
         Bundle args = getArguments();
         if (args == null) {
             Log.e("EditGroup", "Missing group: pass it as an argument to EditGroupFragment!");
@@ -116,6 +120,12 @@ public class EditGroupFragment extends Fragment {
                             true
                         )
                 );
+            }
+
+            if (fields.isEmpty()) {
+                rvFields.setVisibility(View.GONE);
+                noFieldsEditGroupImage.setVisibility(View.VISIBLE);
+                noFieldsEditGroupText.setVisibility(View.VISIBLE);
             }
 
             rvFields.setLayoutManager(new LinearLayoutManager(requireContext()));

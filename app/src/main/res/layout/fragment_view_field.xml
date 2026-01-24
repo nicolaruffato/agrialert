@@ -65,32 +65,33 @@
         android:id="@+id/rvFieldAlerts"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:visibility="visible">
 
     </androidx.recyclerview.widget.RecyclerView>
 
         <!-- BOTTONI-->
 
 
-        <ImageView
-            android:id="@+id/noAlertsListImage"
-            android:layout_width="match_parent"
-            android:layout_height="53dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:visibility="gone"
-            app:srcCompat="@drawable/ic_info" />
+    <ImageView
+        android:id="@+id/noAlertsListImage"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
 
-        <TextView
-            android:id="@+id/noAlertsListText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="100dp"
-            android:gravity="center|center_horizontal|center_vertical"
-            android:text="Non sono presenti alert attivi per questo campo"
-            android:textStyle="bold"
-            android:visibility="gone" />
+    <TextView
+        android:id="@+id/noAlertsListText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:gravity="center|center_horizontal|top"
+        android:text="Non sono presenti alert attivi per questo campo"
+        android:textStyle="bold"
+        android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEditField"

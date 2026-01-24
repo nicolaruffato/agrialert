@@ -108,6 +108,17 @@
                 android:layout_marginBottom="0dp"
                 android:checked="false" />
 
+            <TextView
+                android:id="@+id/txtResolved"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_horizontal"
+                android:lineSpacingExtra="1dp"
+                android:maxLines="2"
+                android:text="Oggi"
+                android:textSize="14sp" />
+
             <!-- LABEL SOTTO LO SWITCH -->
 
         </LinearLayout>

@@ -18,7 +18,7 @@ public enum CropType {
     ORCHARDS(R.string.crop_orchards, R.drawable.ic_frutteti),
     OILSEEDS(R.string.crop_Oilseeds, R.drawable.ic_oleaginose),
     AROMATIC_AND_MEDICINAL(R.string.crop_aromatic_and_medicinal, R.drawable.ic_aromatiche),
-    NONE(R.string.crop_none, R.drawable.ic_group_default);
+    NONE(R.string.crop_none, R.drawable.ic_nessuna);
 
 
     private final int resourceId;

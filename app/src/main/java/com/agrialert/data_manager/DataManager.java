@@ -335,17 +335,6 @@ public class DataManager extends Service {
     public Flowable<List<Alert>> getActiveAlertsFromField(int fieldId) {
         return alertDao.getActiveAlertsFromField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
-    public Flowable<List<Alert>> getAlertsFromField(int fieldId) {
-        return alertDao.getAlertsFromField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
-    }
-
-    public Maybe<Alert> findLatestActiveByField(long fieldId) {
-        return alertDao.findLatestActiveByField(fieldId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
-    }
-
-    public Completable deleteAlert(int alertId) {
-        return alertDao.deleteAlert(alertId).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
-    }
 
     public Single<Long> insertAlert(Alert alert) {
         return alertDao.insert(alert)

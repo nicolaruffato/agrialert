@@ -1,183 +1,178 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
+    <!-- CARD ALERT ATTIVI -->
+
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="2dp">
 
-        <!-- CARD ALERT ATTIVI -->
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp">
-
-                <!-- ICONA GRANDE FISSA -->
-                <ImageView
-                    android:id="@+id/imgAlertBig"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:layout_marginEnd="17dp"
-                    android:src="@drawable/ic_alert"
-                    android:contentDescription="@string/app_name" />
-
-                <!-- CONTENUTO A DESTRA -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <!-- RIGA TITOLO + VEDI TUTTI -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <TextView
-                            android:id="@+id/txtAlertCount"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/txtSeeAllAlerts"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Vedi tutti"
-                            android:textColor="@color/green"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <!-- TESTO NESSUN ALERT -->
-                    <TextView
-                        android:id="@+id/txtNoActiveAlerts"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Nessun alert attivo"
-                        android:layout_marginTop="8dp"
-                        android:visibility="gone" />
-
-                    <!-- ANTEPRIMA ALERT -->
-                    <LinearLayout
-                        android:id="@+id/layoutAlertPreview"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginTop="8dp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-
-
-
-        <!-- Campi/Gruppi -->
-
-        <!-- TITOLO SEZIONE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="16dp">
+            android:padding="16dp">
 
-            <TextView
-                android:id="@+id/txtMyFieldsTitle"
+            <!-- ICONA GRANDE FISSA -->
+            <ImageView
+                android:id="@+id/imgAlertBig"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginEnd="17dp"
+                android:src="@drawable/ic_alert"
+                android:contentDescription="@string/app_name" />
+
+            <!-- CONTENUTO A DESTRA -->
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="I tuoi campi →"
-                android:textStyle="bold"
-                android:textSize="18sp"/>
+                android:orientation="vertical">
+
+                <!-- RIGA TITOLO + VEDI TUTTI -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/txtAlertCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/txtSeeAllAlerts"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Vedi tutti"
+                        android:textColor="@color/green"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- TESTO NESSUN ALERT -->
+                <TextView
+                    android:id="@+id/txtNoActiveAlerts"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nessun alert attivo"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+
+                <!-- ANTEPRIMA ALERT -->
+                <LinearLayout
+                    android:id="@+id/layoutAlertPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
-
-        <!-- TOGGLE CAMPI / GRUPPI -->
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/toggleFieldsGroupsDash"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:singleSelection="true"
-            app:selectionRequired="true">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDashFields"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Campi"
-                android:checkable="true"
-                android:checked="true"
-                android:backgroundTint="@color/toggle_selected"
-                android:textColor="@color/toggle_text"
-                app:cornerRadius="24dp"
-                app:checkedIcon="@null" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDashGroups"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Gruppi di campi"
-                android:checkable="true"
-                android:checked="false"
-                android:backgroundTint="@color/toggle_selected"
-                android:textColor="@color/toggle_text"
-                app:cornerRadius="24dp"
-                app:checkedIcon="@null" />
-
-        </com.google.android.material.button.MaterialButtonToggleGroup>
+    </com.google.android.material.card.MaterialCardView>
 
 
 
-        <!-- PREVIEW LISTA (3 elementi) -->
-        <ImageView
-            android:id="@+id/noFieldsImage"
-            android:layout_width="match_parent"
-            android:layout_height="53dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:visibility="gone"
-            app:srcCompat="@drawable/ic_info" />
+
+    <!-- Campi/Gruppi -->
+
+    <!-- TITOLO SEZIONE -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp">
 
         <TextView
-            android:id="@+id/noFieldsText"
-            android:layout_width="match_parent"
+            android:id="@+id/txtMyFieldsTitle"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:gravity="center|center_horizontal|center_vertical"
-            android:text="Non hai creato nessun campo, vai nella sezione campi per aggiungerne uno nuovo"
+            android:layout_weight="1"
+            android:text="I tuoi campi →"
             android:textStyle="bold"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvDashboardPreview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:nestedScrollingEnabled="false" />
-
-
+            android:textSize="18sp"/>
 
     </LinearLayout>
-</ScrollView>
+
+    <!-- TOGGLE CAMPI / GRUPPI -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/toggleFieldsGroupsDash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        app:singleSelection="true"
+        app:selectionRequired="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDashFields"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Campi"
+            android:checkable="true"
+            android:checked="true"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDashGroups"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Gruppi di campi"
+            android:checkable="true"
+            android:checked="false"
+            android:backgroundTint="@color/toggle_selected"
+            android:textColor="@color/toggle_text"
+            app:cornerRadius="24dp"
+            app:checkedIcon="@null" />
+
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+
+
+    <!-- PREVIEW LISTA (3 elementi) -->
+    <ImageView
+        android:id="@+id/noFieldsImage"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/noFieldsText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center|center_horizontal|center_vertical"
+        android:text="Non hai creato nessun campo, vai nella sezione campi per aggiungerne uno nuovo"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvDashboardPreview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_weight="1" />
+
+
+
+</LinearLayout>

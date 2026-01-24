@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Locale;
 import java.text.SimpleDateFormat;
 
-import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
 /**
@@ -85,8 +84,6 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
 
     /** Maximum number of groups or fields to display in the dashboard. */
     private final int MAX_PREVIEW = 3;
-    List<GroupUiModel> uiGroups = new ArrayList<>();
-    List<FieldUiModel> uiFields = new ArrayList<>();
 
     /**
      * Initializes views, adapters, and data observers after the view is created.
@@ -272,6 +269,13 @@ public class DashboardFragment extends Fragment implements FieldsAdapter.OnField
         return startLabel + "–" + endDayLabel + " " + timeFormat.format(endDate);
     }
 
+    /**
+     * Checks if two {@link Calendar} instances represent the same day.
+     *
+     * @param a The first calendar instance.
+     * @param b The second calendar instance.
+     * @return {@code true} if both calendars have the same year and day of year; {@code false} otherwise.
+     */
     private boolean isSameDay(Calendar a, Calendar b) {
         return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);

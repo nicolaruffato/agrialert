@@ -6,6 +6,7 @@
     android:padding="16dp">
 
     <!-- Icona gruppo -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -59,12 +60,33 @@
         android:textStyle="bold" />
 
     <!-- Lista campi -->
+    <ImageView
+        android:id="@+id/noFieldsEditGroupImage"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/noFieldsEditGroupText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:gravity="center|center_horizontal|top"
+        android:text="Questo gruppo non contiene nessun campo"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvFields"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="8dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp" />
+        android:visibility="visible" />
 
     <!-- Bottone salva -->
     <com.google.android.material.button.MaterialButton

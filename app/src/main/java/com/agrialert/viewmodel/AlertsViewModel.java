@@ -95,29 +95,4 @@ public class AlertsViewModel {
     public Flowable<List<Alert>> getActiveAlertsFromField(int fieldId) {
         return dm.getActiveAlertsFromField(fieldId);
     }
-
-    /**
-     * Retrieves all alerts associated with a specific field, regardless of their status.
-     *
-     * @param fieldId The unique identifier of the field.
-     * @return A Flowable emitting a list of Alert objects associated with the field.
-     */
-    public Flowable<List<Alert>> getAlertsFromField(int fieldId) {
-        return dm.getAlertsFromField(fieldId);
-    }
-
-    public Maybe<Alert> findLatestActiveByField(long fieldId) {
-        return dm.findLatestActiveByField(fieldId);
-    }
-
-    /**
-     * Deletes a specific alert from the database.
-     *
-     * @param alertId The unique identifier of the alert to be deleted.
-     * @return A Completable that completes once the alert has been deleted.
-     */
-    public Completable deleteAlert(int alertId) {
-        return dm.deleteAlert(alertId);
-    }
-
 }

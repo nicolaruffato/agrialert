@@ -21,6 +21,7 @@ import com.agrialert.data_manager.Alert;
 import com.agrialert.ui.alerts.AlertUiModel;
 import com.agrialert.ui.alerts.AlertsAdapter;
 import com.agrialert.viewmodel.AlertsViewModel;
+import com.agrialert.viewmodel.FieldsViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
@@ -119,14 +120,17 @@ public class ViewFieldFragment extends Fragment {
                 NavHostFragment.findNavController(ViewFieldFragment.this)
                         .navigate(R.id.action_viewFieldFragment_to_confirmDeleteFieldFragment, b));
 
-        txtAddress.setText(field.address);
-        txtCrop.setText(field.crop);
-        txtGroup.setText(field.groupName);
-        imgCrop.setImageResource(field.iconRes);
-
         MainActivity a = (MainActivity) requireActivity();
         if (!a.vmsReady()) return;
+        FieldsViewModel vm = a.fieldsVM();
         avm = a.alertsVM();
+
+        cd.add(vm.getFieldById((int)field.id).subscribe(f -> {
+            txtAddress.setText(f.getAddress());
+            txtCrop.setText(requireContext().getString(f.getCropType().getResourceId()));
+            txtGroup.setText(f.getGroupName());
+            imgCrop.setImageResource(f.getCropType().getImageResId());
+        }));
 
         // LIST OF ALERTS ASSOCIATED WITH THE FIELD
         rvFieldAlerts.setLayoutManager(new LinearLayoutManager(requireContext()));

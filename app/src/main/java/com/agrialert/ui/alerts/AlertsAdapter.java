@@ -145,6 +145,11 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
         SwitchMaterial switchResolved;
 
         /**
+         * Specifies to the user what the switch does.
+         */
+        TextView txtResolved;
+
+        /**
          * Constructor for the ViewHolder.
          *
          * @param itemView The view representing an individual alert item.
@@ -159,6 +164,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             txtFieldAddress = itemView.findViewById(R.id.txtAlertFieldAddress);
             txtTime = itemView.findViewById(R.id.txtAlertTimeLabel);
             switchResolved = itemView.findViewById(R.id.switchResolved);
+            txtResolved = itemView.findViewById(R.id.txtResolved);
         }
 
         /**
@@ -202,6 +208,7 @@ public class AlertsAdapter extends RecyclerView.Adapter<AlertsAdapter.AlertViewH
             // Temporarily remove listener to avoid triggering it while setting initial state
             switchResolved.setOnCheckedChangeListener(null);
             switchResolved.setChecked(item.isResolved);
+            txtResolved.setText(item.isResolved ? "Attiva" : "Risolvi");
 
             switchResolved.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (listener != null) {
