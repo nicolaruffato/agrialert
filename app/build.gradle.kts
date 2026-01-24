@@ -40,11 +40,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "MAPS_API_KEY", getProps("MAPS_API_KEY"))
             buildConfigField("String", "MAPBOX_API_KEY", getProps("MAPBOX_API_KEY"))
         }
         debug {
-            buildConfigField("String", "MAPS_API_KEY", getProps("MAPS_API_KEY"))
             buildConfigField("String", "MAPBOX_API_KEY", getProps("MAPBOX_API_KEY"))
         }
     }
