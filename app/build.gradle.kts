@@ -6,7 +6,7 @@ plugins {
     //id("com.android.application")
 
     // Make sure that you have the Google services Gradle plugin
-    id("com.google.gms.google-services")
+ //   id("com.google.gms.google-services")
 
     // Add the Performance Monitoring Gradle plugin
     id("com.google.firebase.firebase-perf")
