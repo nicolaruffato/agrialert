@@ -9,7 +9,6 @@ import com.agrialert.data_manager.Field;
 import com.agrialert.data_manager.FieldsGroup;
 import com.agrialert.data_manager.GroupWithFields;
 import com.agrialert.data_manager.Threshold;
-import com.google.firebase.perf.metrics.AddTrace;
 
 import io.reactivex.rxjava3.core.Flowable;
 
@@ -24,7 +23,6 @@ import io.reactivex.rxjava3.core.Completable;
  */
 public class FieldsViewModel {
 
-    private static final boolean enable_traces = true;
 
     /** The data manager used for persistent storage operations. */
     private final DataManager dm;
@@ -79,7 +77,6 @@ public class FieldsViewModel {
      * @return A Flowable emitting a list of groups with fields.
      */
     // READ
-    @AddTrace(name = "getAllGroupsTrace", enabled = enable_traces)
     public Flowable<List<GroupWithFields>> getAllGroups() {
         return dm.getAllGroups();
     }
@@ -90,7 +87,6 @@ public class FieldsViewModel {
      * @param name The name of the group.
      * @return A Single emitting the group data.
      */
-    @AddTrace(name = "getGroupByNameTrace", enabled = enable_traces)
     public Single<GroupWithFields> getGroupByName(String name) {
         return dm.getGroupByName(name);
     }
@@ -101,7 +97,6 @@ public class FieldsViewModel {
      * @param group The group object to insert.
      * @return A Completable for the operation.
      */
-    @AddTrace(name = "insertGroupTrace", enabled = enable_traces)
     public Completable insertGroup(FieldsGroup group) {
         return dm.insertGroup(group);
     }
@@ -112,7 +107,6 @@ public class FieldsViewModel {
      * @param field The field object to insert.
      * @return A Completable for the operation.
      */
-    @AddTrace(name = "insertFieldTrace", enabled = enable_traces)
     public Completable insertField(Field field) {
         return dm.insertField(field);
     }
@@ -126,7 +120,6 @@ public class FieldsViewModel {
      * @return A Completable for the operation.
      */
     // UPDATE
-    @AddTrace(name = "updateFieldTrace", enabled = enable_traces)
     public Completable updateField(Field field) {
         return dm.updateField(field);
     }
@@ -137,7 +130,6 @@ public class FieldsViewModel {
      * @param group The updated group object.
      * @return A Completable for the operation.
      */
-    @AddTrace(name = "updateGroupTrace", enabled = enable_traces)
     public Completable updateGroup(FieldsGroup group) {
         return dm.updateGroup(group);
     }
@@ -149,7 +141,6 @@ public class FieldsViewModel {
      * @return A Completable for the operation.
      */
     // DELETE
-    @AddTrace(name = "deleteFieldTrace", enabled = enable_traces)
     public Completable deleteField(Field field) {
         return dm.deleteField(field);
     }
@@ -160,7 +151,6 @@ public class FieldsViewModel {
      * @param group The group object to delete.
      * @return A Completable for the operation.
      */
-    @AddTrace(name = "deleteGroupTrace", enabled = enable_traces)
     public Completable deleteGroup(FieldsGroup group) {
         return dm.deleteGroup(group);
     }
@@ -173,7 +163,6 @@ public class FieldsViewModel {
      * @param threshold   The threshold values for the alert.
      * @return A Completable for the operation.
      */
-    @AddTrace(name= "addAlertToFieldTrace", enabled = enable_traces)
     public Completable addAlertToField(int fieldId, int alertTypeId, Threshold threshold) {
         return dm.addAlertToField(fieldId, alertTypeId, threshold);
     }
@@ -186,7 +175,6 @@ public class FieldsViewModel {
      * @return A Completable for the operation.
      */
 
-    @AddTrace(name = "updateAlertToFieldTrace", enabled = enable_traces)
     public Completable updateAlertsToField(int fieldId, List<Pair<Integer, Threshold>> alertsTypeWithThresholds){
         return dm.updateAlertsToField(fieldId, alertsTypeWithThresholds);
     }
@@ -197,7 +185,6 @@ public class FieldsViewModel {
      * @param fieldId The unique identifier of the field.
      * @return A Flowable emitting the activated alerts.
      */
-    @AddTrace(name = "getActivatedAlertsFromFieldTrace", enabled = enable_traces)
     public Flowable<ActivatedAlerts> getActivatedAlertsFromField(int fieldId) {
         return dm.getActivatedAlertsFromField(fieldId);
     }
@@ -208,7 +195,6 @@ public class FieldsViewModel {
      * @param fieldId The unique identifier of the field.
      * @return A Single emitting the field object.
      */
-    @AddTrace(name = "getFieldByIdTrace", enabled = enable_traces)
     public Single<Field> getFieldById(int fieldId) {
         return  dm.getFieldById(fieldId);
     }

@@ -3,16 +3,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    //id("com.android.application")
-
-    // Make sure that you have the Google services Gradle plugin
-    id("com.google.gms.google-services")
-
-    // Add the Performance Monitoring Gradle plugin
-    id("com.google.firebase.firebase-perf")
-
-    // Add the Crashlytics Gradle plugin
-    id("com.google.firebase.crashlytics")
 }
 
 fun getProps(name: String): String {
@@ -91,10 +81,6 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("com.mapbox.maps:android-ndk27:11.17.1")
-    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
-    implementation("com.google.firebase:firebase-perf")
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-analytics")
 
 }
 
