@@ -4,36 +4,80 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 /**
- * Entità Room e modello pubblico per gli alert (getter/setter).
+ * Room entity representing a weather alert associated with a field.
+ * <p>
+ * Persisted in the {@code alerts} table. All timestamps are expressed as epoch milliseconds.
+ * {@link #forecastAt} represents the expected start time of the weather event; {@link #durationMs}
+ * (when &gt; 0) represents an estimated event duration used by the UI/notifications.
+ * </p>
  */
 @Entity(tableName = "alerts")
 public class Alert {
 
+    /** Auto-generated primary key. */
     @PrimaryKey(autoGenerate = true)
     private long id;
 
-    /** Identificatore del campo a cui si riferisce l'alert */
+    /** Identifier of the field this alert refers to. */
     private long fieldId;
 
-    /** Nome del gruppo (opzionale) utile per la UI */
+    /** Optional group name, used for UI display and notification aggregation. */
     private String groupName;
 
+    /** Alert type identifier ({@link AlertType}). */
     private int typeId;
+
+    /** User-facing title shown in UI/notifications. */
     private String title;
+
+    /** User-facing description. */
     private String description;
+
+    /** Field address/label for UI display. */
     private String fieldAddress;
-    /** Timestamp (ms) previsto per l'evento meteo che genera l'alert */
+
+    /** Forecast timestamp (ms) for the weather event that triggers the alert. */
     private long forecastAt;
+
+    /** Estimated event duration in milliseconds (0 if unknown). */
     private long durationMs;
+
+    /** Creation/insert timestamp (ms). */
     private long createdAt;
+
+    /** Whether the alert is marked as resolved. */
     private boolean resolved;
-    /** Timestamp (ms) in cui l'alert è stato marcato come risolto (0 se non risolto). */
+
+    /** Resolution timestamp (ms), or {@code 0} when not resolved. */
     private long resolvedAt;
+
+    /** Icon resource id associated with the alert. */
     private int iconRes;
 
+    /**
+     * No-arg constructor required by Room.
+     */
     public Alert() {
     }
 
+    /**
+     * Creates an alert with the main fields initialized.
+     * <p>
+     * {@link #resolvedAt} is initialized to {@code createdAt} when {@code resolved} is {@code true},
+     * otherwise it is set to {@code 0}.
+     * </p>
+     *
+     * @param fieldId      field id
+     * @param groupName    optional group name
+     * @param typeId       alert type id
+     * @param title        user-facing title
+     * @param description  user-facing description
+     * @param fieldAddress field address/label
+     * @param forecastAt   forecast time of the event (ms)
+     * @param createdAt    creation time (ms)
+     * @param resolved     initial resolved state
+     * @param iconRes      icon resource id
+     */
     public Alert(long fieldId,
                  String groupName,
                  int typeId,

@@ -7,11 +7,15 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.RequiresPermission;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -34,11 +38,14 @@ import java.util.Set;
 
 /**
  * Handles alert notification channel creation and dispatching of alert notifications.
+ * Supports both per-alert notifications and (optionally) group-level aggregated notifications.
  */
 public final class AlertNotificationManager {
 
     private static final String CHANNEL_ID = "agri_alerts";
     private static final String TAG = "AlertNotificationMgr";
+    private static final int NOTIFICATION_SMALL_ICON_RES = R.drawable.ic_stat_agrialert;
+    private static final int NOTIFICATION_LARGE_ICON_RES = R.mipmap.ic_logo;
 
     /**
      * Prevents instantiation; this is a static utility class.
@@ -99,14 +106,13 @@ public final class AlertNotificationManager {
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            int smallIcon = alert.getIconRes() != 0 ? alert.getIconRes() : R.drawable.ic_alert;
-
             String contentTitle = alert.getTitle() != null ? alert.getTitle() : "Nuovo alert meteo";
             String shortText = buildShortText(alert);
             String bigText = buildBigText(alert);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(smallIcon)
+                    .setSmallIcon(NOTIFICATION_SMALL_ICON_RES)
+                    .setLargeIcon(loadLargeIcon(context))
                     .setContentTitle(contentTitle)
                     .setContentText(shortText)
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(bigText))
@@ -126,6 +132,10 @@ public final class AlertNotificationManager {
      * Rule: if a group has more than one field and the number of distinct fields to notify is
      * greater than 50% of the total fields in that group, then a single group notification is
      * posted and per-field notifications for that group are suppressed.
+     * </p>
+     * <p>
+     * Only alerts with a positive {@code fieldId} participate in the aggregation heuristic; alerts
+     * without a field id are always notified individually.
      * </p>
      *
      * @param context            any context used to build notifications
@@ -213,6 +223,9 @@ public final class AlertNotificationManager {
         }
     }
 
+    /**
+     * Builds the one-line text shown in the collapsed notification.
+     */
     private static String buildShortText(Alert alert) {
         String description = alert != null && alert.getDescription() != null && !alert.getDescription().trim().isEmpty()
                 ? alert.getDescription().trim()
@@ -226,6 +239,9 @@ public final class AlertNotificationManager {
         return description + " \u2022 " + forecastRange;
     }
 
+    /**
+     * Builds the expanded text shown in {@link androidx.core.app.NotificationCompat.BigTextStyle}.
+     */
     private static String buildBigText(Alert alert) {
         if (alert == null) {
             return "";
@@ -247,6 +263,9 @@ public final class AlertNotificationManager {
         return sb.toString().trim();
     }
 
+    /**
+     * Formats a forecast time (and optional duration) into a short user-facing range.
+     */
     private static String formatForecastRange(long startMs, long durationMs) {
         if (startMs <= 0L) {
             return "";
@@ -267,6 +286,10 @@ public final class AlertNotificationManager {
         return formatDateTime(startMs) + "\u2013" + formatDateTime(endMs);
     }
 
+    /**
+     * Posts a single aggregated notification for a group.
+     */
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     private static void notifyGroupAlert(Context context,
                                          NotificationManagerCompat manager,
                                          String groupName,
@@ -298,7 +321,8 @@ public final class AlertNotificationManager {
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_alert)
+                .setSmallIcon(NOTIFICATION_SMALL_ICON_RES)
+                .setLargeIcon(loadLargeIcon(context))
                 .setContentTitle(contentTitle)
                 .setContentText(contentText)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
@@ -309,12 +333,53 @@ public final class AlertNotificationManager {
         manager.notify(notificationId, builder.build());
     }
 
+    /**
+     * Returns a stable notification id for a group name.
+     */
     private static int groupNotificationId(String groupName) {
         int hash = groupName != null ? groupName.hashCode() : 0;
         int positive = hash == Integer.MIN_VALUE ? 0 : Math.abs(hash);
         return 100_000 + (positive % 900_000);
     }
 
+    /**
+     * Loads and rasterizes the large icon used by notifications.
+     *
+     * @return a bitmap, or {@code null} when unavailable
+     */
+    private static Bitmap loadLargeIcon(Context context) {
+        if (context == null) {
+            return null;
+        }
+
+        android.graphics.drawable.Drawable drawable = AppCompatResources.getDrawable(context, NOTIFICATION_LARGE_ICON_RES);
+        if (drawable == null) {
+            return null;
+        }
+
+        int width;
+        int height;
+        try {
+            width = context.getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
+            height = context.getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_height);
+        } catch (Resources.NotFoundException ex) {
+            int fallbackSize = Math.round(48f * context.getResources().getDisplayMetrics().density);
+            width = fallbackSize;
+            height = fallbackSize;
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, width, height);
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
+    /**
+     * Normalizes group names for display and as map keys.
+     *
+     * @return a non-empty group name
+     */
     private static String normalizeGroupName(String groupName) {
         if (groupName == null) {
             return "Default";
@@ -323,11 +388,17 @@ public final class AlertNotificationManager {
         return trimmed.isEmpty() ? "Default" : trimmed;
     }
 
+    /**
+     * Returns {@code true} when the two calendars fall on the same local day.
+     */
     private static boolean isSameDay(Calendar a, Calendar b) {
         return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
+    /**
+     * Formats a timestamp in the user's locale as {@code dd/MM HH:mm}.
+     */
     private static String formatDateTime(long timestampMs) {
         if (timestampMs <= 0L) {
             return "";
@@ -336,6 +407,9 @@ public final class AlertNotificationManager {
         return df.format(new Date(timestampMs));
     }
 
+    /**
+     * Formats a timestamp in the user's locale as {@code HH:mm}.
+     */
     private static String formatTime(long timestampMs) {
         if (timestampMs <= 0L) {
             return "";

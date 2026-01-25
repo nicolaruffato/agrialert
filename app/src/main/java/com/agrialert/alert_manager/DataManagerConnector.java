@@ -20,7 +20,11 @@ import io.reactivex.rxjava3.core.Single;
 
 /**
  * Utility for binding to {@link DataManager} and exposing its operations through RxJava types.
- * All bind operations are performed against the application context and released automatically.
+ * <p>
+ * Binding is always performed against the application context. The {@code with*} helpers take care
+ * of unbinding when the returned reactive type terminates; requested timeouts shorter than
+ * {@link #DEFAULT_BIND_TIMEOUT_MS} are clamped to that minimum.
+ * </p>
  */
 public final class DataManagerConnector {
 
@@ -46,7 +50,8 @@ public final class DataManagerConnector {
      * Binds to {@link DataManager} using a custom timeout.
      *
      * @param context   any context used to derive the application context
-     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @param timeoutMs timeout in milliseconds before emitting a timeout error; values lower than
+     *                  {@link #DEFAULT_BIND_TIMEOUT_MS} are treated as {@link #DEFAULT_BIND_TIMEOUT_MS}
      * @return a {@link Single} that emits a bound service wrapper
      */
     public static Single<BoundDataManager> bind(Context context, long timeoutMs) {
@@ -175,10 +180,9 @@ public final class DataManagerConnector {
      * Performs the actual bind operation and wraps the bound service in a {@link BoundDataManager}.
      *
      * @param context   any context used to derive the application context
-     * @param timeoutMs timeout in milliseconds before emitting a timeout error
+     * @param timeoutMs requested timeout in milliseconds before emitting a timeout error; values
+     *                  lower than {@link #DEFAULT_BIND_TIMEOUT_MS} are clamped to that minimum
      * @return a {@link Single} that emits the bound service wrapper
-     * @throws IllegalArgumentException if {@code context} is {@code null}
-     * @throws IllegalStateException    if the service cannot be bound or disconnects unexpectedly
      */
     private static Single<BoundDataManager> bindInternal(Context context, long timeoutMs) {
         if (context == null) {

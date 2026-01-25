@@ -30,8 +30,16 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * Orchestrates weather fetch, threshold evaluation, persistence, and alert state updates.
- * All operations are executed through the bound {@link DataManager} service via
- * {@link DataManagerConnector}.
+ * <p>
+ * This repository fetches forecasts via {@link OpenMeteoApiClient}, evaluates thresholds via
+ * {@link AlertEvaluator}, and persists/updates alerts through the bound {@link DataManager} service
+ * using {@link DataManagerConnector}.
+ * </p>
+ * <p>
+ * When persisting candidates, duplicates are avoided by skipping insertion if an unresolved alert
+ * of the same type already exists for the field, or if the most recently resolved alert is still
+ * within its event duration for the candidate forecast time.
+ * </p>
  */
 public class AlertRepository {
 
@@ -113,10 +121,17 @@ public class AlertRepository {
     // ------------------- MODEL -------------------
 
     /**
-     * Holds the outcome of a weather sync, including the response and created alerts.
+     * Holds the outcome of a weather sync.
+     * <p>
+     * A single {@link WeatherApiResponse} is not always meaningful when syncing multiple fields;
+     * therefore {@link #response} may be {@code null}. Consumers should rely on {@link #created}.
+     * </p>
      */
     public static class WeatherSyncResult {
+        /** Optional weather response associated with the sync (may be {@code null}). */
         public final WeatherApiResponse response;
+
+        /** Alerts created during the sync (may be empty). */
         public final List<Alert> created;
 
         /**
@@ -245,7 +260,9 @@ public class AlertRepository {
     }
 
     /**
-     * Inserts a candidate alert only if no recent unresolved alert of the same type exists.
+     * Inserts a candidate alert only if no unresolved alert of the same type already exists for the
+     * same field, and the most recently resolved alert (if any) is not still within its event
+     * duration.
      *
      * @param dm        bound {@link DataManager} instance
      * @param candidate alert candidate to insert
@@ -287,6 +304,21 @@ public class AlertRepository {
                 });
     }
 
+    /**
+     * Returns {@code true} when a newly evaluated candidate should be suppressed because the last
+     * resolved alert has not yet "expired" for the candidate forecast time.
+     * <p>
+     * The end of the resolved event is computed as {@code baseAt + durationMs}, where {@code baseAt}
+     * is taken from (in order) the resolved alert forecast time, resolved time, or creation time,
+     * and {@code durationMs} is taken from (in order) the resolved alert duration, the candidate
+     * duration, or a default value.
+     * </p>
+     *
+     * @param latestResolved the most recent resolved alert for the same type/field
+     * @param candidate      the newly evaluated candidate
+     * @param nowMs          current time used as fallback when the candidate has no forecast time
+     * @return {@code true} to skip inserting the candidate, {@code false} otherwise
+     */
     private boolean isSuppressed(Alert latestResolved, Alert candidate, long nowMs) {
         long candidateAt = candidate != null && candidate.getForecastAt() > 0L
                 ? candidate.getForecastAt()

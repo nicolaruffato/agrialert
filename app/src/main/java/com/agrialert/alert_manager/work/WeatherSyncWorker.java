@@ -21,7 +21,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * WorkManager worker that periodically synchronizes weather data and generates alerts.
+ * WorkManager worker that periodically synchronizes weather data, generates new alerts, and posts
+ * notifications for them.
  */
 public class WeatherSyncWorker extends Worker {
 
@@ -64,6 +65,13 @@ public class WeatherSyncWorker extends Worker {
         }
     }
 
+    /**
+     * Loads the total number of fields per group from {@link com.agrialert.data_manager.DataManager}.
+     * <p>
+     * The returned map is used by {@link AlertNotificationManager} to decide whether to aggregate
+     * notifications at group level. Returns an empty map on failure.
+     * </p>
+     */
     private Map<String, Integer> loadFieldCountsByGroup() {
         try {
             List<GroupWithFields> groups = DataManagerConnector.withSingle(
