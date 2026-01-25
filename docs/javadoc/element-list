@@ -1,0 +1,14 @@
+com.agrialert
+com.agrialert.alert_manager
+com.agrialert.alert_manager.domain
+com.agrialert.alert_manager.notifications
+com.agrialert.alert_manager.repo
+com.agrialert.alert_manager.work
+com.agrialert.api
+com.agrialert.data_manager
+com.agrialert.databinding
+com.agrialert.ui.alerts
+com.agrialert.ui.dashboard
+com.agrialert.ui.fields
+com.agrialert.ui.fields.groups
+com.agrialert.viewmodel

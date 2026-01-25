@@ -6,13 +6,14 @@ plugins {
 }
 
 fun getProps(name: String): String {
-    var propsFile = rootProject.file("local.properties")
-    if(propsFile.exists() && propsFile.isFile) {
-        var props = Properties()
+    val propsFile = rootProject.file("local.properties")
+    if (propsFile.exists() && propsFile.isFile) {
+        val props = Properties()
         props.load(FileInputStream(propsFile))
-        return props[name] as String
+        val value = props.getProperty(name) ?: ""
+        return "\"$value\""
     } else {
-        return ""
+        return "\"\""
     }
 }
 
@@ -82,3 +83,48 @@ dependencies {
 
 }
 
+tasks.register<Javadoc>("generateAndroidJavadoc") {
+    group = "documentation"
+    description = "Genera Javadoc per il codice Java ignorando gli errori di moduli esterni"
+
+    dependsOn("compileReleaseJavaWithJavac", "dataBindingGenBaseClassesRelease")
+
+    // 1. Indica dove sono i tuoi file sorgente (.java)
+    setSource(files(
+        android.sourceSets.getByName("main").java.srcDirs,
+        layout.buildDirectory.dir("generated/data_binding_base_class_source_out/release/out")
+    ))
+
+    // 2. Configura il Classpath (serve per fargli trovare le classi Android come Activity, Context, ecc.)
+    doFirst {
+        val androidBootClasspath = files(android.bootClasspath)
+        // Prende le dipendenze dalla variante di release
+        val dependencyClasspath = android.applicationVariants.find { it.name == "release" }
+            ?.javaCompileProvider?.get()?.classpath?.files ?: files()
+
+        classpath = androidBootClasspath + files(dependencyClasspath) + files(layout.buildDirectory.dir("generated/source/buildConfig/release"))
+    }
+
+    // 3. Opzioni fondamentali per evitare l'errore dei moduli
+    options {
+        this as StandardJavadocDocletOptions
+
+        // Disabilita i controlli severi (questo risolve l'errore module-info)
+        addStringOption("Xdoclint:none", "-quiet")
+
+        // Imposta la codifica corretta
+        encoding = "UTF-8"
+        charSet = "UTF-8"
+
+        // Includi anche i membri privati e protetti? (opzionale)
+        memberLevel = JavadocMemberLevel.PRIVATE
+
+        // Titolo della pagina
+        windowTitle = "AgriAlert Documentation"
+    }
+
+    // 4. Escludi i file generati automaticamente da Android (R.java e BuildConfig)
+    exclude("**/R.java", "**/BuildConfig.java")
+
+
+}
