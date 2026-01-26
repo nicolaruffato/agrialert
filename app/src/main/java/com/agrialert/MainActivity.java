@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
             DataManager.LocalBinder binder = (DataManager.LocalBinder) service;
             dataManager = binder.getService();
             mBound = true;
-            Toast.makeText(MainActivity.this, "DataManager Bound", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MainActivity.this, "DataManager Bound", Toast.LENGTH_SHORT).show();
             fieldsVM = new FieldsViewModel(dataManager);
             alertsVM = new AlertsViewModel(dataManager);
             isBoundSubject.onNext(true);
