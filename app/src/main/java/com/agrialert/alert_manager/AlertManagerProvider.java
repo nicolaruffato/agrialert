@@ -25,7 +25,6 @@ public final class AlertManagerProvider {
 
     /**
      * Returns the singleton {@link AlertRepository}, initializing it on first use.
-     * This method also triggers initialization of background work.
      *
      * @param context any context used to derive the application context
      * @return the shared {@link AlertRepository} instance
@@ -34,7 +33,6 @@ public final class AlertManagerProvider {
         if (repository == null) {
             synchronized (AlertManagerProvider.class) {
                 if (repository == null) {
-                    AlertManagerInitializer.init(context.getApplicationContext());
                     repository = new AlertRepository(
                             context.getApplicationContext(),
                             new OpenMeteoApiClient(),

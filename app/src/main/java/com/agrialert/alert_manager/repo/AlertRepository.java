@@ -295,11 +295,13 @@ public class AlertRepository {
                                 return dm.insertAlert(candidate)
                                         .subscribeOn(ioScheduler)
                                         .observeOn(observeScheduler())
-                                        .map(id -> {
+                                        .flatMapMaybe(id -> {
+                                            if (id == null || id <= 0L) {
+                                                return Maybe.empty();
+                                            }
                                             candidate.setId(id);
-                                            return candidate;
-                                        })
-                                        .toMaybe();
+                                            return Maybe.just(candidate);
+                                        });
                             });
                 });
     }

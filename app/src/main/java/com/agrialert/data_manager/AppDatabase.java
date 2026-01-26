@@ -55,6 +55,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                 @Override
                                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
                                     super.onCreate(db);
+                                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_alerts_active_unique ON alerts(fieldId, typeId) WHERE resolved = 0");
                                     db.execSQL("INSERT INTO FieldsGroup VALUES ('Default', 'Gruppo di Default')");
                                     db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Ondata di calore', 'Temperature elevate che possono causare stress termico', 35, NULL)");
                                     db.execSQL("INSERT INTO AlertType VALUES (NULL, 'Gelo / Brina', 'Rischio di danni da gelo su colture sensibili', 0, NULL)");

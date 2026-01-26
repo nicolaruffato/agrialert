@@ -32,21 +32,21 @@ public interface AlertDao {
     Flowable<List<Alert>> observeByResolved(boolean resolved);
 
     /**
-     * Inserts an alert (or replaces it on conflict).
+     * Inserts an alert, skipping it on conflict.
      *
      * @param entity alert to insert
      * @return inserted row id
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     Single<Long> insert(Alert entity);
 
     /**
-     * Inserts a list of alerts (or replaces them on conflict).
+     * Inserts a list of alerts, skipping them on conflict.
      *
      * @param entities alerts to insert
      * @return list of inserted ids
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     Single<List<Long>> insertAll(List<Alert> entities);
 
     /**
